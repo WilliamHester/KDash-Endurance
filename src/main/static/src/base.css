@@ -1,0 +1,78 @@
+body {
+  margin: 0;
+
+  background-color: #15202b;
+  color: #f0f0f0;
+  height: 100%;
+
+  font-family: sans-serif;
+}
+
+#root {
+  height: 100%;
+}
+
+html {
+  height: 100%;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+  min-height: 60px;
+  padding-left: 60px;
+  padding-right: 60px;
+  background-color: #2b6db0;
+}
+
+.header > * {
+  flex: 1;
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+}
+
+.site-header__wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.website-name {
+  font-family: 'Electrolize', sans-serif;
+  font-size: 24px;
+}
+
+.no-style-link {
+  text-decoration: inherit;
+  color: inherit;
+}
+
+.upload {
+  font-family: 'Electrolize', sans-serif;
+  font-size: 32px;
+}
+
+.nav-right {
+  display: flex;
+  justify-content: right;
+}
+
+.centered-content-column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin: auto;
+}

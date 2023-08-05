@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package me.williamhester.kdash.enduranceweb;
+
+import "google/protobuf/timestamp.proto";
+
+option java_package = "me.williamhester.kdash.enduranceweb.proto";
+option java_multiple_files = true;
+
+service LiveTelemetryService {
+  rpc Connect(ConnectRequest) returns (stream LiveTelemetryEvent);
+}
+
+message ConnectRequest {
+
+}
+
+message LiveTelemetryEvent {
+  oneof update {
+    LapLog lap_log = 1;
+  }
+}
+
+message LapLog {
+  int32 lap_num = 1;
+}
