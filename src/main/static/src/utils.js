@@ -19,4 +19,11 @@ function formatNumberAsDuration(number, minutesOptional) {
   return `${minutes}:${seconds}`;
 };
 
-export { formatNumberAsDuration };
+function formatDriverName(name) {
+  const nameParts = name.split(' ');
+  const firstInitial = nameParts[0][0];
+  const lastName = nameParts[nameParts.length - 1].replace(/\d+/, '');
+  return `${firstInitial}. ${lastName}`
+}
+
+export { formatNumberAsDuration, formatDriverName };

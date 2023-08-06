@@ -1,6 +1,5 @@
 package me.williamhester.kdash.web
 
-import io.grpc.stub.ClientCallStreamObserver
 import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.api.IRacingLoggedDataReader
 import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
@@ -30,10 +29,11 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase(), Runnable {
     responseObserver: StreamObserver<LapEntry>
   ) {
     // 1. Emit all laps we've seen so far
-    for (lap in lapMonitor.logEntries) {
-      responseObserver.onNext(lap.toLapEntry())
+    for (i in 0 until 10) {
+      for (lap in lapMonitor.logEntries) {
+        responseObserver.onNext(lap.toLapEntry())
+      }
     }
-//    responseObserver.onCompleted()
     // 2. Hand off the response observer
   }
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { formatNumberAsDuration } from "./utils.js";
+import { formatNumberAsDuration } from "../utils.js";
 import "./PitChip.css";
 
 export default function PitChip(lapEntry) {

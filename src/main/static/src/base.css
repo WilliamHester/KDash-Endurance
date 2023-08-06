@@ -22,6 +22,13 @@ html {
   height: 100%;
 }
 
+.row {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -60,6 +67,14 @@ html {
   color: inherit;
 }
 
+.hamburgerMenuItem {
+  padding: 16px;
+}
+
+.active {
+  background-color: #3a3a3a;
+}
+
 .upload {
   font-family: 'Electrolize', sans-serif;
   font-size: 32px;
@@ -77,29 +92,13 @@ html {
   margin: auto;
 }
 
-table {
-  border-collapse: separate;
-  border-spacing: 0;
+.content {
+  flex: 1;
 }
 
-tr:hover {
-  background-color: #3a3a3a;
-}
-
-td, th {
-  padding: 10px;
-  text-align: center;
-}
-
-td:first-child {
-  border-top-left-radius: 10px;
-  border-bottom-left-radius: 10px;
-}
-td:last-child {
-  border-top-right-radius: 10px;
-  border-bottom-right-radius: 10px;
-}
-
-.number {
-  text-align: right;
+.hamburgerMenu {
+  display: flex;
+  flex-direction: column;
+  background-color: #232324;
+  font-family: 'Electrolize', sans-serif;
 }
