@@ -11,6 +11,8 @@ service LiveTelemetryService {
   rpc MonitorDriverLaps(ConnectRequest) returns (stream LapEntry);
 
   rpc MonitorCurrentGaps(ConnectRequest) returns (stream Gaps);
+
+  rpc MonitorCurrentDrivers(ConnectRequest) returns (stream CurrentDrivers);
 }
 
 message ConnectRequest {}
@@ -40,4 +42,13 @@ message Gaps {
 message Gap {
    int32 car_id = 1;
    double gap = 2;
+}
+
+message CurrentDrivers {
+   repeated Driver drivers = 1;
+}
+
+message Driver {
+   int32 car_id = 1;
+   string driver_name = 2;
 }

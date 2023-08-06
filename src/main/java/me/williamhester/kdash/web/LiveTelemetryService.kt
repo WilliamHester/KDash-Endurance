@@ -5,10 +5,13 @@ import io.grpc.StatusRuntimeException
 import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.api.IRacingLoggedDataReader
 import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
+import me.williamhester.kdash.enduranceweb.proto.CurrentDrivers
+import me.williamhester.kdash.enduranceweb.proto.Driver
 import me.williamhester.kdash.enduranceweb.proto.Gaps
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryServiceGrpc.LiveTelemetryServiceImplBase
 import me.williamhester.kdash.monitors.DriverCarLapMonitor
+import me.williamhester.kdash.monitors.DriverMonitor
 import me.williamhester.kdash.monitors.RelativeMonitor
 import java.nio.file.Paths
 import java.util.concurrent.CopyOnWriteArrayList
@@ -17,11 +20,15 @@ import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicInteger
 
 class LiveTelemetryService : LiveTelemetryServiceImplBase() {
+  private val iRacingDataReader = IRacingLoggedDataReader(Paths.get("/Users/williamhester/Downloads/livedata.ibt"))
 
   private lateinit var relativeMonitor: RelativeMonitor
   private lateinit var lapMonitor: DriverCarLapMonitor
+  private val driverMonitor = DriverMonitor(iRacingDataReader)
+
   private val lapEntryStreamObservers = CopyOnWriteArrayList<LapEntryStreamObserverProgressHolder>()
   private val gapsStreamObservers = CopyOnWriteArrayList<GapsStreamObserverRateLimitHolder>()
+  private val currentDriversStreamObservers = CopyOnWriteArrayList<CurrentDriversStreamObserverHolder>()
   private val initializedLock = CountDownLatch(1)
 
   fun start(executor: Executor) {
@@ -30,7 +37,6 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
   }
 
   private fun monitor() {
-    val iRacingDataReader = IRacingLoggedDataReader(Paths.get("/Users/williamhester/Downloads/livedata.ibt"))
     relativeMonitor = RelativeMonitor(iRacingDataReader.headers)
     lapMonitor = DriverCarLapMonitor(iRacingDataReader, relativeMonitor)
     initializedLock.countDown()
@@ -51,6 +57,12 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
   }
 
   private fun emitAll() {
+    emitDriverLapLogs()
+    emitAllGapsRateLimited()
+    emitNewDriversPerStream()
+  }
+
+  private fun emitDriverLapLogs() {
     val lapEntries = lapMonitor.logEntries
 
     val responseObserversToRemove = mutableSetOf<LapEntryStreamObserverProgressHolder>()
@@ -66,7 +78,9 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
       }
     }
     lapEntryStreamObservers.removeAll(responseObserversToRemove)
+  }
 
+  private fun emitAllGapsRateLimited() {
     val gapResponseObserversToRemove = mutableSetOf<GapsStreamObserverRateLimitHolder>()
     for (responseObserverHolder in gapsStreamObservers) {
       val rateLimiter = responseObserverHolder.rateLimiter
@@ -82,6 +96,28 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
       }
     }
     gapsStreamObservers.removeAll(gapResponseObserversToRemove)
+  }
+
+  private fun emitNewDriversPerStream() {
+    val driverObserversToRemove = mutableSetOf<CurrentDriversStreamObserverHolder>()
+    val currentDrivers = driverMonitor.currentDrivers.map {
+      Driver.newBuilder().setCarId(it.key).setDriverName(it.value).build()
+    }
+    for (responseObserverHolder in currentDriversStreamObservers) {
+      val previousDrivers = responseObserverHolder.previousDrivers
+      if (currentDrivers != previousDrivers) {
+        try {
+          responseObserverHolder.responseObserver.onNext(
+            CurrentDrivers.newBuilder().addAllDrivers(currentDrivers).build()
+          )
+          responseObserverHolder.previousDrivers = currentDrivers
+        } catch (e: StatusRuntimeException) {
+          driverObserversToRemove += responseObserverHolder
+          break
+        }
+      }
+    }
+    currentDriversStreamObservers.removeAll(driverObserversToRemove)
   }
 
   override fun monitorDriverLaps(
@@ -108,5 +144,18 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
     val responseObserver: StreamObserver<Gaps>,
   ) {
     val rateLimiter: RateLimiter = RateLimiter.create(5.0)
+  }
+
+  override fun monitorCurrentDrivers(
+    request: ConnectRequest,
+    responseObserver: StreamObserver<CurrentDrivers>
+  ) {
+    currentDriversStreamObservers.add(CurrentDriversStreamObserverHolder(responseObserver))
+  }
+
+  private class CurrentDriversStreamObserverHolder(
+    val responseObserver: StreamObserver<CurrentDrivers>,
+  ) {
+    var previousDrivers = listOf<Driver>()
   }
 }
