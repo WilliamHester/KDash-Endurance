@@ -101,7 +101,7 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
   private fun emitNewDriversPerStream() {
     val driverObserversToRemove = mutableSetOf<CurrentDriversStreamObserverHolder>()
     val currentDrivers = driverMonitor.currentDrivers.map {
-      Driver.newBuilder().setCarId(it.key).setDriverName(it.value).build()
+      Driver.newBuilder().setCarId(it.key).setCarNumber(it.value.carNumber).setDriverName(it.value.driverName).build()
     }
     for (responseObserverHolder in currentDriversStreamObservers) {
       val previousDrivers = responseObserverHolder.previousDrivers

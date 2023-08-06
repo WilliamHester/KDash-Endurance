@@ -50,5 +50,6 @@ message CurrentDrivers {
 
 message Driver {
    int32 car_id = 1;
-   string driver_name = 2;
+   int32 car_number = 2;
+   string driver_name = 3;
 }

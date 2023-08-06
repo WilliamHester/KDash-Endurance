@@ -64,7 +64,13 @@ export default function App2() {
     stream.on('data', response => {
       console.log('response: ', response);
       const entries = new Map(
-        response.getDriversList().map((driver) => [driver.getCarId(), driver.getDriverName()])
+        response.getDriversList().map((driver) => [
+          driver.getCarId(),
+          {
+            'driverName': driver.getDriverName(),
+            'carNumber': driver.getCarNumber()
+          }
+        ])
       );
       setCurrentDrivers(entries);
     });

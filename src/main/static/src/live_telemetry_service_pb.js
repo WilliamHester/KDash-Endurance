@@ -1319,7 +1319,8 @@ proto.me.williamhester.kdash.enduranceweb.Driver.prototype.toObject = function(o
 proto.me.williamhester.kdash.enduranceweb.Driver.toObject = function(includeInstance, msg) {
   var f, obj = {
     carId: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    driverName: jspb.Message.getFieldWithDefault(msg, 2, "")
+    carNumber: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    driverName: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -1361,6 +1362,10 @@ proto.me.williamhester.kdash.enduranceweb.Driver.deserializeBinaryFromReader = f
       msg.setCarId(value);
       break;
     case 2:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setCarNumber(value);
+      break;
+    case 3:
       var value = /** @type {string} */ (reader.readString());
       msg.setDriverName(value);
       break;
@@ -1400,10 +1405,17 @@ proto.me.williamhester.kdash.enduranceweb.Driver.serializeBinaryToWriter = funct
       f
     );
   }
+  f = message.getCarNumber();
+  if (f !== 0) {
+    writer.writeInt32(
+      2,
+      f
+    );
+  }
   f = message.getDriverName();
   if (f.length > 0) {
     writer.writeString(
-      2,
+      3,
       f
     );
   }
@@ -1429,11 +1441,29 @@ proto.me.williamhester.kdash.enduranceweb.Driver.prototype.setCarId = function(v
 
 
 /**
- * optional string driver_name = 2;
+ * optional int32 car_number = 2;
+ * @return {number}
+ */
+proto.me.williamhester.kdash.enduranceweb.Driver.prototype.getCarNumber = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.me.williamhester.kdash.enduranceweb.Driver} returns this
+ */
+proto.me.williamhester.kdash.enduranceweb.Driver.prototype.setCarNumber = function(value) {
+  return jspb.Message.setProto3IntField(this, 2, value);
+};
+
+
+/**
+ * optional string driver_name = 3;
  * @return {string}
  */
 proto.me.williamhester.kdash.enduranceweb.Driver.prototype.getDriverName = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
 };
 
 
@@ -1442,7 +1472,7 @@ proto.me.williamhester.kdash.enduranceweb.Driver.prototype.getDriverName = funct
  * @return {!proto.me.williamhester.kdash.enduranceweb.Driver} returns this
  */
 proto.me.williamhester.kdash.enduranceweb.Driver.prototype.setDriverName = function(value) {
-  return jspb.Message.setProto3StringField(this, 2, value);
+  return jspb.Message.setProto3StringField(this, 3, value);
 };
 
 

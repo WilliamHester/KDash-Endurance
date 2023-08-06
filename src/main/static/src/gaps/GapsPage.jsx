@@ -7,7 +7,8 @@ export default function GapsPage(gapEntries, drivers) {
       <tr>
         <td><div></div></td>
         <td>{ index + 1 }</td>
-        <td>{ drivers.get(gap.getCarId()) }</td>
+        <td>#{ drivers.get(gap.getCarId()).carNumber }</td>
+        <td>{ drivers.get(gap.getCarId()).driverName }</td>
         <td>{ gap.getGap().toFixed(3) }</td>
       </tr>
     ));
@@ -17,7 +18,8 @@ export default function GapsPage(gapEntries, drivers) {
         <thead>
           <tr>
             <td></td>
-            <td>Position</td>
+            <td>Pos</td>
+            <td>Num</td>
             <td>Driver</td>
             <td>Gap</td>
           </tr>
