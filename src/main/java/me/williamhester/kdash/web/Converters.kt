@@ -1,7 +1,9 @@
 package me.williamhester.kdash.web
 
+import me.williamhester.kdash.enduranceweb.proto.Gap
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.monitors.DriverCarLapMonitor.LogEntry
+import me.williamhester.kdash.monitors.RelativeMonitor.GapToCarId
 
 internal fun LogEntry.toLapEntry(): LapEntry {
   val log = this
@@ -21,5 +23,13 @@ internal fun LogEntry.toLapEntry(): LapEntry {
     pitIn = log.pitIn
     pitOut = log.pitOut
     pitTime = log.pitTime
+  }.build()
+}
+
+internal fun GapToCarId.toGap(): Gap {
+  val gapToCarId = this
+  return Gap.newBuilder().apply {
+    carId = gapToCarId.carId
+    gap = gapToCarId.gap
   }.build()
 }

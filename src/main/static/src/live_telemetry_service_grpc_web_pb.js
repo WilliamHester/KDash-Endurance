@@ -135,5 +135,61 @@ proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prot
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
+ *   !proto.me.williamhester.kdash.enduranceweb.Gaps>}
+ */
+const methodDescriptor_LiveTelemetryService_MonitorCurrentGaps = new grpc.web.MethodDescriptor(
+  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorCurrentGaps',
+  grpc.web.MethodType.SERVER_STREAMING,
+  proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
+  proto.me.williamhester.kdash.enduranceweb.Gaps,
+  /**
+   * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.me.williamhester.kdash.enduranceweb.Gaps.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.Gaps>}
+ *     The XHR Node Readable Stream
+ */
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.monitorCurrentGaps =
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorCurrentGaps',
+      request,
+      metadata || {},
+      methodDescriptor_LiveTelemetryService_MonitorCurrentGaps);
+};
+
+
+/**
+ * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.Gaps>}
+ *     The XHR Node Readable Stream
+ */
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.monitorCurrentGaps =
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorCurrentGaps',
+      request,
+      metadata || {},
+      methodDescriptor_LiveTelemetryService_MonitorCurrentGaps);
+};
+
+
 module.exports = proto.me.williamhester.kdash.enduranceweb;
 

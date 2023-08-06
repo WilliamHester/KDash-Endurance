@@ -9,11 +9,11 @@ option java_multiple_files = true;
 
 service LiveTelemetryService {
   rpc MonitorDriverLaps(ConnectRequest) returns (stream LapEntry);
+
+  rpc MonitorCurrentGaps(ConnectRequest) returns (stream Gaps);
 }
 
-message ConnectRequest {
-
-}
+message ConnectRequest {}
 
 message LapEntry {
    int32 lap_num = 1;
@@ -31,4 +31,13 @@ message LapEntry {
    bool pit_in = 13;
    bool pit_out = 14;
    double pit_time = 15;
+}
+
+message Gaps {
+   repeated Gap gaps = 1;
+}
+
+message Gap {
+   int32 car_id = 1;
+   double gap = 2;
 }

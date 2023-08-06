@@ -15,6 +15,7 @@ kt_jvm_library(
         "@maven//:io_grpc_grpc_protobuf",
         "@maven//:io_grpc_grpc_stub",
         "@maven//:io_javalin_javalin",
+        "@maven//:com_google_guava_guava",
         "@maven//:com_google_protobuf_protobuf_java_util",
         "@maven//:org_mindrot_jbcrypt",
         "@kdash//main/java/me/williamhester/kdash/api",
