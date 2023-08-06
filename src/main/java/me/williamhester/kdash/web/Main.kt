@@ -5,9 +5,14 @@ import io.grpc.ServerBuilder
 import java.util.concurrent.Executors
 
 fun main() {
-  val executor = Executors.newCachedThreadPool()
+  val executor = Executors.newCachedThreadPool(
+    ThreadFactoryBuilder()
+      .setNameFormat("runner-thread-%d")
+      .setUncaughtExceptionHandler { _, e -> e?.printStackTrace() }
+      .build()
+  )
   val telemetryService = LiveTelemetryService()
-  executor.execute(telemetryService)
+  telemetryService.start(executor)
 
   ServerBuilder.forPort(8081)
     .addService(telemetryService)

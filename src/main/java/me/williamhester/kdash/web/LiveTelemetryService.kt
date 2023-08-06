@@ -12,29 +12,41 @@ import me.williamhester.kdash.monitors.DriverCarLapMonitor
 import me.williamhester.kdash.monitors.RelativeMonitor
 import java.nio.file.Paths
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicInteger
 
-class LiveTelemetryService : LiveTelemetryServiceImplBase(), Runnable {
+class LiveTelemetryService : LiveTelemetryServiceImplBase() {
 
   private lateinit var relativeMonitor: RelativeMonitor
   private lateinit var lapMonitor: DriverCarLapMonitor
   private val lapEntryStreamObservers = CopyOnWriteArrayList<LapEntryStreamObserverProgressHolder>()
   private val gapsStreamObservers = CopyOnWriteArrayList<GapsStreamObserverRateLimitHolder>()
+  private val initializedLock = CountDownLatch(1)
 
-  override fun run() {
+  fun start(executor: Executor) {
+    executor.execute(this::monitor)
+    executor.execute(this::emitLoop)
+  }
+
+  private fun monitor() {
     val iRacingDataReader = IRacingLoggedDataReader(Paths.get("/Users/williamhester/Downloads/livedata.ibt"))
     relativeMonitor = RelativeMonitor(iRacingDataReader.headers)
     lapMonitor = DriverCarLapMonitor(iRacingDataReader, relativeMonitor)
+    initializedLock.countDown()
 
     val rateLimiter = RateLimiter.create(600.0)
     for (varBuf in iRacingDataReader) {
       relativeMonitor.process(varBuf)
       lapMonitor.process(varBuf)
-
-      // TODO: Move the emit loop to a separate thread. Leaving it here puts us at risk of taking too long to emit and
-      //  missing live data.
-      emitAll()
       rateLimiter.acquire()
+    }
+  }
+
+  private fun emitLoop() {
+    initializedLock.await()
+    while (true) {
+      emitAll()
     }
   }
 
