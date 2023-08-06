@@ -1,36 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { Outlet } from "react-router";
-import { Link, useNavigate } from "react-router-dom";
-import { ConnectRequest, LiveTelemetryEvent } from "../live_telemetry_service_pb.js";
-import { LiveTelemetryServiceClient } from "../live_telemetry_service_grpc_web_pb.js";
+import React from "react";
 import "./LapLogPage.css";
 import { formatNumberAsDuration, formatDriverName } from "../utils.js";
 import PitChip from "./PitChip";
 
-export default function LapLogPage() {
-  const [lapEntries, setLapEntries] = useState([]);
-
-  useEffect(() => {
-    const liveTelemetryServiceClient = new LiveTelemetryServiceClient('http://localhost:8000/api');
-    const request = new ConnectRequest();
-    const entries = [];
-    const stream = liveTelemetryServiceClient.monitorDriverLaps(request, {}, (err, resp) => {
-        console.log("went here");
-        console.log(err, resp);
-    });
-    stream.on('data', response => {
-      console.log('response: ', response);
-      entries.unshift(response);
-      setLapEntries([...entries]);
-    });
-    stream.on('status', status => {
-      console.log(status);
-    });
-    stream.on('end', end => {
-      console.log('Stream end');
-    });
-  }, []);
-
+export default function LapLogPage(lapEntries) {
   const lapRows = lapEntries.map(
       (lapEntry) => {
         return <tr>
