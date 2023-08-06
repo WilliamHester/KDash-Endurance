@@ -8,19 +8,27 @@ option java_package = "me.williamhester.kdash.enduranceweb.proto";
 option java_multiple_files = true;
 
 service LiveTelemetryService {
-  rpc Connect(ConnectRequest) returns (stream LiveTelemetryEvent);
+  rpc MonitorDriverLaps(ConnectRequest) returns (stream LapEntry);
 }
 
 message ConnectRequest {
 
 }
 
-message LiveTelemetryEvent {
-  oneof update {
-    LapLog lap_log = 1;
-  }
-}
-
-message LapLog {
-  int32 lap_num = 1;
+message LapEntry {
+   int32 lap_num = 1;
+   string driver_name = 2;
+   int32 position = 3;
+   double lap_time = 4;
+   double gap_to_leader = 5;
+   float fuel_remaining = 6;
+   float fuel_used = 7;
+   float track_temp = 8;
+   int32 driver_incidents = 9;
+   int32 team_incidents = 10;
+   float optional_repairs_remaining = 11;
+   float repairs_remaining = 12;
+   bool pit_in = 13;
+   bool pit_out = 14;
+   double pit_time = 15;
 }

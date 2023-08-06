@@ -83,13 +83,13 @@ proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient =
  * @const
  * @type {!grpc.web.MethodDescriptor<
  *   !proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
- *   !proto.me.williamhester.kdash.enduranceweb.LiveTelemetryEvent>}
+ *   !proto.me.williamhester.kdash.enduranceweb.LapEntry>}
  */
-const methodDescriptor_LiveTelemetryService_Connect = new grpc.web.MethodDescriptor(
-  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/Connect',
+const methodDescriptor_LiveTelemetryService_MonitorDriverLaps = new grpc.web.MethodDescriptor(
+  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorDriverLaps',
   grpc.web.MethodType.SERVER_STREAMING,
   proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
-  proto.me.williamhester.kdash.enduranceweb.LiveTelemetryEvent,
+  proto.me.williamhester.kdash.enduranceweb.LapEntry,
   /**
    * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request
    * @return {!Uint8Array}
@@ -97,7 +97,7 @@ const methodDescriptor_LiveTelemetryService_Connect = new grpc.web.MethodDescrip
   function(request) {
     return request.serializeBinary();
   },
-  proto.me.williamhester.kdash.enduranceweb.LiveTelemetryEvent.deserializeBinary
+  proto.me.williamhester.kdash.enduranceweb.LapEntry.deserializeBinary
 );
 
 
@@ -105,16 +105,16 @@ const methodDescriptor_LiveTelemetryService_Connect = new grpc.web.MethodDescrip
  * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.LiveTelemetryEvent>}
+ * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.LapEntry>}
  *     The XHR Node Readable Stream
  */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.connect =
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.monitorDriverLaps =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/Connect',
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorDriverLaps',
       request,
       metadata || {},
-      methodDescriptor_LiveTelemetryService_Connect);
+      methodDescriptor_LiveTelemetryService_MonitorDriverLaps);
 };
 
 
@@ -122,16 +122,16 @@ proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.c
  * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.LiveTelemetryEvent>}
+ * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.LapEntry>}
  *     The XHR Node Readable Stream
  */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.connect =
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.monitorDriverLaps =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/Connect',
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorDriverLaps',
       request,
       metadata || {},
-      methodDescriptor_LiveTelemetryService_Connect);
+      methodDescriptor_LiveTelemetryService_MonitorDriverLaps);
 };
 
 

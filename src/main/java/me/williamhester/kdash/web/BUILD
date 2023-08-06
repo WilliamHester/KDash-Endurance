@@ -18,12 +18,8 @@ kt_jvm_library(
         "@maven//:com_google_protobuf_protobuf_java_util",
         "@maven//:org_mindrot_jbcrypt",
         "@kdash//main/java/me/williamhester/kdash/api",
+        "@kdash//main/java/me/williamhester/kdash/monitors",
         "//main/proto:live_telemetry_service_java_grpc",
-
-        # Debugging sources
-        "@io_grpc_grpc_java//core:core_maven",
-        "@io_grpc_grpc_java//netty",
-        "@maven//:io_netty_netty_codec_http2",
     ],
 )
 

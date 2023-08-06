@@ -1,11 +1,11 @@
 body {
   margin: 0;
 
-  background-color: #15202b;
+  background-color: #1a1a1a;
   color: #f0f0f0;
   height: 100%;
 
-  font-family: sans-serif;
+  font-family: 'Azeret Mono', monospace;
 }
 
 #root {
@@ -30,7 +30,7 @@ html {
   min-height: 60px;
   padding-left: 60px;
   padding-right: 60px;
-  background-color: #2b6db0;
+  background-color: #486a8d;
 }
 
 .header > * {
@@ -75,4 +75,31 @@ html {
   flex-direction: column;
   flex: 1;
   margin: auto;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+tr:hover {
+  background-color: #3a3a3a;
+}
+
+td, th {
+  padding: 10px;
+  text-align: center;
+}
+
+td:first-child {
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+td:last-child {
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+.number {
+  text-align: right;
 }
