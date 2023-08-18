@@ -8,9 +8,11 @@ option java_package = "me.williamhester.kdash.enduranceweb.proto";
 option java_multiple_files = true;
 
 service LiveTelemetryService {
-  rpc MonitorDriverLaps(ConnectRequest) returns (stream LapEntry);
+   rpc MonitorDriverLaps(ConnectRequest) returns (stream LapEntry);
 
-  rpc MonitorCurrentGaps(ConnectRequest) returns (stream Gaps);
+   rpc MonitorOtherCarsLaps(ConnectRequest) returns (stream OtherCarLapEntry);
+
+   rpc MonitorCurrentGaps(ConnectRequest) returns (stream Gaps);
 
    rpc MonitorCurrentDrivers(ConnectRequest) returns (stream CurrentDrivers);
 
@@ -37,6 +39,19 @@ message LapEntry {
    double pit_time = 15;
 }
 
+message OtherCarLapEntry {
+   int32 car_id = 1;
+   int32 lap_num = 2;
+   string driver_name = 3;
+   int32 position = 4;
+   double lap_time = 5;
+   double gap_to_leader = 6;
+   float track_temp = 7;
+   bool pit_in = 8;
+   bool pit_out = 9;
+   double pit_time = 10;
+}
+
 message Gaps {
    repeated Gap gaps = 1;
 }
@@ -53,7 +68,10 @@ message CurrentDrivers {
 message Driver {
    int32 car_id = 1;
    int32 car_number = 2;
-   string driver_name = 3;
+   int32 car_class_id = 3;
+   string car_class_name = 4;
+   string driver_name = 5;
+   string team_name = 6;
 }
 
 message DriverDistances {

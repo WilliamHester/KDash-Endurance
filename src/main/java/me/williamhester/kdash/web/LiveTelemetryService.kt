@@ -11,9 +11,11 @@ import me.williamhester.kdash.enduranceweb.proto.DriverDistances
 import me.williamhester.kdash.enduranceweb.proto.Gaps
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryServiceGrpc.LiveTelemetryServiceImplBase
+import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
 import me.williamhester.kdash.monitors.DriverCarLapMonitor
 import me.williamhester.kdash.monitors.DriverDistancesMonitor
 import me.williamhester.kdash.monitors.DriverMonitor
+import me.williamhester.kdash.monitors.OtherCarsLapMonitor
 import me.williamhester.kdash.monitors.RelativeMonitor
 import java.nio.file.Paths
 import java.util.concurrent.CopyOnWriteArrayList
@@ -26,10 +28,12 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
 
   private lateinit var relativeMonitor: RelativeMonitor
   private lateinit var lapMonitor: DriverCarLapMonitor
+  private lateinit var otherCarsLapMonitor: OtherCarsLapMonitor
   private lateinit var driverDistancesMonitor: DriverDistancesMonitor
   private val driverMonitor = DriverMonitor(iRacingDataReader)
 
   private val lapEntryStreamObservers = CopyOnWriteArrayList<LapEntryStreamObserverProgressHolder>()
+  private val otherCarLapEntryStreamObservers = CopyOnWriteArrayList<OtherCarLapEntryStreamObserverProgressHolder>()
   private val gapsStreamObservers = CopyOnWriteArrayList<GapsStreamObserverRateLimitHolder>()
   private val currentDriversStreamObservers = CopyOnWriteArrayList<CurrentDriversStreamObserverHolder>()
   private val driverDistancesStreamObserverHolders = CopyOnWriteArrayList<DriverDistanceStreamObserverHolder>()
@@ -43,6 +47,7 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
   private fun monitor() {
     relativeMonitor = RelativeMonitor(iRacingDataReader.headers)
     lapMonitor = DriverCarLapMonitor(iRacingDataReader, relativeMonitor)
+    otherCarsLapMonitor = OtherCarsLapMonitor(iRacingDataReader, relativeMonitor)
     driverDistancesMonitor = DriverDistancesMonitor(iRacingDataReader)
     initializedLock.countDown()
 
@@ -50,6 +55,7 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
     for (varBuf in iRacingDataReader) {
       relativeMonitor.process(varBuf)
       lapMonitor.process(varBuf)
+      otherCarsLapMonitor.process(varBuf)
       driverDistancesMonitor.process(varBuf)
       rateLimiter.acquire()
     }
@@ -64,6 +70,7 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
 
   private fun emitAll() {
     emitDriverLapLogs()
+    emitOtherCarsLapLogs()
     emitAllGapsRateLimited()
     emitNewDriversPerStream()
     emitDriverDistances()
@@ -85,6 +92,24 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
       }
     }
     lapEntryStreamObservers.removeAll(responseObserversToRemove)
+  }
+
+  private fun emitOtherCarsLapLogs() {
+    val lapEntries = otherCarsLapMonitor.logEntries
+
+    val responseObserversToRemove = mutableSetOf<OtherCarLapEntryStreamObserverProgressHolder>()
+    for (responseObserverHolder in otherCarLapEntryStreamObservers) {
+      val lapsSent = responseObserverHolder.lapsSent
+      while (lapEntries.size > lapsSent.get()) {
+        try {
+          responseObserverHolder.responseObserver.onNext(lapEntries[lapsSent.getAndIncrement()].toOtherCarLapEntry())
+        } catch (e: StatusRuntimeException) {
+          responseObserversToRemove += responseObserverHolder
+          break
+        }
+      }
+    }
+    otherCarLapEntryStreamObservers.removeAll(responseObserversToRemove)
   }
 
   private fun emitAllGapsRateLimited() {
@@ -156,6 +181,16 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
 
   private class LapEntryStreamObserverProgressHolder(
     val responseObserver: StreamObserver<LapEntry>,
+  ) {
+    val lapsSent = AtomicInteger(0)
+  }
+
+  override fun monitorOtherCarsLaps(request: ConnectRequest, responseObserver: StreamObserver<OtherCarLapEntry>) {
+    otherCarLapEntryStreamObservers.add(OtherCarLapEntryStreamObserverProgressHolder(responseObserver))
+  }
+
+  private class OtherCarLapEntryStreamObserverProgressHolder(
+    val responseObserver: StreamObserver<OtherCarLapEntry>,
   ) {
     val lapsSent = AtomicInteger(0)
   }

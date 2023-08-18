@@ -4,11 +4,13 @@ import me.williamhester.kdash.enduranceweb.proto.DriverDistance
 import me.williamhester.kdash.enduranceweb.proto.DriverDistances
 import me.williamhester.kdash.enduranceweb.proto.Gap
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
-import me.williamhester.kdash.monitors.DriverCarLapMonitor.LogEntry
+import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
+import me.williamhester.kdash.monitors.DriverCarLapMonitor
 import me.williamhester.kdash.monitors.DriverDistancesMonitor
+import me.williamhester.kdash.monitors.OtherCarsLapMonitor
 import me.williamhester.kdash.monitors.RelativeMonitor.GapToCarId
 
-internal fun LogEntry.toLapEntry(): LapEntry {
+internal fun DriverCarLapMonitor.LogEntry.toLapEntry(): LapEntry {
   val log = this
   return LapEntry.newBuilder().apply {
     lapNum = log.lapNum
@@ -23,6 +25,21 @@ internal fun LogEntry.toLapEntry(): LapEntry {
     teamIncidents = log.teamIncidents
     optionalRepairsRemaining = log.optionalRepairsRemaining
     repairsRemaining = log.repairsRemaining
+    pitIn = log.pitIn
+    pitOut = log.pitOut
+    pitTime = log.pitTime
+  }.build()
+}
+
+internal fun OtherCarsLapMonitor.LogEntry.toOtherCarLapEntry(): OtherCarLapEntry {
+  val log = this
+  return OtherCarLapEntry.newBuilder().apply {
+    lapNum = log.lapNum
+    driverName = log.driverName
+    position = log.position
+    lapTime = log.lapTime
+    gapToLeader = log.gapToLeader
+    trackTemp = log.trackTemp
     pitIn = log.pitIn
     pitOut = log.pitOut
     pitTime = log.pitTime

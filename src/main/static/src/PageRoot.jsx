@@ -7,6 +7,7 @@ import {
 import { ConnectRequest, LiveTelemetryEvent } from "./live_telemetry_service_pb.js";
 import { LiveTelemetryServiceClient } from "./live_telemetry_service_grpc_web_pb.js";
 import LapLogPage from "./laplog/LapLogPage";
+import OtherCarsLapLogPage from "./laplog/OtherCarsLapLogPage";
 import GapsPage from "./gaps/GapsPage";
 import GapChartPage from "./gapchart/GapChartPage";
 import App from "./App";
@@ -44,6 +45,27 @@ export default function App2() {
     stream.on('data', response => {
       entries.unshift(response);
       setLapEntries([...entries]);
+    });
+    stream.on('status', status => {
+      console.log(status);
+    });
+    stream.on('end', end => {
+      console.log('Stream end');
+    });
+  }, []);
+
+  const [otherCarLapEntries, setOtherCarLapEntries] = useState([]);
+  useEffect(() => {
+    const liveTelemetryServiceClient = new LiveTelemetryServiceClient('http://localhost:8000/api');
+    const request = new ConnectRequest();
+    const entries = [];
+    const stream = liveTelemetryServiceClient.monitorOtherCarsLaps(request, {}, (err, resp) => {
+        console.log("went here");
+        console.log(err, resp);
+    });
+    stream.on('data', response => {
+      entries.unshift(response);
+      setOtherCarLapEntries([...entries]);
     });
     stream.on('status', status => {
       console.log(status);
@@ -125,6 +147,7 @@ export default function App2() {
         <Route path="/" element={ App() }>
           <Route path="" element={ LapLogPage(lapEntries) } />
           <Route path="laps" element={ LapLogPage(lapEntries) } />
+          <Route path="otherlaps" element={ OtherCarsLapLogPage(otherCarLapEntries) } />
           <Route path="gaps" element={ GapsPage(gapEntries, currentDrivers) } />
           <Route path="gapchart" element={ GapChartPage(driverDistances, currentDrivers) } />
         </Route>
