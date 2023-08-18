@@ -1,8 +1,11 @@
 package me.williamhester.kdash.web
 
+import me.williamhester.kdash.enduranceweb.proto.DriverDistance
+import me.williamhester.kdash.enduranceweb.proto.DriverDistances
 import me.williamhester.kdash.enduranceweb.proto.Gap
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.monitors.DriverCarLapMonitor.LogEntry
+import me.williamhester.kdash.monitors.DriverDistancesMonitor
 import me.williamhester.kdash.monitors.RelativeMonitor.GapToCarId
 
 internal fun LogEntry.toLapEntry(): LapEntry {
@@ -31,5 +34,15 @@ internal fun GapToCarId.toGap(): Gap {
   return Gap.newBuilder().apply {
     carId = gapToCarId.carId
     gap = gapToCarId.gap
+  }.build()
+}
+
+internal fun DriverDistancesMonitor.DriverDistances.toDriverDistances(): DriverDistances {
+  val driverDistances = this
+  return DriverDistances.newBuilder().apply {
+    sessionTime = driverDistances.sessionTime.toFloat()
+    for (distance in driverDistances.distances) {
+      addDistances(DriverDistance.newBuilder().setCarId(distance.carId).setDriverDistance(distance.distance))
+    }
   }.build()
 }

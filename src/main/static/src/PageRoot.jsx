@@ -8,6 +8,7 @@ import { ConnectRequest, LiveTelemetryEvent } from "./live_telemetry_service_pb.
 import { LiveTelemetryServiceClient } from "./live_telemetry_service_grpc_web_pb.js";
 import LapLogPage from "./laplog/LapLogPage";
 import GapsPage from "./gaps/GapsPage";
+import GapChartPage from "./gapchart/GapChartPage";
 import App from "./App";
 
 export default function App2() {
@@ -52,7 +53,7 @@ export default function App2() {
     });
   }, []);
 
-  const [currentDrivers, setCurrentDrivers] = useState({});
+  const [currentDrivers, setCurrentDrivers] = useState(new Map());
   useEffect(() => {
     const liveTelemetryServiceClient = new LiveTelemetryServiceClient('http://localhost:8000/api');
     const request = new ConnectRequest();
@@ -82,6 +83,42 @@ export default function App2() {
     });
   }, []);
 
+  const [driverDistances, setDriverDistances] = useState(new Map());
+  useEffect(() => {
+    const liveTelemetryServiceClient = new LiveTelemetryServiceClient('http://localhost:8000/api');
+    const request = new ConnectRequest();
+    const entries = [];
+    const stream = liveTelemetryServiceClient.monitorDriverDistances(request, {}, (err, resp) => {
+        console.log("went here");
+        console.log(err, resp);
+    });
+    stream.on('data', response => {
+      const distances = response.getDistancesList();
+
+//       const relativeDistance = Math.max(...distances.map((distance) => distance.getDriverDistance()));
+      const relativeDistance = distances[0].getDriverDistance();
+
+      const carDistances = distances.map((distance) => {
+        return {
+          'carIdx': distance.getCarId(),
+          'gapToLeader': distance.getDriverDistance() - relativeDistance
+        }
+      });
+      entries.push({
+        'sessionTime': response.getSessionTime(),
+        'distances': carDistances
+      })
+
+      setDriverDistances([...entries]);
+    });
+    stream.on('status', status => {
+      console.log(status);
+    });
+    stream.on('end', end => {
+      console.log('Stream end');
+    });
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -89,6 +126,7 @@ export default function App2() {
           <Route path="" element={ LapLogPage(lapEntries) } />
           <Route path="laps" element={ LapLogPage(lapEntries) } />
           <Route path="gaps" element={ GapsPage(gapEntries, currentDrivers) } />
+          <Route path="gapchart" element={ GapChartPage(driverDistances, currentDrivers) } />
         </Route>
       </Routes>
     </BrowserRouter>

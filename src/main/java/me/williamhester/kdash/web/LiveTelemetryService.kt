@@ -7,10 +7,12 @@ import me.williamhester.kdash.api.IRacingLoggedDataReader
 import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
 import me.williamhester.kdash.enduranceweb.proto.CurrentDrivers
 import me.williamhester.kdash.enduranceweb.proto.Driver
+import me.williamhester.kdash.enduranceweb.proto.DriverDistances
 import me.williamhester.kdash.enduranceweb.proto.Gaps
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryServiceGrpc.LiveTelemetryServiceImplBase
 import me.williamhester.kdash.monitors.DriverCarLapMonitor
+import me.williamhester.kdash.monitors.DriverDistancesMonitor
 import me.williamhester.kdash.monitors.DriverMonitor
 import me.williamhester.kdash.monitors.RelativeMonitor
 import java.nio.file.Paths
@@ -24,11 +26,13 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
 
   private lateinit var relativeMonitor: RelativeMonitor
   private lateinit var lapMonitor: DriverCarLapMonitor
+  private lateinit var driverDistancesMonitor: DriverDistancesMonitor
   private val driverMonitor = DriverMonitor(iRacingDataReader)
 
   private val lapEntryStreamObservers = CopyOnWriteArrayList<LapEntryStreamObserverProgressHolder>()
   private val gapsStreamObservers = CopyOnWriteArrayList<GapsStreamObserverRateLimitHolder>()
   private val currentDriversStreamObservers = CopyOnWriteArrayList<CurrentDriversStreamObserverHolder>()
+  private val driverDistancesStreamObserverHolders = CopyOnWriteArrayList<DriverDistanceStreamObserverHolder>()
   private val initializedLock = CountDownLatch(1)
 
   fun start(executor: Executor) {
@@ -39,12 +43,14 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
   private fun monitor() {
     relativeMonitor = RelativeMonitor(iRacingDataReader.headers)
     lapMonitor = DriverCarLapMonitor(iRacingDataReader, relativeMonitor)
+    driverDistancesMonitor = DriverDistancesMonitor(iRacingDataReader)
     initializedLock.countDown()
 
     val rateLimiter = RateLimiter.create(600.0)
     for (varBuf in iRacingDataReader) {
       relativeMonitor.process(varBuf)
       lapMonitor.process(varBuf)
+      driverDistancesMonitor.process(varBuf)
       rateLimiter.acquire()
     }
   }
@@ -60,6 +66,7 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
     emitDriverLapLogs()
     emitAllGapsRateLimited()
     emitNewDriversPerStream()
+    emitDriverDistances()
   }
 
   private fun emitDriverLapLogs() {
@@ -120,6 +127,26 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
     currentDriversStreamObservers.removeAll(driverObserversToRemove)
   }
 
+  private fun emitDriverDistances() {
+    val lapEntries = driverDistancesMonitor.distances
+
+    val responseObserversToRemove = mutableSetOf<DriverDistanceStreamObserverHolder>()
+    for (responseObserverHolder in driverDistancesStreamObserverHolders) {
+      val ticksSent = responseObserverHolder.lastDriverDistance
+      while (ticksSent.get() < lapEntries.size) {
+        try {
+          responseObserverHolder.responseObserver.onNext(
+            lapEntries[ticksSent.getAndIncrement()].toDriverDistances()
+          )
+        } catch (e: StatusRuntimeException) {
+          responseObserversToRemove += responseObserverHolder
+          break
+        }
+      }
+    }
+    driverDistancesStreamObserverHolders.removeAll(responseObserversToRemove)
+  }
+
   override fun monitorDriverLaps(
     request: ConnectRequest,
     responseObserver: StreamObserver<LapEntry>
@@ -157,5 +184,18 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
     val responseObserver: StreamObserver<CurrentDrivers>,
   ) {
     var previousDrivers = listOf<Driver>()
+  }
+
+  override fun monitorDriverDistances(
+    request: ConnectRequest,
+    responseObserver: StreamObserver<DriverDistances>
+  ) {
+    driverDistancesStreamObserverHolders.add(DriverDistanceStreamObserverHolder(responseObserver))
+  }
+
+  private class DriverDistanceStreamObserverHolder(
+    val responseObserver: StreamObserver<DriverDistances>,
+  ) {
+    var lastDriverDistance = AtomicInteger(0)
   }
 }

@@ -20,6 +20,7 @@ function App() {
         <div className="hamburgerMenu">
           <NavLink className="no-style-link hamburgerMenuItem" to="/laps">Lap Records</NavLink>
           <NavLink className="no-style-link hamburgerMenuItem" to="/gaps">Current Gaps</NavLink>
+          <NavLink className="no-style-link hamburgerMenuItem" to="/gapchart">Gap Chart</NavLink>
           <NavLink className="no-style-link hamburgerMenuItem" to="/striking">Striking distance</NavLink>
         </div>
 

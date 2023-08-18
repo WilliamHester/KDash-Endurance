@@ -1,4 +1,6 @@
 import React from "react";
+import { formatNumberAsDuration, formatDriverName } from "../utils.js";
+import "./GapsPage.css";
 
 export default function GapsPage(gapEntries, drivers) {
   const gapRows = gapEntries
@@ -8,13 +10,13 @@ export default function GapsPage(gapEntries, drivers) {
         <td><div></div></td>
         <td>{ index + 1 }</td>
         <td>#{ drivers.get(gap.getCarId()).carNumber }</td>
-        <td>{ drivers.get(gap.getCarId()).driverName }</td>
-        <td>{ gap.getGap().toFixed(3) }</td>
+        <td>{ formatDriverName(drivers.get(gap.getCarId()).driverName) }</td>
+        <td>{ formatNumberAsDuration(gap.getGap(), true, true) }</td>
       </tr>
     ));
   return (
-    <div>
-      <table>
+    <div className="centered-content-column">
+      <table className="gapsTable">
         <thead>
           <tr>
             <td></td>

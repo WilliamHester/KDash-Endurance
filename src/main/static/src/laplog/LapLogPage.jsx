@@ -4,13 +4,20 @@ import { formatNumberAsDuration, formatDriverName } from "../utils.js";
 import PitChip from "./PitChip";
 
 export default function LapLogPage(lapEntries) {
+  const fastestLap = Math.min(...lapEntries.map((entry) => entry.getLapTime()));
   const lapRows = lapEntries.map(
       (lapEntry) => {
+        var lapTimeClassName = '';
+        if (lapEntry.getLapTime() === fastestLap) {
+          lapTimeClassName = 'purple';
+        } else {
+//           console.log(lapEntry.getLapTime(), fastestLap);
+        }
         return <tr>
           <td className="number">{ lapEntry.getLapNum() }</td>
           <td>{ formatDriverName(lapEntry.getDriverName()) }</td>
           <td className="number">{ lapEntry.getPosition() }</td>
-          <td className="number">{ formatNumberAsDuration(lapEntry.getLapTime()) }</td>
+          <td className={`number ${lapTimeClassName}`}>{ formatNumberAsDuration(lapEntry.getLapTime()) }</td>
           <td className="number">{ formatNumberAsDuration(lapEntry.getGapToLeader(), true) }</td>
           <td className="number">{ lapEntry.getFuelRemaining().toFixed(2) }</td>
           <td className="number">{ lapEntry.getFuelUsed().toFixed(3) }</td>
@@ -22,7 +29,7 @@ export default function LapLogPage(lapEntries) {
       });
 
     return (
-      <table>
+      <table className="lapLogTable">
         <thead>
           <tr>
             <th>Lap</th>
@@ -30,7 +37,7 @@ export default function LapLogPage(lapEntries) {
             <th>Pos</th>
             <th>Lap Time</th>
             <th>Gap to leader</th>
-            <th>Fuel remaining</th>
+            <th>Fuel level</th>
             <th>Fuel used</th>
             <th>Track temp</th>
             <th>Incidents</th>

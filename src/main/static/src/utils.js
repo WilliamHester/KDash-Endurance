@@ -1,11 +1,13 @@
 
-function formatNumberAsDuration(number, minutesOptional) {
-  var sign = '+';
+function formatNumberAsDuration(number, minutesOptional, alwaysShowSign) {
+  var sign = '';
   if (number == 0) {
     return '--';
   }
   if (number < 0) {
     sign = '-';
+  } else if (number > 0 && alwaysShowSign) {
+    sign = '+';
   }
   number = Math.abs(number);
   const minutes = Math.floor(number / 60);
@@ -13,10 +15,13 @@ function formatNumberAsDuration(number, minutesOptional) {
   if (seconds < 10) {
     seconds = `0${seconds}`;
   }
+  var durationString;
   if (minutesOptional && minutes == 0) {
-    return seconds;
+    durationString = seconds;
+  } else {
+    durationString = `${minutes}:${seconds}`;
   }
-  return `${minutes}:${seconds}`;
+  return `${sign}${durationString}`;
 };
 
 function formatDriverName(name) {
