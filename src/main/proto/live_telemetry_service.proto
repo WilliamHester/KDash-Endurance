@@ -37,6 +37,7 @@ message LapEntry {
    bool pit_in = 13;
    bool pit_out = 14;
    double pit_time = 15;
+   float max_speed = 16;
 }
 
 message OtherCarLapEntry {

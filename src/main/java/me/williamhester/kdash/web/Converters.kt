@@ -28,12 +28,14 @@ internal fun DriverCarLapMonitor.LogEntry.toLapEntry(): LapEntry {
     pitIn = log.pitIn
     pitOut = log.pitOut
     pitTime = log.pitTime
+    maxSpeed = log.maxSpeed
   }.build()
 }
 
 internal fun OtherCarsLapMonitor.LogEntry.toOtherCarLapEntry(): OtherCarLapEntry {
   val log = this
   return OtherCarLapEntry.newBuilder().apply {
+    carId = log.carId
     lapNum = log.lapNum
     driverName = log.driverName
     position = log.position

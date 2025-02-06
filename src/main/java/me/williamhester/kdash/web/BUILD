@@ -29,3 +29,9 @@ java_binary(
     main_class = "me.williamhester.kdash.web.MainKt",
     runtime_deps = [":web"],
 )
+
+java_binary(
+    name = "desktop_web_main",
+    main_class = "me.williamhester.kdash.web.DesktopMainKt",
+    runtime_deps = [":web"],
+)

@@ -15,7 +15,7 @@ import App from "./App";
 export default function App2() {
   const [gapEntries, setGapEntries] = useState([]);
   useEffect(() => {
-    const liveTelemetryServiceClient = new LiveTelemetryServiceClient('http://localhost:8000/api');
+    const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
     const request = new ConnectRequest();
     const entries = [];
     const stream = liveTelemetryServiceClient.monitorCurrentGaps(request, {}, (err, resp) => {
@@ -35,7 +35,7 @@ export default function App2() {
 
   const [lapEntries, setLapEntries] = useState([]);
   useEffect(() => {
-    const liveTelemetryServiceClient = new LiveTelemetryServiceClient('http://localhost:8000/api');
+    const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
     const request = new ConnectRequest();
     const entries = [];
     const stream = liveTelemetryServiceClient.monitorDriverLaps(request, {}, (err, resp) => {
@@ -56,7 +56,7 @@ export default function App2() {
 
   const [otherCarLapEntries, setOtherCarLapEntries] = useState([]);
   useEffect(() => {
-    const liveTelemetryServiceClient = new LiveTelemetryServiceClient('http://localhost:8000/api');
+    const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
     const request = new ConnectRequest();
     const entries = [];
     const stream = liveTelemetryServiceClient.monitorOtherCarsLaps(request, {}, (err, resp) => {
@@ -77,7 +77,7 @@ export default function App2() {
 
   const [currentDrivers, setCurrentDrivers] = useState(new Map());
   useEffect(() => {
-    const liveTelemetryServiceClient = new LiveTelemetryServiceClient('http://localhost:8000/api');
+    const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
     const request = new ConnectRequest();
     const entries = [];
     const stream = liveTelemetryServiceClient.monitorCurrentDrivers(request, {}, (err, resp) => {
@@ -90,7 +90,10 @@ export default function App2() {
         response.getDriversList().map((driver) => [
           driver.getCarId(),
           {
+            'carClassId': driver.getCarClassId(),
+            'carClassName': driver.getCarClassName(),
             'driverName': driver.getDriverName(),
+            'teamName': driver.getTeamName(),
             'carNumber': driver.getCarNumber()
           }
         ])
@@ -107,7 +110,7 @@ export default function App2() {
 
   const [driverDistances, setDriverDistances] = useState(new Map());
   useEffect(() => {
-    const liveTelemetryServiceClient = new LiveTelemetryServiceClient('http://localhost:8000/api');
+    const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
     const request = new ConnectRequest();
     const entries = [];
     const stream = liveTelemetryServiceClient.monitorDriverDistances(request, {}, (err, resp) => {
@@ -147,7 +150,7 @@ export default function App2() {
         <Route path="/" element={ App() }>
           <Route path="" element={ LapLogPage(lapEntries) } />
           <Route path="laps" element={ LapLogPage(lapEntries) } />
-          <Route path="otherlaps" element={ OtherCarsLapLogPage(otherCarLapEntries) } />
+          <Route path="otherlaps" element={ OtherCarsLapLogPage(otherCarLapEntries, currentDrivers) } />
           <Route path="gaps" element={ GapsPage(gapEntries, currentDrivers) } />
           <Route path="gapchart" element={ GapChartPage(driverDistances, currentDrivers) } />
         </Route>

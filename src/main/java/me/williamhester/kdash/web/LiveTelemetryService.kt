@@ -1,9 +1,10 @@
 package me.williamhester.kdash.web
 
+import com.google.common.flogger.FluentLogger
 import com.google.common.util.concurrent.RateLimiter
 import io.grpc.StatusRuntimeException
 import io.grpc.stub.StreamObserver
-import me.williamhester.kdash.api.IRacingLoggedDataReader
+import me.williamhester.kdash.api.IRacingDataReader
 import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
 import me.williamhester.kdash.enduranceweb.proto.CurrentDrivers
 import me.williamhester.kdash.enduranceweb.proto.Driver
@@ -17,14 +18,15 @@ import me.williamhester.kdash.monitors.DriverDistancesMonitor
 import me.williamhester.kdash.monitors.DriverMonitor
 import me.williamhester.kdash.monitors.OtherCarsLapMonitor
 import me.williamhester.kdash.monitors.RelativeMonitor
-import java.nio.file.Paths
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
-class LiveTelemetryService : LiveTelemetryServiceImplBase() {
-  private val iRacingDataReader = IRacingLoggedDataReader(Paths.get("/Users/williamhester/Downloads/livedata.ibt"))
+class LiveTelemetryService(
+  private val iRacingDataReader: IRacingDataReader,
+) : LiveTelemetryServiceImplBase() {
 
   private lateinit var relativeMonitor: RelativeMonitor
   private lateinit var lapMonitor: DriverCarLapMonitor
@@ -53,6 +55,7 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
 
     val rateLimiter = RateLimiter.create(600.0)
     for (varBuf in iRacingDataReader) {
+      logger.atInfo().atMostEvery(10, TimeUnit.SECONDS).log("Processing new buffer.")
       relativeMonitor.process(varBuf)
       lapMonitor.process(varBuf)
       otherCarsLapMonitor.process(varBuf)
@@ -84,6 +87,7 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
       val lapsSent = responseObserverHolder.lapsSent
       while (lapEntries.size > lapsSent.get()) {
         try {
+          println("Emitting driver lap")
           responseObserverHolder.responseObserver.onNext(lapEntries[lapsSent.getAndIncrement()].toLapEntry())
         } catch (e: StatusRuntimeException) {
           responseObserversToRemove += responseObserverHolder
@@ -133,7 +137,14 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
   private fun emitNewDriversPerStream() {
     val driverObserversToRemove = mutableSetOf<CurrentDriversStreamObserverHolder>()
     val currentDrivers = driverMonitor.currentDrivers.map {
-      Driver.newBuilder().setCarId(it.key).setCarNumber(it.value.carNumber).setDriverName(it.value.driverName).build()
+      Driver.newBuilder().apply {
+        carId = it.key
+        carNumber = it.value.carNumber
+        carClassId = it.value.carClassId
+        carClassName = it.value.carClassName
+        driverName = it.value.driverName
+        teamName = it.value.teamName
+      }.build()
     }
     for (responseObserverHolder in currentDriversStreamObservers) {
       val previousDrivers = responseObserverHolder.previousDrivers
@@ -232,5 +243,9 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
     val responseObserver: StreamObserver<DriverDistances>,
   ) {
     var lastDriverDistance = AtomicInteger(0)
+  }
+
+  companion object {
+    private val logger = FluentLogger.forEnclosingClass()
   }
 }

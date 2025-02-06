@@ -368,7 +368,8 @@ proto.me.williamhester.kdash.enduranceweb.LapEntry.toObject = function(includeIn
     repairsRemaining: jspb.Message.getFloatingPointFieldWithDefault(msg, 12, 0.0),
     pitIn: jspb.Message.getBooleanFieldWithDefault(msg, 13, false),
     pitOut: jspb.Message.getBooleanFieldWithDefault(msg, 14, false),
-    pitTime: jspb.Message.getFloatingPointFieldWithDefault(msg, 15, 0.0)
+    pitTime: jspb.Message.getFloatingPointFieldWithDefault(msg, 15, 0.0),
+    maxSpeed: jspb.Message.getFloatingPointFieldWithDefault(msg, 16, 0.0)
   };
 
   if (includeInstance) {
@@ -464,6 +465,10 @@ proto.me.williamhester.kdash.enduranceweb.LapEntry.deserializeBinaryFromReader =
     case 15:
       var value = /** @type {number} */ (reader.readDouble());
       msg.setPitTime(value);
+      break;
+    case 16:
+      var value = /** @type {number} */ (reader.readFloat());
+      msg.setMaxSpeed(value);
       break;
     default:
       reader.skipField();
@@ -596,6 +601,13 @@ proto.me.williamhester.kdash.enduranceweb.LapEntry.serializeBinaryToWriter = fun
   if (f !== 0.0) {
     writer.writeDouble(
       15,
+      f
+    );
+  }
+  f = message.getMaxSpeed();
+  if (f !== 0.0) {
+    writer.writeFloat(
+      16,
       f
     );
   }
@@ -869,6 +881,24 @@ proto.me.williamhester.kdash.enduranceweb.LapEntry.prototype.getPitTime = functi
  */
 proto.me.williamhester.kdash.enduranceweb.LapEntry.prototype.setPitTime = function(value) {
   return jspb.Message.setProto3FloatField(this, 15, value);
+};
+
+
+/**
+ * optional float max_speed = 16;
+ * @return {number}
+ */
+proto.me.williamhester.kdash.enduranceweb.LapEntry.prototype.getMaxSpeed = function() {
+  return /** @type {number} */ (jspb.Message.getFloatingPointFieldWithDefault(this, 16, 0.0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.me.williamhester.kdash.enduranceweb.LapEntry} returns this
+ */
+proto.me.williamhester.kdash.enduranceweb.LapEntry.prototype.setMaxSpeed = function(value) {
+  return jspb.Message.setProto3FloatField(this, 16, value);
 };
 
 

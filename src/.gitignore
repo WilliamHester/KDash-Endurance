@@ -23,3 +23,6 @@
 .bazelversion
 # User-specific .bazelrc
 user.bazelrc
+
+# Ignore .DS_Store
+*.DS_Store

@@ -22,6 +22,7 @@ export default function LapLogPage(lapEntries) {
           <td className="number">{ lapEntry.getFuelRemaining().toFixed(2) }</td>
           <td className="number">{ lapEntry.getFuelUsed().toFixed(3) }</td>
           <td className="number">{ lapEntry.getTrackTemp().toFixed(1) }</td>
+          <td className="number">{ (lapEntry.getMaxSpeed() * 3.6).toFixed(1) }</td>
           <td>{ lapEntry.getDriverIncidents() } / { lapEntry.getTeamIncidents() }</td>
           <td className="number">{ formatNumberAsDuration(lapEntry.getOptionalRepairsRemaining()) } / { formatNumberAsDuration(lapEntry.getRepairsRemaining()) }</td>
           <td className="number">{ PitChip(lapEntry) }</td>
@@ -40,6 +41,7 @@ export default function LapLogPage(lapEntries) {
             <th>Fuel level</th>
             <th>Fuel used</th>
             <th>Track temp</th>
+            <th>Max Speed</th>
             <th>Incidents</th>
             <th>Repairs</th>
             <th>Pit</th>

@@ -4,8 +4,7 @@ body {
   background-color: #1a1a1a;
   color: #f0f0f0;
   height: 100%;
-
-  font-family: 'Azeret Mono', monospace;
+  font-family: Roboto,-apple-system,BlinkMacSystemFont,'Helvetica Neue',Helvetica,sans-serif;
 }
 
 #root {
