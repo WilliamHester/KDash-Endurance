@@ -17,9 +17,11 @@ internal class ServerRunner(
     )
     val telemetryService = LiveTelemetryService(iRacingDataReader)
     telemetryService.start(executor)
+    val liveTelemetryPusherService = LiveTelemetryPusherService()
 
     ServerBuilder.forPort(8081)
       .addService(telemetryService)
+      .addService(liveTelemetryPusherService)
       .executor(Executors.newCachedThreadPool(ThreadFactoryBuilder().setNameFormat("grpc-thread-%d").build()))
       .build()
       .start()

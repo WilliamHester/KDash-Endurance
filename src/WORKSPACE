@@ -23,6 +23,13 @@ http_archive(
 )
 
 http_archive(
+    name = "com_github_grpc_grpc_kotlin",
+    sha256 = "a218306e681318cbbc3b0e72ec9fe1241b2166b735427a51a3c8921c3250216f",
+    strip_prefix = "grpc-kotlin-1.4.2",
+    urls = ["https://github.com/grpc/grpc-kotlin/archive/refs/tags/v1.4.2.zip"],
+)
+
+http_archive(
     name = "rules_jvm_external",
     sha256 = "c21ce8b8c4ccac87c809c317def87644cdc3a9dd650c74f41698d761c95175f3",
     strip_prefix = "rules_jvm_external-1498ac6ccd3ea9cdb84afed65aa257c57abf3e0a",
@@ -33,8 +40,12 @@ load("@rules_jvm_external//:defs.bzl", "maven_install")
 load("@io_grpc_grpc_java//:repositories.bzl", "IO_GRPC_GRPC_JAVA_ARTIFACTS")
 load("@io_grpc_grpc_java//:repositories.bzl", "IO_GRPC_GRPC_JAVA_OVERRIDE_TARGETS")
 load("@io_grpc_grpc_java//:repositories.bzl", "grpc_java_repositories")
+load("@com_github_grpc_grpc_kotlin//:repositories.bzl", "IO_GRPC_GRPC_KOTLIN_ARTIFACTS")
+load("@com_github_grpc_grpc_kotlin//:repositories.bzl", "IO_GRPC_GRPC_KOTLIN_OVERRIDE_TARGETS")
+load("@com_github_grpc_grpc_kotlin//:repositories.bzl", "grpc_kt_repositories")
 
 grpc_java_repositories()
+grpc_kt_repositories()
 
 # Protobuf now requires C++14 or higher, which requires Bazel configuration
 # outside the WORKSPACE. See .bazelrc in this directory.
@@ -77,9 +88,9 @@ maven_install(
 
         "com.google.api.grpc:grpc-google-cloud-pubsub-v1:0.1.24",
         "com.google.api.grpc:proto-google-cloud-pubsub-v1:0.1.24",
-    ] + IO_GRPC_GRPC_JAVA_ARTIFACTS + PROTOBUF_MAVEN_ARTIFACTS,
+    ] + IO_GRPC_GRPC_JAVA_ARTIFACTS + IO_GRPC_GRPC_KOTLIN_ARTIFACTS + PROTOBUF_MAVEN_ARTIFACTS,
     generate_compat_repositories = True,
-    override_targets = IO_GRPC_GRPC_JAVA_OVERRIDE_TARGETS,
+    override_targets = IO_GRPC_GRPC_JAVA_OVERRIDE_TARGETS | IO_GRPC_GRPC_KOTLIN_OVERRIDE_TARGETS,
     repositories = [
         "https://repo.maven.apache.org/maven2/",
     ],

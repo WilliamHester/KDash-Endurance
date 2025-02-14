@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package me.williamhester.kdash.enduranceweb;
+
+import "google/protobuf/descriptor.proto";
+
+option java_package = "me.williamhester.kdash.enduranceweb.proto";
+option java_multiple_files = true;
+
+service LiveTelemetryPusherService {
+  rpc Connect(stream DriverHeaderOrVarBufferProto) returns (stream VarBufferFields);
+}
+
+message DriverHeaderOrVarBufferProto {
+  oneof value {
+    DriverHeader header = 1;
+    DataSnapshot data_snapshot = 2;
+  }
+}
+
+message DriverHeader {
+  string name = 1;
+}
+
+// One thought here is that we could dynamically create a VarBufferProto type based off of
+// the VarBufferFields.
+message VarBufferProto {
+  oneof value {
+    int32 char = 2;
+    bool boolean = 3;
+    int64 int = 4;
+    int32 bitfield = 5;
+    float float = 6;
+    double double = 7;
+  }
+}
+
+message VarBufferFields {
+  google.protobuf.DescriptorProto descriptor_proto = 1;
+}
+
+enum FieldType {
+  VAR_BUFFER_KIND_UNSPECIFIED = 0;
+  CHAR = 1;
+  BOOLEAN = 2;
+  INT = 3;
+  BITFIELD = 4;
+  FLOAT = 5;
+  DOUBLE = 6;
+}
+
+extend google.protobuf.FieldOptions {
+  optional string iracing_field = 50000;
+}
+
+// TODO: Name this something better.
+// This is the current data snapshot from a client. The server will describe this proto to the client, and the client
+// will hand pack it into an Any proto. The server is then free to deserialize it as a proper proto.
+message DataSnapshot {
+  int32 lap = 1 [(iracing_field) = "Lap"];
+  float fuel_level = 2 [(iracing_field) = "FuelLevel"];
+  double session_time = 3 [(iracing_field) = "SessionTime"];
+  int32 player_car_position = 4 [(iracing_field) = "PlayerCarPosition"];
+  float track_temp_crew = 5 [(iracing_field) = "TrackTempCrew"];
+  int32 driver_incident_count = 6 [(iracing_field) = "PlayerCarDriverIncidentCount"];
+  int32 team_incident_count = 7 [(iracing_field) = "PlayerCarTeamIncidentCount"];
+  bool on_pit_road = 8 [(iracing_field) = "OnPitRoad"];
+  repeated int32 car_idx_track_surface = 9 [(iracing_field) = "CarIdxTrackSurface"];
+  bool pitstop_active = 10 [(iracing_field) = "PitstopActive"];
+  float pit_opt_repair_left = 11 [(iracing_field) = "PitOptRepairLeft"];
+  float pit_repair_left = 12 [(iracing_field) = "PitRepairLeft"];
+  float speed = 13 [(iracing_field) = "Speed"];
+}
