@@ -15,9 +15,10 @@ internal class ServerRunner(
         .setUncaughtExceptionHandler { _, e -> e?.printStackTrace() }
         .build()
     )
-    val telemetryService = LiveTelemetryService(iRacingDataReader)
+    val dataSnapshotQueue = DataSnapshotQueue()
+    val telemetryService = LiveTelemetryService(dataSnapshotQueue, iRacingDataReader)
     telemetryService.start(executor)
-    val liveTelemetryPusherService = LiveTelemetryPusherService()
+    val liveTelemetryPusherService = LiveTelemetryPusherService(dataSnapshotQueue)
 
     ServerBuilder.forPort(8081)
       .addService(telemetryService)

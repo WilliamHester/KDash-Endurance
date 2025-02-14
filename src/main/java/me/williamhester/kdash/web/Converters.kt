@@ -5,10 +5,10 @@ import me.williamhester.kdash.enduranceweb.proto.DriverDistances
 import me.williamhester.kdash.enduranceweb.proto.Gap
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
-import me.williamhester.kdash.monitors.DriverCarLapMonitor
-import me.williamhester.kdash.monitors.DriverDistancesMonitor
-import me.williamhester.kdash.monitors.OtherCarsLapMonitor
-import me.williamhester.kdash.monitors.RelativeMonitor.GapToCarId
+import me.williamhester.kdash.web.monitors.DriverCarLapMonitor
+import me.williamhester.kdash.web.monitors.DriverDistancesMonitor
+import me.williamhester.kdash.web.monitors.OtherCarsLapMonitor
+import me.williamhester.kdash.web.monitors.RelativeMonitor.GapToCarId
 
 internal fun DriverCarLapMonitor.LogEntry.toLapEntry(): LapEntry {
   val log = this

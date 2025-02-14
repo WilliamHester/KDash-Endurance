@@ -9,7 +9,9 @@ import me.williamhester.kdash.enduranceweb.proto.VarBufferFields
 import me.williamhester.kdash.enduranceweb.proto.varBufferFields
 import java.util.concurrent.TimeUnit
 
-class LiveTelemetryPusherService : LiveTelemetryPusherServiceImplBase() {
+class LiveTelemetryPusherService(
+  private val dataSnapshotQueue: DataSnapshotQueue,
+) : LiveTelemetryPusherServiceImplBase() {
   override fun connect(
     responseObserver: StreamObserver<VarBufferFields>,
   ): StreamObserver<DriverHeaderOrVarBufferProto> {
@@ -18,9 +20,12 @@ class LiveTelemetryPusherService : LiveTelemetryPusherServiceImplBase() {
     return ConnectedDriverStreamHandler()
   }
 
-  class ConnectedDriverStreamHandler : StreamObserver<DriverHeaderOrVarBufferProto> {
+  inner class ConnectedDriverStreamHandler : StreamObserver<DriverHeaderOrVarBufferProto> {
     override fun onNext(driverHeaderOrVarBufferProto: DriverHeaderOrVarBufferProto) {
       logger.atInfo().atMostEvery(10, TimeUnit.SECONDS).log("Received %s", driverHeaderOrVarBufferProto)
+      if (driverHeaderOrVarBufferProto.hasDataSnapshot()) {
+        dataSnapshotQueue.add(driverHeaderOrVarBufferProto.dataSnapshot)
+      }
     }
 
     override fun onError(t: Throwable) {

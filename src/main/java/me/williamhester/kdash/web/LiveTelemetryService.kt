@@ -13,11 +13,11 @@ import me.williamhester.kdash.enduranceweb.proto.Gaps
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryServiceGrpc.LiveTelemetryServiceImplBase
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
-import me.williamhester.kdash.monitors.DriverCarLapMonitor
-import me.williamhester.kdash.monitors.DriverDistancesMonitor
-import me.williamhester.kdash.monitors.DriverMonitor
-import me.williamhester.kdash.monitors.OtherCarsLapMonitor
-import me.williamhester.kdash.monitors.RelativeMonitor
+import me.williamhester.kdash.web.monitors.DriverCarLapMonitor
+import me.williamhester.kdash.web.monitors.DriverDistancesMonitor
+import me.williamhester.kdash.web.monitors.DriverMonitor
+import me.williamhester.kdash.web.monitors.OtherCarsLapMonitor
+import me.williamhester.kdash.web.monitors.RelativeMonitor
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 class LiveTelemetryService(
+  private val dataSnapshotQueue: DataSnapshotQueue,
   private val iRacingDataReader: IRacingDataReader,
 ) : LiveTelemetryServiceImplBase() {
 
@@ -47,19 +48,19 @@ class LiveTelemetryService(
   }
 
   private fun monitor() {
-    relativeMonitor = RelativeMonitor(iRacingDataReader.headers)
+    relativeMonitor = RelativeMonitor()
     lapMonitor = DriverCarLapMonitor(iRacingDataReader, relativeMonitor)
     otherCarsLapMonitor = OtherCarsLapMonitor(iRacingDataReader, relativeMonitor)
     driverDistancesMonitor = DriverDistancesMonitor(iRacingDataReader)
     initializedLock.countDown()
 
     val rateLimiter = RateLimiter.create(600.0)
-    for (varBuf in iRacingDataReader) {
+    for (dataSnapshot in dataSnapshotQueue) {
       logger.atInfo().atMostEvery(10, TimeUnit.SECONDS).log("Processing new buffer.")
-      relativeMonitor.process(varBuf)
-      lapMonitor.process(varBuf)
-      otherCarsLapMonitor.process(varBuf)
-      driverDistancesMonitor.process(varBuf)
+      relativeMonitor.process(dataSnapshot)
+      lapMonitor.process(dataSnapshot)
+      otherCarsLapMonitor.process(dataSnapshot)
+      driverDistancesMonitor.process(dataSnapshot)
       rateLimiter.acquire()
     }
   }

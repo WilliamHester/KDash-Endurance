@@ -19,7 +19,7 @@ kt_jvm_library(
         "@maven//:com_google_protobuf_protobuf_java_util",
         "@maven//:org_mindrot_jbcrypt",
         "@kdash//main/java/me/williamhester/kdash/api",
-        "@kdash//main/java/me/williamhester/kdash/monitors",
+        "//main/java/me/williamhester/kdash/web/monitors",
         "//main/proto:live_telemetry_service_java_grpc",
         "//main/proto:live_telemetry_pusher_service_kt_grpc",
         "//main/proto:live_telemetry_pusher_service_kt_proto",
