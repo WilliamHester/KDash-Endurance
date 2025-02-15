@@ -10,11 +10,13 @@ import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.api.IRacingDataReader
 import me.williamhester.kdash.api.IRacingLoggedDataReader
 import me.williamhester.kdash.api.VarBuffer
+import me.williamhester.kdash.enduranceweb.proto.ControlMessage
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryPusherServiceGrpc
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadataOrDataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.VarBufferFields
+import me.williamhester.kdash.enduranceweb.proto.VarBufferFieldsOrControlMessage
 import me.williamhester.kdash.enduranceweb.proto.sessionMetadata
 import me.williamhester.kdash.enduranceweb.proto.sessionMetadataOrDataSnapshot
 import java.io.ByteArrayOutputStream
@@ -33,14 +35,18 @@ class Client {
   private val sessionMetadataMonitorExecutor = Executors.newSingleThreadScheduledExecutor()
   private var lastSessionMetadataVersion: Int = -1
   private var sessionMetadataMonitor: ScheduledFuture<*>? = null
+  private var shouldSend = false
 
   fun connect() {
     val channel = NettyChannelBuilder.forTarget("localhost:8081").usePlaintext().build()
     val client = LiveTelemetryPusherServiceGrpc.newStub(channel)
 
-    val responseObserver = object : StreamObserver<VarBufferFields> {
-      override fun onNext(value: VarBufferFields) {
-        onConnected(value)
+    val responseObserver = object : StreamObserver<VarBufferFieldsOrControlMessage> {
+      override fun onNext(value: VarBufferFieldsOrControlMessage) {
+        when {
+          value.hasVarBufferFields() -> onConnected(value.varBufferFields)
+          value.hasControlMessage() -> handleControlMessage(value.controlMessage)
+        }
       }
 
       override fun onError(t: Throwable) {
@@ -55,6 +61,15 @@ class Client {
     }
     outputStreamObserver = SynchronizedStreamObserver(client.connect(responseObserver))
     latch.countDown()
+  }
+
+  fun handleControlMessage(controlMessage: ControlMessage) {
+    val command = controlMessage.command
+    when (command) {
+      ControlMessage.ControlCommand.STOP_SENDING -> shouldSend = false
+      ControlMessage.ControlCommand.START_SENDING -> shouldSend = true
+      else -> logger.atWarning().log("Unknown command $command")
+    }
   }
 
   fun onConnected(varBufferFields: VarBufferFields) {
@@ -72,6 +87,10 @@ class Client {
       byteArrayOutputStream.reset()
 
       val data = iRacingDataReader.next()
+      checkDriverInCar(data)
+
+      if (!shouldSend) continue
+
       for (field in varBufferFields.descriptorProto.fieldList) {
         data.writeToOutputStream(field, iRacingDataReader, codedOutputStream)
       }
@@ -87,6 +106,15 @@ class Client {
         }
       )
       logger.atInfo().atMostEvery(10, TimeUnit.SECONDS).log("Sending data snapshot: %s", dataSnapshot)
+    }
+  }
+
+  private fun checkDriverInCar(varBuffer: VarBuffer) {
+    val isThisClientInCar = varBuffer.getBoolean("IsOnTrack")
+    val wasSending = shouldSend
+    shouldSend = isThisClientInCar || shouldSend
+    if (!wasSending && isThisClientInCar) {
+      logger.atInfo().log("Client in car. Sending data.")
     }
   }
 

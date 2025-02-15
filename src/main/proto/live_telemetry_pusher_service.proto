@@ -8,7 +8,7 @@ option java_package = "me.williamhester.kdash.enduranceweb.proto";
 option java_multiple_files = true;
 
 service LiveTelemetryPusherService {
-  rpc Connect(stream SessionMetadataOrDataSnapshot) returns (stream VarBufferFields);
+  rpc Connect(stream SessionMetadataOrDataSnapshot) returns (stream VarBufferFieldsOrControlMessage);
 }
 
 message SessionMetadataOrDataSnapshot {
@@ -24,8 +24,25 @@ message SessionMetadata {
   repeated SessionMetadata list = 3;
 }
 
+message VarBufferFieldsOrControlMessage {
+  oneof value {
+    VarBufferFields var_buffer_fields = 1;
+    ControlMessage control_message = 2;
+  }
+}
+
 message VarBufferFields {
   google.protobuf.DescriptorProto descriptor_proto = 1;
+}
+
+message ControlMessage {
+  ControlCommand command = 1;
+
+  enum ControlCommand {
+    CONTROL_COMMAND_UNSPECIFIED = 0;
+    STOP_SENDING = 1;
+    START_SENDING = 2;
+  }
 }
 
 extend google.protobuf.FieldOptions {
@@ -54,4 +71,5 @@ message DataSnapshot {
   repeated int32 car_idx_position = 16 [(iracing_field) = "CarIdxPosition"];
   repeated bool car_idx_on_pit_road = 17 [(iracing_field) = "CarIdxOnPitRoad"];
   repeated float car_idx_lap_dist_pct = 18 [(iracing_field) = "CarIdxLapDistPct"];
+  bool is_on_track = 19 [(iracing_field) = "IsOnTrack"];
 }
