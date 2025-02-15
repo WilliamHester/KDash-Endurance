@@ -18,7 +18,6 @@ kt_jvm_library(
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_protobuf_protobuf_java_util",
         "@maven//:org_mindrot_jbcrypt",
-        "@kdash//main/java/me/williamhester/kdash/api",
         "//main/java/me/williamhester/kdash/web/monitors",
         "//main/java/me/williamhester/kdash/web/state",
         "//main/proto:live_telemetry_service_java_grpc",

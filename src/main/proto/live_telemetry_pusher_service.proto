@@ -22,8 +22,6 @@ message SessionMetadata {
   string value = 1;
   map<string, SessionMetadata> key_value_pairs = 2;
   repeated SessionMetadata list = 3;
-
-  string driver_name = 100;
 }
 
 message VarBufferFields {
