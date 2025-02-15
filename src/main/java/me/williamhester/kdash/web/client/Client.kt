@@ -11,11 +11,12 @@ import me.williamhester.kdash.api.IRacingDataReader
 import me.williamhester.kdash.api.IRacingLoggedDataReader
 import me.williamhester.kdash.api.VarBuffer
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
-import me.williamhester.kdash.enduranceweb.proto.DriverHeaderOrVarBufferProto
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryPusherServiceGrpc
+import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
+import me.williamhester.kdash.enduranceweb.proto.SessionMetadataOrDataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.VarBufferFields
-import me.williamhester.kdash.enduranceweb.proto.driverHeader
-import me.williamhester.kdash.enduranceweb.proto.driverHeaderOrVarBufferProto
+import me.williamhester.kdash.enduranceweb.proto.sessionMetadata
+import me.williamhester.kdash.enduranceweb.proto.sessionMetadataOrDataSnapshot
 import java.io.ByteArrayOutputStream
 import java.nio.file.Paths
 import java.util.concurrent.CountDownLatch
@@ -25,7 +26,7 @@ class Client {
 
   private val latch = CountDownLatch(1)
   private val rateLimiter = RateLimiter.create(60.0)
-  private lateinit var outputStreamObserver: StreamObserver<DriverHeaderOrVarBufferProto>
+  private lateinit var outputStreamObserver: StreamObserver<SessionMetadataOrDataSnapshot>
 
   fun connect() {
     val channel = NettyChannelBuilder.forTarget("localhost:8081").usePlaintext().build()
@@ -55,10 +56,11 @@ class Client {
     val driverCarIdx = iRacingDataReader.metadata["DriverInfo"]["DriverCarIdx"].value
     val driverCar = iRacingDataReader.metadata["DriverInfo"]["Drivers"].first { it["CarIdx"].value == driverCarIdx }
 
-    val driverHeader = driverHeader {
-      name = driverCar["UserName"].value
-    }
-    outputStreamObserver.onNext(driverHeaderOrVarBufferProto { this.header = driverHeader })
+    outputStreamObserver.onNext(
+      sessionMetadataOrDataSnapshot {
+        this.sessionMetadata = iRacingDataReader.metadata.toProto()
+      }
+    )
 
     val byteArrayOutputStream = ByteArrayOutputStream()
     val codedOutputStream = CodedOutputStream.newInstance(byteArrayOutputStream)
@@ -78,7 +80,7 @@ class Client {
       logger.atInfo().atMostEvery(10, TimeUnit.SECONDS).log("Bytes: %s", bytes.size)
       val dataSnapshot = DataSnapshot.parseFrom(bytes)
       outputStreamObserver.onNext(
-        driverHeaderOrVarBufferProto {
+        sessionMetadataOrDataSnapshot {
           this.dataSnapshot = dataSnapshot
         }
       )
@@ -136,5 +138,13 @@ class Client {
       Client().connect()
       Thread.sleep(365 * 24 * 60 * 60 * 1000)
     }
+  }
+}
+
+private fun IRacingDataReader.SessionMetadata.toProto(): SessionMetadata {
+  return sessionMetadata {
+    value = this@toProto.value
+    keyValuePairs.putAll(this@toProto.map.entries.associate { it.key to it.value.toProto() })
+    list.addAll(this@toProto.list.map { it.toProto() })
   }
 }

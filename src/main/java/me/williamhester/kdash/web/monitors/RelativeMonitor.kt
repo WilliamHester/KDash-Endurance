@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * RelativeMonitor keeps track of the duration that a car was at the driver's car.
  */
-class RelativeMonitor() {
+class RelativeMonitor {
   private val driverDistancesByTick = ConcurrentHashMap<Int, MutableList<Float>>()
   private val tickSeconds = mutableListOf<Double>()
   private var latestSeconds = 0.0

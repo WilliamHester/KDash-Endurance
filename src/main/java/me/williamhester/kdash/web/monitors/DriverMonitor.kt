@@ -1,14 +1,15 @@
 package me.williamhester.kdash.web.monitors
 
-import me.williamhester.kdash.api.IRacingDataReader
+import me.williamhester.kdash.web.extensions.get
+import me.williamhester.kdash.web.state.MetadataHolder
 
 class DriverMonitor(
-  private val iRacingDataReader: IRacingDataReader,
+  private val metadataHolder: MetadataHolder,
 ) {
   val currentDrivers: Map<Int, CarInfo>
     get() {
-      val currentMetadata = iRacingDataReader.metadata
-      val driverList = currentMetadata["DriverInfo"]["Drivers"].list
+      val currentMetadata = metadataHolder.metadata
+      val driverList = currentMetadata["DriverInfo"]["Drivers"].listList
       val paceCarIdx = currentMetadata["DriverInfo"]["PaceCarIdx"].value.toInt()
 
       return driverList

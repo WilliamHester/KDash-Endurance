@@ -1,15 +1,15 @@
-package me.williamhester.kdash.web
+package me.williamhester.kdash.web.state
 
 import com.google.common.flogger.FluentLogger
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
-import me.williamhester.kdash.web.DataSnapshotQueue.Companion.BUFFER_SECONDS
+import me.williamhester.kdash.web.state.DataSnapshotQueue.Companion.BUFFER_SECONDS
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.math.max
 
 /**
- * A queue of [DataSnapshot] that buffers snapshots for [BUFFER_SECONDS] seconds before releasing them to a consumer.
+ * A queue of [me.williamhester.kdash.enduranceweb.proto.DataSnapshot] that buffers snapshots for [BUFFER_SECONDS] seconds before releasing them to a consumer.
  *
  * This allows data snapshots to be received out of order, in which case, they'll be placed in order and returned once
  * [BUFFER_SECONDS] seconds have passed.

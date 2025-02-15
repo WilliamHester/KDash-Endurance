@@ -8,45 +8,26 @@ option java_package = "me.williamhester.kdash.enduranceweb.proto";
 option java_multiple_files = true;
 
 service LiveTelemetryPusherService {
-  rpc Connect(stream DriverHeaderOrVarBufferProto) returns (stream VarBufferFields);
+  rpc Connect(stream SessionMetadataOrDataSnapshot) returns (stream VarBufferFields);
 }
 
-message DriverHeaderOrVarBufferProto {
+message SessionMetadataOrDataSnapshot {
   oneof value {
-    DriverHeader header = 1;
+    SessionMetadata session_metadata = 1;
     DataSnapshot data_snapshot = 2;
   }
 }
 
-message DriverHeader {
-  string name = 1;
-}
+message SessionMetadata {
+  string value = 1;
+  map<string, SessionMetadata> key_value_pairs = 2;
+  repeated SessionMetadata list = 3;
 
-// One thought here is that we could dynamically create a VarBufferProto type based off of
-// the VarBufferFields.
-message VarBufferProto {
-  oneof value {
-    int32 char = 2;
-    bool boolean = 3;
-    int64 int = 4;
-    int32 bitfield = 5;
-    float float = 6;
-    double double = 7;
-  }
+  string driver_name = 100;
 }
 
 message VarBufferFields {
   google.protobuf.DescriptorProto descriptor_proto = 1;
-}
-
-enum FieldType {
-  VAR_BUFFER_KIND_UNSPECIFIED = 0;
-  CHAR = 1;
-  BOOLEAN = 2;
-  INT = 3;
-  BITFIELD = 4;
-  FLOAT = 5;
-  DOUBLE = 6;
 }
 
 extend google.protobuf.FieldOptions {

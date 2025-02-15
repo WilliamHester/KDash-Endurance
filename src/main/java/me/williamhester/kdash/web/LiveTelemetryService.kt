@@ -4,7 +4,6 @@ import com.google.common.flogger.FluentLogger
 import com.google.common.util.concurrent.RateLimiter
 import io.grpc.StatusRuntimeException
 import io.grpc.stub.StreamObserver
-import me.williamhester.kdash.api.IRacingDataReader
 import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
 import me.williamhester.kdash.enduranceweb.proto.CurrentDrivers
 import me.williamhester.kdash.enduranceweb.proto.Driver
@@ -18,6 +17,8 @@ import me.williamhester.kdash.web.monitors.DriverDistancesMonitor
 import me.williamhester.kdash.web.monitors.DriverMonitor
 import me.williamhester.kdash.web.monitors.OtherCarsLapMonitor
 import me.williamhester.kdash.web.monitors.RelativeMonitor
+import me.williamhester.kdash.web.state.DataSnapshotQueue
+import me.williamhester.kdash.web.state.MetadataHolder
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
@@ -25,15 +26,15 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 class LiveTelemetryService(
+  private val metadataHolder: MetadataHolder,
   private val dataSnapshotQueue: DataSnapshotQueue,
-  private val iRacingDataReader: IRacingDataReader,
 ) : LiveTelemetryServiceImplBase() {
 
   private lateinit var relativeMonitor: RelativeMonitor
   private lateinit var lapMonitor: DriverCarLapMonitor
   private lateinit var otherCarsLapMonitor: OtherCarsLapMonitor
   private lateinit var driverDistancesMonitor: DriverDistancesMonitor
-  private val driverMonitor = DriverMonitor(iRacingDataReader)
+  private val driverMonitor = DriverMonitor(metadataHolder)
 
   private val lapEntryStreamObservers = CopyOnWriteArrayList<LapEntryStreamObserverProgressHolder>()
   private val otherCarLapEntryStreamObservers = CopyOnWriteArrayList<OtherCarLapEntryStreamObserverProgressHolder>()
@@ -49,9 +50,9 @@ class LiveTelemetryService(
 
   private fun monitor() {
     relativeMonitor = RelativeMonitor()
-    lapMonitor = DriverCarLapMonitor(iRacingDataReader, relativeMonitor)
-    otherCarsLapMonitor = OtherCarsLapMonitor(iRacingDataReader, relativeMonitor)
-    driverDistancesMonitor = DriverDistancesMonitor(iRacingDataReader)
+    lapMonitor = DriverCarLapMonitor(metadataHolder, relativeMonitor)
+    otherCarsLapMonitor = OtherCarsLapMonitor(metadataHolder, relativeMonitor)
+    driverDistancesMonitor = DriverDistancesMonitor()
     initializedLock.countDown()
 
     val rateLimiter = RateLimiter.create(600.0)

@@ -20,6 +20,7 @@ kt_jvm_library(
         "@maven//:org_mindrot_jbcrypt",
         "@kdash//main/java/me/williamhester/kdash/api",
         "//main/java/me/williamhester/kdash/web/monitors",
+        "//main/java/me/williamhester/kdash/web/state",
         "//main/proto:live_telemetry_service_java_grpc",
         "//main/proto:live_telemetry_pusher_service_kt_grpc",
         "//main/proto:live_telemetry_pusher_service_kt_proto",
@@ -29,11 +30,5 @@ kt_jvm_library(
 java_binary(
     name = "web_main",
     main_class = "me.williamhester.kdash.web.MainKt",
-    runtime_deps = [":web"],
-)
-
-java_binary(
-    name = "desktop_web_main",
-    main_class = "me.williamhester.kdash.web.DesktopMainKt",
     runtime_deps = [":web"],
 )

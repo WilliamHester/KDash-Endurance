@@ -1,11 +1,8 @@
 package me.williamhester.kdash.web.monitors
 
-import me.williamhester.kdash.api.IRacingDataReader
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 
-class DriverDistancesMonitor(
-  private val iRacingDataReader: IRacingDataReader,
-) {
+class DriverDistancesMonitor {
   private val _distances = mutableListOf<DriverDistances>()
   val distances: List<DriverDistances>
     get() = _distances
@@ -16,7 +13,7 @@ class DriverDistancesMonitor(
     if (sessionTime < lastSessionTime + 1) return
 
     lastSessionTime = sessionTime
-    val numDrivers = iRacingDataReader.headers["CarIdxLapCompleted"]!!.count
+    val numDrivers = dataSnapshot.carIdxLapCompletedCount
 
     val tickDistances = mutableListOf<DriverDistance>()
     for (i in 0 until numDrivers) {

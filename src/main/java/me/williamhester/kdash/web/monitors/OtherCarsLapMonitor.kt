@@ -1,11 +1,12 @@
 package me.williamhester.kdash.web.monitors
 
-import me.williamhester.kdash.api.IRacingDataReader
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
+import me.williamhester.kdash.web.extensions.get
+import me.williamhester.kdash.web.state.MetadataHolder
 import java.util.concurrent.ConcurrentHashMap
 
 class OtherCarsLapMonitor(
-  private val reader: IRacingDataReader,
+  private val metadataHolder: MetadataHolder,
   private val relativeMonitor: RelativeMonitor,
 ) {
 
@@ -44,7 +45,7 @@ class OtherCarsLapMonitor(
           position = dataSnapshot.getCarIdxPosition(carIdx)
           lapTime = sessionTime - lapStartTime
           trackTemp = dataSnapshot.trackTempCrew
-          driverName = reader.metadata["DriverInfo"]["Drivers"][carIdx]["UserName"].value
+          driverName = metadataHolder.metadata["DriverInfo"]["Drivers"][carIdx]["UserName"].value
 
           val gaps = relativeMonitor.getGaps()
           val gapToLeader = if (gaps.size > carIdx) relativeMonitor.getGaps()[carIdx].gap else 0.0

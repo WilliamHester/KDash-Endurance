@@ -1,12 +1,13 @@
 package me.williamhester.kdash.web.monitors
 
-import me.williamhester.kdash.api.IRacingDataReader
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
+import me.williamhester.kdash.web.extensions.get
+import me.williamhester.kdash.web.state.MetadataHolder
 import kotlin.math.max
 import kotlin.math.min
 
 class DriverCarLapMonitor(
-  private val reader: IRacingDataReader,
+  private val metadataHolder: MetadataHolder,
   private val relativeMonitor: RelativeMonitor,
 ) {
 
@@ -40,7 +41,7 @@ class DriverCarLapMonitor(
 
   fun process(dataSnapshot: DataSnapshot) {
     if (driverCarIdx == -1) {
-      driverCarIdx = reader.metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
+      driverCarIdx = metadataHolder.metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
     }
 
     val currentLap = dataSnapshot.lap
@@ -53,7 +54,7 @@ class DriverCarLapMonitor(
       lapTime = sessionTime - lapStartTime
       trackTemp = dataSnapshot.trackTempCrew
       // TODO: Find a way to reliably get the current driver name.
-      driverName = reader.metadata["DriverInfo"]["Drivers"][driverCarIdx]["UserName"].value
+      driverName = metadataHolder.metadata["DriverInfo"]["Drivers"][driverCarIdx]["UserName"].value
       driverIncidents = dataSnapshot.driverIncidentCount
       teamIncidents = dataSnapshot.teamIncidentCount
       val fuelUsed = (this.fuelRemaining - fuelRemaining) + fuelUsedBeforeRefuel
