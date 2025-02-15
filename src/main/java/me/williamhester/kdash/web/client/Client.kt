@@ -20,13 +20,19 @@ import me.williamhester.kdash.enduranceweb.proto.sessionMetadataOrDataSnapshot
 import java.io.ByteArrayOutputStream
 import java.nio.file.Paths
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 class Client {
 
+  private val iRacingDataReader = IRacingLoggedDataReader(Paths.get("/Users/williamhester/Downloads/livedata.ibt")) // IRacingLiveDataReader()
   private val latch = CountDownLatch(1)
   private val rateLimiter = RateLimiter.create(60.0)
   private lateinit var outputStreamObserver: StreamObserver<SessionMetadataOrDataSnapshot>
+  private val sessionMetadataMonitorExecutor = Executors.newSingleThreadScheduledExecutor()
+  private var lastSessionMetadataVersion: Int = -1
+  private var sessionMetadataMonitor: ScheduledFuture<*>? = null
 
   fun connect() {
     val channel = NettyChannelBuilder.forTarget("localhost:8081").usePlaintext().build()
@@ -39,28 +45,24 @@ class Client {
 
       override fun onError(t: Throwable) {
         logger.atWarning().withCause(t).log("Error")
+        sessionMetadataMonitor?.cancel(false)
       }
 
       override fun onCompleted() {
         logger.atInfo().log("Stream completed.")
+        sessionMetadataMonitor?.cancel(false)
       }
     }
-    outputStreamObserver = client.connect(responseObserver)
+    outputStreamObserver = SynchronizedStreamObserver(client.connect(responseObserver))
     latch.countDown()
   }
 
   fun onConnected(varBufferFields: VarBufferFields) {
     latch.await()
-    val iRacingDataReader = IRacingLoggedDataReader(Paths.get("/Users/williamhester/Downloads/livedata.ibt")) // IRacingLiveDataReader()
 
-    val driverCarIdx = iRacingDataReader.metadata["DriverInfo"]["DriverCarIdx"].value
-    val driverCar = iRacingDataReader.metadata["DriverInfo"]["Drivers"].first { it["CarIdx"].value == driverCarIdx }
-
-    outputStreamObserver.onNext(
-      sessionMetadataOrDataSnapshot {
-        this.sessionMetadata = iRacingDataReader.metadata.toProto()
-      }
-    )
+    sendSessionMetadata()
+    sessionMetadataMonitor =
+      sessionMetadataMonitorExecutor.scheduleAtFixedRate(this::sendSessionMetadata, 1, 1, TimeUnit.SECONDS)
 
     val byteArrayOutputStream = ByteArrayOutputStream()
     val codedOutputStream = CodedOutputStream.newInstance(byteArrayOutputStream)
@@ -86,6 +88,25 @@ class Client {
       )
       logger.atInfo().atMostEvery(10, TimeUnit.SECONDS).log("Sending data snapshot: %s", dataSnapshot)
     }
+  }
+
+  private fun sendSessionMetadata() {
+    val sessionInfoVersion = iRacingDataReader.fileHeader.sessionInfoUpdate
+    if (lastSessionMetadataVersion == sessionInfoVersion) return
+
+    logger.atInfo().log(
+      "New session metadata available. New version: %s; Old version: %s",
+      sessionInfoVersion,
+      lastSessionMetadataVersion,
+    )
+
+    lastSessionMetadataVersion = sessionInfoVersion
+
+    outputStreamObserver.onNext(
+      sessionMetadataOrDataSnapshot {
+        this.sessionMetadata = iRacingDataReader.metadata.toProto()
+      }
+    )
   }
 
   private fun VarBuffer.writeToOutputStream(
