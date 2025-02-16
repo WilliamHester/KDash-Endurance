@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Outlet } from "react-router";
 import { Link, NavLink } from "react-router-dom";
-import { ConnectRequest, LiveTelemetryEvent } from "./live_telemetry_service_pb.js";
-import { LiveTelemetryServiceClient } from "./live_telemetry_service_grpc_web_pb.js";
 import "./base.css";
 
 function App() {

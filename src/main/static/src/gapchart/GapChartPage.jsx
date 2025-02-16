@@ -2,6 +2,7 @@ import React from "react";
 import { formatNumberAsDuration, formatDriverName } from "../utils.js";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import "./GapChartPage.css";
+import Chart from "../charts/Chart";
 
 export default function GapChartPage(driverDistances, drivers) {
   const getXValue = (index) => (distances) => {
@@ -84,26 +85,28 @@ export default function GapChartPage(driverDistances, drivers) {
   ]
   const lines = [];
   drivers.forEach((value, carId) => {
-    lines.push(
-      <Line
-        type="monotone"
-        name={ value.driverName }
-        dataKey={ getXValue(carId) }
-        stroke={colors[carId]}
-        dot={false}
-        isAnimationActive={false} />
-    );
+    lines.push({
+      type: "monotone",
+      name: value.driverName,
+      dataKey: getXValue(carId),
+      stroke: colors[carId],
+      dot: false,
+      isAnimationActive: false,
+    });
   });
+  const chartNumericAxisProps = {
+    x: {
+      dataKey: "sessionTime",
+      type: "number",
+      scale: "linear",
+      allowDataOverflow: true,
+      allowDecimals: false,
+      interval: 0,
+    },
+  };
   return (
     <div className="centered-content-column" style={{height: '100%', width: '100%'}}>
-      <ResponsiveContainer width="100%" height={800}>
-        <LineChart data={driverDistances}>
-          <XAxis dataKey="sessionTime" />
-          <YAxis />
-          <Tooltip formatter={tooltipFormatter} contentStyle={{backgroundColor: '#1a1a1a'}} />
-          { lines }
-        </LineChart>
-      </ResponsiveContainer>
+      <Chart data={driverDistances} lines={lines} axis={chartNumericAxisProps} />
     </div>
   );
 }
