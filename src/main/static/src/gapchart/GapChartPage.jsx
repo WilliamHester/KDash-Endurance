@@ -1,6 +1,4 @@
 import React from "react";
-import { formatNumberAsDuration, formatDriverName } from "../utils.js";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import "./GapChartPage.css";
 import Chart from "../charts/Chart";
 
@@ -106,7 +104,14 @@ export default function GapChartPage(driverDistances, drivers) {
   };
   return (
     <div className="centered-content-column" style={{height: '100%', width: '100%'}}>
-      <Chart data={driverDistances} lines={lines} axis={chartNumericAxisProps} />
+      <Chart
+        data={driverDistances}
+        lines={lines}
+        axis={chartNumericAxisProps}
+        gridOptions={{
+          hide: true,
+        }}
+      />
     </div>
   );
 }

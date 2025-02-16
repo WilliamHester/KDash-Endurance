@@ -130,6 +130,7 @@ export const useZoomAndPan = ({
       state?.chartY &&
       chartXPaddingOnMouseDown.current
     ) {
+      e.preventDefault();
       const xDistance = chartMouseDown.current.x - state.chartX;
       const [paddingLeft, paddingRight] = chartXPaddingOnMouseDown.current;
 
@@ -153,6 +154,7 @@ export const useZoomAndPan = ({
 
   const onChartMouseMove = useCallback(
     (state: CategoricalChartState, e: MouseEvent) => {
+      e.preventDefault();
       const target = e.target as HTMLElement | null;
       if (chartMouseDown.current !== null) chartPan(state, e);
       if (target && clipPathRefs?.current?.axis?.current) {
@@ -175,6 +177,7 @@ export const useZoomAndPan = ({
 
   const onChartMouseDown = useCallback(
     (state: CategoricalChartState, e: MouseEvent) => {
+      e.preventDefault();
       if (state) {
         const { chartX, chartY } = state;
         if (typeof chartX === "number" && typeof chartY === "number") {
@@ -227,9 +230,9 @@ export const useZoomAndPan = ({
       e.preventDefault();
       const delta = Math.sign(e.deltaY);
       if (delta < 0) {
-        zoomOut();
-      } else {
         zoomIn();
+      } else {
+        zoomOut();
       }
     };
 

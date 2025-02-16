@@ -82,6 +82,15 @@ const Chart = <T extends Record<string, unknown>>({
 }: LineChartProps<T>) => {
   const [loaded, setLoaded] = useState(false);
 
+  const maxDataPoints = 100;
+  let downSampledData;
+  if (data.length !== undefined) {
+    const downSampleRate = Math.max(1, Math.floor(data.length / maxDataPoints));
+    downSampledData = data.filter((_, index) => index % downSampleRate === 0);
+  } else {
+    downSampledData = data;
+  }
+
   const {
     clipPathRefs,
     xPadding,
@@ -118,7 +127,7 @@ const Chart = <T extends Record<string, unknown>>({
             ...chartOptions?.margin
           }
         }}
-        data={data}
+        data={downSampledData}
         onMouseMove={onChartMouseMove}
         onMouseDown={onChartMouseDown}
         onMouseUp={onChartMouseUp}
