@@ -1,7 +1,8 @@
-import React from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import { formatNumberAsDuration, formatDriverName } from "../utils.js";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import "./GapChartPage.css";
+import debounce from "lodash";
 
 export default function GapChartPage(driverDistances, drivers) {
   const getXValue = (index) => (distances) => {
@@ -82,6 +83,97 @@ export default function GapChartPage(driverDistances, drivers) {
     '#48d1cc',
     '#c71585'
   ]
+  const chartContainerRef = useRef(null);
+  const [xAxisDataPercent, setXAxisDataPercent] = useState(100);
+  const [targetZoomPercent, setTargetZoomPercent] = useState(100);
+
+  const computedDomain = useMemo(() => {
+    console.log("Recomputing domain", xAxisDataPercent);
+    let minMax = [0, 0];
+    if (driverDistances.map !== undefined) {
+      minMax = [
+        Math.min(...driverDistances.map(d => d.sessionTime)),
+        Math.max(...driverDistances.map(d => d.sessionTime)),
+      ];
+    }
+    const min = minMax[0];
+    const max = minMax[1];
+    const range = max - min;
+    const newMin = range - range * (xAxisDataPercent / 100.0) + min;
+
+    return [newMin, max];
+  }, [xAxisDataPercent, driverDistances]); // Dependencies for useMemo
+
+  useEffect(() => {
+    let animationId;
+
+    const animate = () => {
+      console.log("Entered animate");
+      // Smoothly interpolate towards the target zoom percent
+      const currentZoomPercent = xAxisDataPercent;
+      const difference = targetZoomPercent - currentZoomPercent;
+      const animationSpeed = 0.05; // Adjust for animation speed (0.0 - 1.0)
+      const nextZoomPercent = currentZoomPercent + difference * animationSpeed;
+
+      console.log("Previous percent/new percent", currentZoomPercent, nextZoomPercent);
+      setXAxisDataPercent(nextZoomPercent);
+
+      if (Math.abs(difference) < 0.1) { // Stop animation when close enough
+        cancelAnimationFrame(animationId);
+        animationId = null;
+        setXAxisDataPercent(targetZoomPercent); // Snap to target to avoid floating point issues
+      } else {
+        animationId = requestAnimationFrame(animate); // Continue animation
+      }
+    };
+
+    let handledWheel = false;
+
+    const handleWheel = (e) => {
+      console.log(e);
+      e.preventDefault();
+      if (handledWheel) {
+        console.log("Ignoring wheel. Already handled.");
+        return;
+      }
+      handledWheel = true;
+
+      const delta = e.deltaY;
+      const direction = delta > 0 ? 1 : -1;
+
+      const zoomFactor = 1;
+
+      const newZoomPercent = Math.max(1, Math.min(100, targetZoomPercent + (1 + zoomFactor) * direction));
+      setTargetZoomPercent(newZoomPercent);
+
+      // console.log("New zoom percent", newZoomPercent);
+
+      if (!animationId) {
+        console.log("Animating?");
+        animationId = requestAnimationFrame(animate);
+      }
+
+      // setXAxisDataPercent(newZoomPercent);
+    };
+
+    const chartContainer = chartContainerRef.current;
+    if (chartContainer) {
+      console.log("Adding event listener");
+      chartContainer.addEventListener('wheel', handleWheel, { passive: false });
+
+      return () => {
+        console.log("Removing event listener");
+        chartContainer.removeEventListener('wheel', handleWheel);
+
+        if (animationId) {
+          cancelAnimationFrame(animationId); // Stop animation on unmount
+        }
+      };
+    } else {
+      console.log("Did not add event listener");
+    }
+  }, [targetZoomPercent]);
+
   const lines = [];
   drivers.forEach((value, carId) => {
     lines.push(
@@ -95,10 +187,10 @@ export default function GapChartPage(driverDistances, drivers) {
     );
   });
   return (
-    <div className="centered-content-column" style={{height: '100%', width: '100%'}}>
+    <div ref={chartContainerRef} className="centered-content-column" style={{height: '100%', width: '100%'}}>
       <ResponsiveContainer width="100%" height={800}>
         <LineChart data={driverDistances}>
-          <XAxis dataKey="sessionTime" />
+          <XAxis dataKey="sessionTime" type="number" domain={computedDomain} allowDataOverflow />
           <YAxis />
           <Tooltip formatter={tooltipFormatter} contentStyle={{backgroundColor: '#1a1a1a'}} />
           { lines }
