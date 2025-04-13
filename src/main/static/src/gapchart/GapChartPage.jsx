@@ -106,13 +106,14 @@ export default function GapChartPage(driverDistances, drivers) {
 
   useEffect(() => {
     let animationId;
+    let currentZoomPercent = xAxisDataPercent;
+    console.log("Current zoom", currentZoomPercent);
 
     const animate = () => {
       console.log("Entered animate");
       // Smoothly interpolate towards the target zoom percent
-      const currentZoomPercent = xAxisDataPercent;
       const difference = targetZoomPercent - currentZoomPercent;
-      const animationSpeed = 0.05; // Adjust for animation speed (0.0 - 1.0)
+      const animationSpeed = 0.0001; // Adjust for animation speed (0.0 - 1.0)
       const nextZoomPercent = currentZoomPercent + difference * animationSpeed;
 
       console.log("Previous percent/new percent", currentZoomPercent, nextZoomPercent);
@@ -125,6 +126,8 @@ export default function GapChartPage(driverDistances, drivers) {
       } else {
         animationId = requestAnimationFrame(animate); // Continue animation
       }
+      console.log("Next zoom", nextZoomPercent);
+      currentZoomPercent = nextZoomPercent;
     };
 
     let handledWheel = false;
@@ -133,17 +136,27 @@ export default function GapChartPage(driverDistances, drivers) {
       console.log(e);
       e.preventDefault();
       if (handledWheel) {
-        console.log("Ignoring wheel. Already handled.");
+        // console.log("Ignoring wheel. Already handled.");
         return;
       }
       handledWheel = true;
 
       const delta = e.deltaY;
-      const direction = delta > 0 ? 1 : -1;
+      const direction = delta > 0 ? -1 : 1;
+      if (direction === -1) {
+        console.log("Zooming out");
+      } else {
+        console.log("Zooming in");
+      }
 
       const zoomFactor = 1;
 
       const newZoomPercent = Math.max(1, Math.min(100, targetZoomPercent + (1 + zoomFactor) * direction));
+      if (newZoomPercent === targetZoomPercent) {
+        // console.log("Ignoring wheel. Zoom percents are the same.");
+        handledWheel = false;
+        return;
+      }
       setTargetZoomPercent(newZoomPercent);
 
       // console.log("New zoom percent", newZoomPercent);
@@ -158,11 +171,11 @@ export default function GapChartPage(driverDistances, drivers) {
 
     const chartContainer = chartContainerRef.current;
     if (chartContainer) {
-      console.log("Adding event listener");
+      // console.log("Adding event listener");
       chartContainer.addEventListener('wheel', handleWheel, { passive: false });
 
       return () => {
-        console.log("Removing event listener");
+        // console.log("Removing event listener");
         chartContainer.removeEventListener('wheel', handleWheel);
 
         if (animationId) {
@@ -176,6 +189,7 @@ export default function GapChartPage(driverDistances, drivers) {
 
   const lines = [];
   drivers.forEach((value, carId) => {
+    if (carId > 100) return;
     lines.push(
       <Line
         type="monotone"

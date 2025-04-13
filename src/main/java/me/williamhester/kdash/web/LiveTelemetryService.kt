@@ -30,10 +30,10 @@ class LiveTelemetryService(
   private val dataSnapshotQueue: DataSnapshotQueue,
 ) : LiveTelemetryServiceImplBase() {
 
-  private lateinit var relativeMonitor: RelativeMonitor
-  private lateinit var lapMonitor: DriverCarLapMonitor
-  private lateinit var otherCarsLapMonitor: OtherCarsLapMonitor
-  private lateinit var driverDistancesMonitor: DriverDistancesMonitor
+  private val relativeMonitor = RelativeMonitor()
+  private val lapMonitor = DriverCarLapMonitor(metadataHolder, relativeMonitor)
+  private val otherCarsLapMonitor = OtherCarsLapMonitor(metadataHolder, relativeMonitor)
+  private val driverDistancesMonitor = DriverDistancesMonitor()
   private val driverMonitor = DriverMonitor(metadataHolder)
 
   private val lapEntryStreamObservers = CopyOnWriteArrayList<LapEntryStreamObserverProgressHolder>()
@@ -41,7 +41,6 @@ class LiveTelemetryService(
   private val gapsStreamObservers = CopyOnWriteArrayList<GapsStreamObserverRateLimitHolder>()
   private val currentDriversStreamObservers = CopyOnWriteArrayList<CurrentDriversStreamObserverHolder>()
   private val driverDistancesStreamObserverHolders = CopyOnWriteArrayList<DriverDistanceStreamObserverHolder>()
-  private val initializedLock = CountDownLatch(1)
 
   fun start(executor: Executor) {
     executor.execute(this::monitor)
@@ -49,12 +48,6 @@ class LiveTelemetryService(
   }
 
   private fun monitor() {
-    relativeMonitor = RelativeMonitor()
-    lapMonitor = DriverCarLapMonitor(metadataHolder, relativeMonitor)
-    otherCarsLapMonitor = OtherCarsLapMonitor(metadataHolder, relativeMonitor)
-    driverDistancesMonitor = DriverDistancesMonitor()
-    initializedLock.countDown()
-
     val rateLimiter = RateLimiter.create(600.0)
     for (dataSnapshot in dataSnapshotQueue) {
       logger.atInfo().atMostEvery(10, TimeUnit.SECONDS).log("Processing new buffer.")
@@ -67,7 +60,6 @@ class LiveTelemetryService(
   }
 
   private fun emitLoop() {
-    initializedLock.await()
     while (true) {
       emitAll()
     }
