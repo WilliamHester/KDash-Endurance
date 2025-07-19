@@ -1,7 +1,7 @@
 body {
   margin: 0;
 
-  background-color: #1a1a1a;
+  background-color: #000;
   color: #f0f0f0;
   height: 100%;
   font-family: Roboto,-apple-system,BlinkMacSystemFont,'Helvetica Neue',Helvetica,sans-serif;
@@ -36,7 +36,7 @@ html {
   min-height: 60px;
   padding-left: 60px;
   padding-right: 60px;
-  background-color: #486a8d;
+  background-color: #181818;
 }
 
 .header > * {
@@ -100,7 +100,7 @@ html {
 .hamburgerMenu {
   display: flex;
   flex-direction: column;
-  background-color: #232324;
+  background-color: #101010;
   font-family: 'Electrolize', sans-serif;
 }
 

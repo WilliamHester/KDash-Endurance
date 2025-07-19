@@ -1,9 +1,17 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import UPlotReact from "uplot-react";
 
 export default function Chart2(driverDistances, drivers) {
+  const parentRef = useRef(null);
+  const [parentWidth, setParentWidth] = useState(0);
+
+  useEffect(() => {
+    if (parentRef.current) {
+      setParentWidth(parentRef.current.offsetWidth);
+    }
+  }, []); // Empty dependency array ensures this runs once after initial render
   const [scales, setScales] = useState({
     x: {
       auto: true,
@@ -171,7 +179,7 @@ export default function Chart2(driverDistances, drivers) {
   }
   const options = {
     title: "Driver Gaps",
-    width: 800,
+    width: parentWidth,
     height: 300,
     cursor: {
       drag: {
@@ -182,10 +190,18 @@ export default function Chart2(driverDistances, drivers) {
     },
     axes: [
       {
-        stroke: "white"
+        stroke: "white",
+        grid: {
+          stroke: "rgba(255, 255, 255, 0.2)",
+          width: 1,
+        },
       },
       {
-        stroke: "white"
+        stroke: "white",
+        grid: {
+          stroke: "rgba(255, 255, 255, 0.2)",
+          width: 1,
+        },
       },
     ],
     series: [
@@ -198,12 +214,18 @@ export default function Chart2(driverDistances, drivers) {
       wheelZoomPlugin({factor: 0.95}),
     ],
     scales: scales,
+    legend: {
+      // TODO: find a better way to show the legend that doesn't take up a ton of space
+      show: false,
+    }
   };
   return (
-    <UPlotReact
-      key="hooks-key"
-      options={options}
-      data={driverDistances}
-    />
+    <div ref={parentRef}>
+      <UPlotReact
+        key="hooks-key"
+        options={options}
+        data={driverDistances}
+      />
+    </div>
   );
 }
