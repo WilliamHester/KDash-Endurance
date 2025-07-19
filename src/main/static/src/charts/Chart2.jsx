@@ -4,6 +4,26 @@ import "uplot/dist/uPlot.min.css";
 import UPlotReact from "uplot-react";
 
 export default function Chart2(driverDistances, drivers) {
+  const [dimensions, setDimensions] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+  useEffect(() => {
+    function handleResize() {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    }
+
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup function
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []); // Empty dependency array ensures this effect runs only once on mount
+
   const parentRef = useRef(null);
   const [parentWidth, setParentWidth] = useState(0);
 
@@ -11,7 +31,7 @@ export default function Chart2(driverDistances, drivers) {
     if (parentRef.current) {
       setParentWidth(parentRef.current.offsetWidth);
     }
-  }, []); // Empty dependency array ensures this runs once after initial render
+  }, [dimensions]); // Empty dependency array ensures this runs once after initial render
   const [scales, setScales] = useState({
     x: {
       auto: true,

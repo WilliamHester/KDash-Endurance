@@ -1,5 +1,5 @@
 import React from "react";
-import "./GapChartPage.css";
+import "./FuelChartPage.css";
 import Chart2 from "../charts/Chart2";
 
 export default function FuelChartPage(driverDistances, drivers) {
