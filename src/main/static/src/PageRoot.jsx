@@ -108,7 +108,7 @@ export default function App2() {
     });
   }, []);
 
-  const [driverDistances, setDriverDistances] = useState(new Map());
+  const [driverDistances, setDriverDistances] = useState([]);
   useEffect(() => {
     const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
     const request = new ConnectRequest();
@@ -118,22 +118,21 @@ export default function App2() {
         console.log(err, resp);
     });
     stream.on('data', response => {
-      const distances = response.getDistancesList();
-
-//       const relativeDistance = Math.max(...distances.map((distance) => distance.getDriverDistance()));
-      const relativeDistance = distances[0].getDriverDistance();
-
-      const carDistances = distances.map((distance) => {
-        return {
-          'carIdx': distance.getCarId(),
-          'gapToLeader': distance.getDriverDistance() - relativeDistance
+      console.log('what')
+      const entry = [response.getSessionTime(), ...response.getDistancesList().map((distance) => distance.getDriverDistance())];
+      if (entries.length === 0) {
+        console.log("entry length", entry);
+        entry.forEach((value) => entries.push([value]));
+      } else {
+        console.log(entries.length);
+//         console.log(entry.length);
+//         console.log(entries);
+        for (const [index, value] of entry.entries()) {
+//           console.log('entries[%d].push(%f)', index, value);
+//           console.log('entries[%d]', index, entries[index]);
+          entries[index].push(value);
         }
-      });
-      entries.push({
-        'sessionTime': response.getSessionTime(),
-        'distances': carDistances
-      })
-
+      }
       setDriverDistances([...entries]);
     });
     stream.on('status', status => {

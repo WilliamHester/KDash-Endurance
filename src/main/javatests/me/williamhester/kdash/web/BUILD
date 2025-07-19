@@ -1,4 +1,4 @@
-load("@io_bazel_rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library", "kt_jvm_test")
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library", "kt_jvm_test")
 
 #kt_jvm_test(
 #    name = "tests",
@@ -9,7 +9,7 @@ load("@io_bazel_rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library", "kt_jvm_test")
 #    ],
 #    deps = [
 #        "@maven//:com_google_flogger_flogger",
-#        "@maven//:com_google_protobuf_protobuf_java_util",
+#        "@maven//:protobuf_protobuf_java_util",
 #        "@maven//:com_google_truth_truth",
 #        "@maven//:io_javalin_javalin",
 #        "@maven//:org_mindrot_jbcrypt",

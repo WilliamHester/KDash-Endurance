@@ -1,22 +1,12 @@
 import React from "react";
 import "./GapChartPage.css";
 import Chart from "../charts/Chart";
+import uPlot from "uplot";
+import "uplot/dist/uPlot.min.css";
+
+import UPlotReact from "uplot-react";
 
 export default function GapChartPage(driverDistances, drivers) {
-  const getXValue = (index) => (distances) => {
-    if (index >= distances.length) {
-      return 0;
-    }
-    const distance = distances.distances[index];
-    if (distance === undefined) {
-      console.log('Distance undefined for index', index);
-      return 0.0;
-    }
-    return distance.gapToLeader;
-  };
-  function tooltipFormatter(value, name, props) {
-    return [value.toFixed(3), name];
-  }
   const colors = [
     '#f0f8ff',
     '#00ffff',
@@ -81,37 +71,50 @@ export default function GapChartPage(driverDistances, drivers) {
     '#48d1cc',
     '#c71585'
   ]
-  const lines = [];
-  drivers.forEach((value, carId) => {
-    lines.push({
-      type: "monotone",
-      name: value.driverName,
-      dataKey: getXValue(carId),
-      stroke: colors[carId],
-      dot: false,
-      isAnimationActive: false,
-    });
-  });
-  const chartNumericAxisProps = {
-    x: {
-      dataKey: "sessionTime",
-      type: "number",
-      scale: "linear",
-      allowDataOverflow: true,
-      allowDecimals: false,
-      interval: 0,
+// console.log(drivers);
+// console.log(drivers.values());
+  const driverLabels = drivers.values().map((driver, idx) => {
+    return {
+      label: driver.driverName,
+      points: { show: false },
+      stroke: colors[idx],
+    }});
+  const options = {
+    title: "Driver Gaps",
+    width: 800,
+    height: 300,
+    cursor: {
+      drag: {
+        x: true,
+        y: false,
+        setScale: false, // Disable uPlot's default drag-to-zoom
+      }
     },
+    axes: [
+      {
+        stroke: "white"
+      },
+      {
+        stroke: "white"
+      },
+    ],
+    series: [
+      {
+        label: "Date"
+      },
+      ...driverLabels,
+    ],
+    plugins: [
+//       uplotDragPanZoom()
+    ],
+    scales: { x: { time: true } }
   };
+//   console.log(driverDistances);
   return (
-    <div className="centered-content-column" style={{height: '100%', width: '100%'}}>
-      <Chart
-        data={driverDistances}
-        lines={lines}
-        axis={chartNumericAxisProps}
-        gridOptions={{
-          hide: true,
-        }}
-      />
-    </div>
+    <UPlotReact
+      key="hooks-key"
+      options={options}
+      data={driverDistances}
+    />
   );
 }
