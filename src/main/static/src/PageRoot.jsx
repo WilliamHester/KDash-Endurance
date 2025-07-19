@@ -118,13 +118,13 @@ export default function App2() {
         console.log(err, resp);
     });
     stream.on('data', response => {
-      console.log('what')
+//       console.log('what')
       const entry = [response.getSessionTime(), ...response.getDistancesList().map((distance) => distance.getDriverDistance())];
       if (entries.length === 0) {
         console.log("entry length", entry);
         entry.forEach((value) => entries.push([value]));
       } else {
-        console.log(entries.length);
+//         console.log(entries.length);
 //         console.log(entry.length);
 //         console.log(entries);
         for (const [index, value] of entry.entries()) {
