@@ -17,6 +17,8 @@ service LiveTelemetryService {
    rpc MonitorCurrentDrivers(ConnectRequest) returns (stream CurrentDrivers);
 
    rpc MonitorDriverDistances(ConnectRequest) returns (stream DriverDistances);
+
+   rpc MonitorFuelLevel(ConnectRequest) returns (stream DriverFuelLevel);
 }
 
 message ConnectRequest {}
@@ -83,4 +85,9 @@ message DriverDistances {
 message DriverDistance {
    int32 car_id = 1;
    float driver_distance = 2;
+}
+
+message DriverFuelLevel {
+   float driver_distance = 1;
+   float fuel_level = 2;
 }

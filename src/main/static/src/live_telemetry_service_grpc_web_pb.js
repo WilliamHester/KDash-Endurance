@@ -359,5 +359,61 @@ proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prot
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
+ *   !proto.me.williamhester.kdash.enduranceweb.DriverFuelLevel>}
+ */
+const methodDescriptor_LiveTelemetryService_MonitorFuelLevel = new grpc.web.MethodDescriptor(
+  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorFuelLevel',
+  grpc.web.MethodType.SERVER_STREAMING,
+  proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
+  proto.me.williamhester.kdash.enduranceweb.DriverFuelLevel,
+  /**
+   * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.me.williamhester.kdash.enduranceweb.DriverFuelLevel.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.DriverFuelLevel>}
+ *     The XHR Node Readable Stream
+ */
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.monitorFuelLevel =
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorFuelLevel',
+      request,
+      metadata || {},
+      methodDescriptor_LiveTelemetryService_MonitorFuelLevel);
+};
+
+
+/**
+ * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.DriverFuelLevel>}
+ *     The XHR Node Readable Stream
+ */
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.monitorFuelLevel =
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorFuelLevel',
+      request,
+      metadata || {},
+      methodDescriptor_LiveTelemetryService_MonitorFuelLevel);
+};
+
+
 module.exports = proto.me.williamhester.kdash.enduranceweb;
 

@@ -3,7 +3,7 @@ import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import UPlotReact from "uplot-react";
 
-export default function Chart2(driverDistances, drivers) {
+export default function Chart2(title, driverDistances, drivers) {
   const [dimensions, setDimensions] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
@@ -198,7 +198,7 @@ export default function Chart2(driverDistances, drivers) {
     };
   }
   const options = {
-    title: "Driver Gaps",
+    title: title,
     width: parentWidth,
     height: 300,
     cursor: {

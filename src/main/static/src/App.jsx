@@ -20,6 +20,7 @@ function App() {
           <NavLink className="no-style-link hamburgerMenuItem" to="/otherlaps">Other Cars' Laps</NavLink>
           <NavLink className="no-style-link hamburgerMenuItem" to="/gaps">Current Gaps</NavLink>
           <NavLink className="no-style-link hamburgerMenuItem" to="/gapchart">Gap Chart</NavLink>
+          <NavLink className="no-style-link hamburgerMenuItem" to="/fuelcharts">Fuel Charts</NavLink>
         </div>
 
         <div className="column content">

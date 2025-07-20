@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -10,6 +10,7 @@ import LapLogPage from "./laplog/LapLogPage";
 import OtherCarsLapLogPage from "./laplog/OtherCarsLapLogPage";
 import GapsPage from "./gaps/GapsPage";
 import GapChartPage from "./gapchart/GapChartPage";
+import FuelChartPage from "./fuel/FuelChartPage";
 import App from "./App";
 
 export default function App2() {
@@ -118,22 +119,59 @@ export default function App2() {
         console.log(err, resp);
     });
     stream.on('data', response => {
-//       console.log('what')
       const entry = [response.getSessionTime(), ...response.getDistancesList().map((distance) => distance.getDriverDistance())];
       if (entries.length === 0) {
         console.log("entry length", entry);
         entry.forEach((value) => entries.push([value]));
       } else {
-//         console.log(entries.length);
-//         console.log(entry.length);
-//         console.log(entries);
         for (const [index, value] of entry.entries()) {
-//           console.log('entries[%d].push(%f)', index, value);
-//           console.log('entries[%d]', index, entries[index]);
           entries[index].push(value);
         }
       }
       setDriverDistances([...entries]);
+    });
+    stream.on('status', status => {
+      console.log(status);
+    });
+    stream.on('end', end => {
+      console.log('Stream end');
+    });
+  }, []);
+
+  function useBatchedState(initialState) {
+    const [state, setState] = useState(initialState);
+    const latestStateRef = useRef(initialState);
+    const animationFrameId = useRef(null);
+
+    const updateState = useCallback(() => {
+      setState(latestStateRef.current);
+      animationFrameId.current = requestAnimationFrame(updateState);
+    }, []);
+
+    useEffect(() => {
+      animationFrameId.current = requestAnimationFrame(updateState);
+      return () => cancelAnimationFrame(animationFrameId.current);
+    }, [updateState]);
+
+    const setBatchState = useCallback((newState) => {
+      latestStateRef.current = newState;
+    }, []);
+
+    return [state, setBatchState];
+  }
+
+  const [fuelLevels, setFuelLevels] = useBatchedState([]);
+  useEffect(() => {
+    const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
+    const request = new ConnectRequest();
+    const entries = [];
+    const stream = liveTelemetryServiceClient.monitorFuelLevel(request, {}, (err, resp) => {
+        console.log("went here");
+        console.log(err, resp);
+    });
+    stream.on('data', response => {
+      entries.push(response);
+      setFuelLevels([...entries]);
     });
     stream.on('status', status => {
       console.log(status);
@@ -152,6 +190,7 @@ export default function App2() {
           <Route path="otherlaps" element={ OtherCarsLapLogPage(otherCarLapEntries, currentDrivers) } />
           <Route path="gaps" element={ GapsPage(gapEntries, currentDrivers) } />
           <Route path="gapchart" element={ GapChartPage(driverDistances, currentDrivers) } />
+          <Route path="fuelcharts" element={ FuelChartPage(fuelLevels) } />
         </Route>
       </Routes>
     </BrowserRouter>
