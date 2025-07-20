@@ -2,8 +2,10 @@ import React from "react";
 import { formatNumberAsDuration, formatDriverName } from "../utils.js";
 import "./GapsPage.css";
 
-export default function GapsPage(gapEntries, drivers) {
-  const gapRows = gapEntries
+export default function GapsPage(props) {
+  const entries = props.entries;
+  const drivers = props.drivers;
+  const gapRows = entries
     .filter((gap) => drivers.has(gap.getCarId()))
     .map((gap, index) => (
       <tr>

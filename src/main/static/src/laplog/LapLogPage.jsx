@@ -3,9 +3,10 @@ import "./LapLogPage.css";
 import { formatNumberAsDuration, formatDriverName } from "../utils.js";
 import PitChip from "./PitChip";
 
-export default function LapLogPage(lapEntries) {
-  const fastestLap = Math.min(...lapEntries.map((entry) => entry.getLapTime()));
-  const lapRows = lapEntries.map(
+export default function LapLogPage(props) {
+  const entries = props.entries;
+  const fastestLap = Math.min(...entries.map((entry) => entry.getLapTime()));
+  const lapRows = entries.map(
       (lapEntry) => {
         var lapTimeClassName = '';
         if (lapEntry.getLapTime() === fastestLap) {

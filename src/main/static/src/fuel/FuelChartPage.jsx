@@ -2,7 +2,8 @@ import React from "react";
 import "./FuelChartPage.css";
 import Chart2 from "../charts/Chart2";
 
-export default function FuelChartPage(fuelLevels) {
+export default function FuelChartPage(props) {
+  const fuelLevels = props.fuelLevels;
   const drivers = [{driverName: 'Hardcoded Driver Name'}];
 
   const xAxis = fuelLevels.map((level) => level.getDriverDistance());

@@ -4,7 +4,9 @@ import { formatNumberAsDuration, formatDriverName } from "../utils.js";
 import PitChip from "./PitChip";
 import Select from 'react-select'
 
-export default function OtherCarsLapLogPage(lapEntries, drivers) {
+export default function OtherCarsLapLogPage(props) {
+  const lapEntries = props.entries;
+  const drivers = props.drivers;
   const options = [];
   drivers.forEach((value, carId) => {
     options.push(

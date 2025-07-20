@@ -31,7 +31,8 @@ export default function Chart2(title, driverDistances, drivers) {
     if (parentRef.current) {
       setParentWidth(parentRef.current.offsetWidth);
     }
-  }, [dimensions]); // Empty dependency array ensures this runs once after initial render
+  }, [dimensions]);
+
   const [scales, setScales] = useState({
     x: {
       auto: true,
