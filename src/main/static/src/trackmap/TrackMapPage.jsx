@@ -16,7 +16,6 @@ export default function TrackMapPage() {
   useEffect(() => {
     if (container.current === null) return;
     const pathElement = container.current.querySelector('path');
-//     const pathElement = document.getElementsByClassName('st0')[0];
     if (pathElement) {
       console.log('found path');
       pathRef.current = pathElement;
@@ -24,22 +23,26 @@ export default function TrackMapPage() {
       console.log('did not find path');
     }
 
-    if (pathRef.current) {
-      const path = pathRef.current;
-      const totalLength = path.getTotalLength();
-      console.log('totalLength: ', totalLength);
+    let percent = 0;
 
-      // Calculate the distance along the path based on the progress percentage
-      const distance = (totalLength * 0) / 100;
-      console.log('distance: ', distance);
+    const intervalId = setInterval(() => {
+      if (pathRef.current) {
+        const path = pathRef.current;
+        const totalLength = path.getTotalLength();
+        console.log('totalLength: ', totalLength);
 
-      // Get the {x, y} coordinates at that distance
-      const coordinates = path.getPointAtLength(distance);
-      console.log('coordinates: ', coordinates);
+        // Calculate the distance along the path based on the progress percentage
+        const distance = (totalLength * percent) / 100;
+        percent += 0.1;
 
-      // Update the state to trigger a re-render
-      setPoint({ x: coordinates.x, y: coordinates.y });
-    }
+        // Get the {x, y} coordinates at that distance
+        const coordinates = path.getPointAtLength(distance);
+
+        setPoint({ x: coordinates.x, y: coordinates.y });
+      }
+    }, 20);
+
+    return () => clearInterval(intervalId); // Cleanup interval on unmount
   }, [progress, container]); // Re-run this effect whenever 'progress' changes
 
   return (

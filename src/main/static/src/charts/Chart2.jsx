@@ -47,6 +47,7 @@ export default function Chart2(title, driverDistances, drivers) {
     maxX = 0;
   }
   const colors = [
+    '#DDDD00',
     '#f0f8ff',
     '#00ffff',
     '#7fffd4',
@@ -115,6 +116,7 @@ export default function Chart2(title, driverDistances, drivers) {
       label: driver.driverName,
       points: { show: false },
       stroke: colors[idx],
+      width: 1.5,
     }});
   function wheelZoomPlugin(opts) {
     let factor = opts.factor || 0.75;
