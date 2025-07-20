@@ -14,152 +14,135 @@ import FuelChartPage from "./fuel/FuelChartPage";
 import TrackMapPage from "./trackmap/TrackMapPage";
 import App from "./App";
 
+const MAX_FUEL_POINTS = 1000;
+const MAX_GAP_POINTS = 1000;
+
 export default function App2() {
   const [gapEntries, setGapEntries] = useState([]);
-//   useEffect(() => {
-//     const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
-//     const request = new ConnectRequest();
-//     const entries = [];
-//     const stream = liveTelemetryServiceClient.monitorCurrentGaps(request, {}, (err, resp) => {
-//         console.log("went here");
-//         console.log(err, resp);
-//     });
-//     stream.on('data', response => {
-// //       setGapEntries([...response.getGapsList()]);
-//     });
-//     stream.on('status', status => {
-//       console.log(status);
-//     });
-//     stream.on('end', end => {
-//       console.log('Stream end');
-//     });
-//     return () => stream.cancel();
-//   }, []);
-
   const [lapEntries, setLapEntries] = useState([]);
-  useEffect(() => {
-    const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
-    const request = new ConnectRequest();
-    const entries = [];
-    const stream = liveTelemetryServiceClient.monitorDriverLaps(request, {}, (err, resp) => {
-        console.log("went here");
-        console.log(err, resp);
-    });
-    stream.on('data', response => {
-      setLapEntries(prevEntries => [response, ...prevEntries]);
-    });
-    stream.on('status', status => {
-      console.log(status);
-    });
-    stream.on('end', end => {
-      console.log('Stream end');
-    });
-    return () => stream.cancel();
-  }, []);
-
   const [otherCarLapEntries, setOtherCarLapEntries] = useState([]);
-  useEffect(() => {
-    const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
-    const request = new ConnectRequest();
-    const stream = liveTelemetryServiceClient.monitorOtherCarsLaps(request, {}, (err, resp) => {
-        console.log("went here");
-        console.log(err, resp);
-    });
-    stream.on('data', response => {
-      setOtherCarLapEntries(prevEntries => [response, ...prevEntries]);
-    });
-    stream.on('status', status => {
-      console.log(status);
-    });
-    stream.on('end', end => {
-      console.log('Stream end');
-    });
-    return () => stream.cancel();
-  }, []);
-
   const [currentDrivers, setCurrentDrivers] = useState(new Map());
-  useEffect(() => {
-    const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
-    const request = new ConnectRequest();
-    const stream = liveTelemetryServiceClient.monitorCurrentDrivers(request, {}, (err, resp) => {
-        console.log("went here");
-        console.log(err, resp);
-    });
-    stream.on('data', response => {
-      console.log('response: ', response);
-      const entries = new Map(
-        response.getDriversList().map((driver) => [
-          driver.getCarId(),
-          {
-            'carClassId': driver.getCarClassId(),
-            'carClassName': driver.getCarClassName(),
-            'driverName': driver.getDriverName(),
-            'teamName': driver.getTeamName(),
-            'carNumber': driver.getCarNumber()
-          }
-        ])
-      );
-      setCurrentDrivers(entries);
-    });
-    stream.on('status', status => {
-      console.log(status);
-    });
-    stream.on('end', end => {
-      console.log('Stream end');
-    });
-    return () => stream.cancel();
-  }, []);
-
   const [driverDistances, setDriverDistances] = useState([]);
-  useEffect(() => {
-    const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
-    const request = new ConnectRequest();
-    const entries = [];
-    const stream = liveTelemetryServiceClient.monitorDriverDistances(request, {}, (err, resp) => {
-        console.log("went here");
-        console.log(err, resp);
-    });
-    stream.on('data', response => {
-      const entry = [response.getSessionTime(), ...response.getDistancesList().map((distance) => distance.getDriverDistance())];
-      if (entries.length === 0) {
-        console.log("entry length", entry);
-        entry.forEach((value) => entries.push([value]));
-      } else {
-        for (const [index, value] of entry.entries()) {
-          entries[index].push(value);
-        }
-      }
-//       setDriverDistances(prevDistances => [...prevDistances, ]);
-    });
-    stream.on('status', status => {
-      console.log(status);
-    });
-    stream.on('end', end => {
-      console.log('Stream end');
-    });
-    return () => stream.cancel();
-  }, []);
-
   const [fuelLevels, setFuelLevels] = useState([]);
+
+  const gapBuffer = useRef([]);
+  const lapBuffer = useRef([]);
+  const otherCarLapBuffer = useRef([]);
+  const driverDistancesBuffer = useRef([]);
+  const fuelBuffer = useRef([]);
+
   useEffect(() => {
     const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
-    const request = new ConnectRequest();
-    const stream = liveTelemetryServiceClient.monitorFuelLevel(request, {}, (err, resp) => {
-//         console.log("went here");
-        console.log(err, resp);
-    });
-    stream.on('data', response => {
-//       setFuelLevels(prevLevels => [...prevLevels, response]);
-    });
-    stream.on('status', status => {
-      console.log(status);
-    });
-    stream.on('end', end => {
-      console.log('Stream end');
-    });
 
-    return () => stream.cancel();
+    const setupStream = (rpcMethodName, buffer) => {
+      const request = new ConnectRequest();
+      const stream = liveTelemetryServiceClient[rpcMethodName](request, {});
+      stream.on('data', response => {
+        buffer.current.push(response);
+      });
+    };
+
+    // We can't have more than 6 simultaneous TCP connections to the same domain. This means that we need to combine
+    // the streams into a single stream. Having 6 causes the browser to lock up when refreshing the page,
+    // presumably because the page itself would be a 7th connection.
+    setupStream('monitorCurrentGaps', gapBuffer);
+    setupStream('monitorDriverLaps', lapBuffer);
+//     setupStream('monitorOtherCarsLaps', otherCarLapBuffer);
+    setupStream('monitorDriverDistances', driverDistancesBuffer);
+    setupStream('monitorFuelLevel', fuelBuffer);
+
+    // This stream updates state directly because it's a single map, not a growing list.
+    // The workload is minimal.
+    const driversRequest = new ConnectRequest();
+    const driversStream = liveTelemetryServiceClient.monitorCurrentDrivers(driversRequest, {});
+    driversStream.on('data', response => {
+        if (response && response.getDriversList()) {
+          const driverMap = new Map(
+            response.getDriversList().map((driver) => [
+              driver.getCarId(),
+              {
+                'carClassId': driver.getCarClassId(),
+                'carClassName': driver.getCarClassName(),
+                'driverName': driver.getDriverName(),
+                'teamName': driver.getTeamName(),
+                'carNumber': driver.getCarNumber()
+              }
+            ])
+          );
+          setCurrentDrivers(driverMap);
+        }
+    });
   }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      // Process Fuel Levels
+      if (fuelBuffer.current.length > 0) {
+        setFuelLevels(prevLevels => {
+          const updated = [...prevLevels, ...fuelBuffer.current];
+          fuelBuffer.current = []; // Clear buffer
+          return updated.slice(-MAX_FUEL_POINTS); // Enforce data cap
+        });
+      }
+
+      // Process Gaps
+      if (gapBuffer.current.length > 0) {
+        const lastMessage = gapBuffer.current[gapBuffer.current.length - 1];
+        if (lastMessage && lastMessage.getGapsList) {
+            setGapEntries(lastMessage.getGapsList());
+        }
+        gapBuffer.current = []; // Clear buffer
+      }
+
+      // Process Driver Laps
+      if (lapBuffer.current.length > 0) {
+        setLapEntries(prevEntries => {
+          const updated = [...lapBuffer.current, ...prevEntries];
+          lapBuffer.current = []; // Clear buffer
+          return updated;
+        });
+      }
+
+      // Process Other Car Laps
+      if (otherCarLapBuffer.current.length > 0) {
+        setOtherCarLapEntries(prevEntries => {
+          const updated = [...otherCarLapBuffer.current, ...prevEntries];
+          otherCarLapBuffer.current = []; // Clear buffer
+          return updated;
+        });
+      }
+
+      // Process Driver Distances
+      if (driverDistancesBuffer.current.length > 0) {
+        setDriverDistances(prevData => {
+            let newData = [...prevData];
+            for (const response of driverDistancesBuffer.current) {
+                if (response && response.getSessionTime && response.getDistancesList) {
+                    const newRow = [response.getSessionTime(), ...response.getDistancesList().map(d => d.getDriverDistance())];
+                    if (newData.length === 0) {
+                        newData = newRow.map(value => [value]);
+                    } else {
+                        for (const [index, value] of newRow.entries()) {
+                            if (newData[index]) {
+                                newData[index].push(value);
+                            }
+                        }
+                    }
+                }
+            }
+            driverDistancesBuffer.current = []; // Clear buffer
+
+            if (newData.length > 0) {
+                newData = newData.map(column => column.slice(-MAX_GAP_POINTS));
+            }
+            return newData;
+        });
+      }
+
+    }, 250); // Update the UI 4 times per second. Adjust as needed.
+
+    return () => clearInterval(intervalId); // Cleanup interval on unmount
+  }, []); // Empty dependency array means this runs only once.
 
   return (
     <BrowserRouter>
