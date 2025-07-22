@@ -25,6 +25,12 @@ proto_library(
     ]
 )
 
+kt_jvm_proto_library(
+    name = "live_telemetry_service_kt_proto",
+    deps = [":live_telemetry_service"],
+    visibility = ["//visibility:public"],
+)
+
 java_proto_library(
     name = "live_telemetry_pusher_service_java_proto",
     deps = [":live_telemetry_pusher_service"],

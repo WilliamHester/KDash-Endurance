@@ -4,7 +4,7 @@ import {
   Routes,
   Route,
 } from "react-router-dom";
-import { ConnectRequest, LiveTelemetryEvent } from "./live_telemetry_service_pb.js";
+import { ConnectRequest, MonitorTelemetryRequest } from "./live_telemetry_service_pb.js";
 import { LiveTelemetryServiceClient } from "./live_telemetry_service_grpc_web_pb.js";
 import LapLogPage from "./laplog/LapLogPage";
 import OtherCarsLapLogPage from "./laplog/OtherCarsLapLogPage";
@@ -16,8 +16,21 @@ import App from "./App";
 
 const MAX_FUEL_POINTS = 1000;
 const MAX_GAP_POINTS = 1000;
+const DOWNSAMPLE_THRESHOLD = 1000;
+
+const downsample = (array) => {
+  // Every time an array grows to be larger than DOWNSAMPLE_THRESHOLD items, cut it in half.
+  if (array.length < DOWNSAMPLE_THRESHOLD) {
+    return array;
+  }
+  const factor = Math.floor(array.length / DOWNSAMPLE_THRESHOLD);
+  // console.log('Array length is %d downsampling', array.length);
+  return array.filter((_value, index) => index % factor === 0);
+}
 
 export default function App2() {
+  const [sessionTimes, setSessionTimes] = useState([]);
+  const [targetDriverDistances, setTargetDriverDistances] = useState([]);
   const [gapEntries, setGapEntries] = useState([]);
   const [lapEntries, setLapEntries] = useState([]);
   const [otherCarLapEntries, setOtherCarLapEntries] = useState([]);
@@ -25,6 +38,10 @@ export default function App2() {
   const [driverDistances, setDriverDistances] = useState([]);
   const [fuelLevels, setFuelLevels] = useState([]);
 
+  const sampleRateHz = useRef(100);
+
+  const sessionTimesBuffer = useRef([]);
+  const targetDriverDistancesBuffer = useRef([]);
   const gapBuffer = useRef([]);
   const lapBuffer = useRef([]);
   const otherCarLapBuffer = useRef([]);
@@ -45,11 +62,21 @@ export default function App2() {
     // We can't have more than 6 simultaneous TCP connections to the same domain. This means that we need to combine
     // the streams into a single stream. Having 6 causes the browser to lock up when refreshing the page,
     // presumably because the page itself would be a 7th connection.
-    setupStream('monitorCurrentGaps', gapBuffer);
+    // setupStream('monitorCurrentGaps', gapBuffer);
     setupStream('monitorDriverLaps', lapBuffer);
 //     setupStream('monitorOtherCarsLaps', otherCarLapBuffer);
-    setupStream('monitorDriverDistances', driverDistancesBuffer);
-    setupStream('monitorFuelLevel', fuelBuffer);
+    // setupStream('monitorDriverDistances', driverDistancesBuffer);
+    // setupStream('monitorFuelLevel', fuelBuffer);
+
+    const request = new MonitorTelemetryRequest();
+    request.setSampleRateHz(sampleRateHz.current);
+    const stream = liveTelemetryServiceClient.monitorTelemetry(request, {});
+    stream.on('data', response => {
+      sessionTimesBuffer.current.push(response.getSessionTime());
+      targetDriverDistancesBuffer.current.push(response.getDriverDistance());
+
+      fuelBuffer.current.push(response.getFuelLevel());
+    });
 
     // This stream updates state directly because it's a single map, not a growing list.
     // The workload is minimal.
@@ -76,12 +103,25 @@ export default function App2() {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      // Process Fuel Levels
+      if (sessionTimesBuffer.current.length > 0) {
+        setSessionTimes(prev => {
+          const updated = [...prev, ...sessionTimesBuffer.current];
+          sessionTimesBuffer.current = [];
+          return updated;
+        });
+      }
+      if (targetDriverDistancesBuffer.current.length > 0) {
+        setTargetDriverDistances(prevLevels => {
+          const updated = [...prevLevels, ...targetDriverDistancesBuffer.current];
+          targetDriverDistancesBuffer.current = [];
+          return updated;
+        });
+      }
       if (fuelBuffer.current.length > 0) {
         setFuelLevels(prevLevels => {
           const updated = [...prevLevels, ...fuelBuffer.current];
-          fuelBuffer.current = []; // Clear buffer
-          return updated.slice(-MAX_FUEL_POINTS); // Enforce data cap
+          fuelBuffer.current = [];
+          return updated;
         });
       }
 
@@ -153,7 +193,7 @@ export default function App2() {
           <Route path="otherlaps" element={ <OtherCarsLapLogPage entries={otherCarLapEntries} drivers={currentDrivers} /> } />
           <Route path="gaps" element={ <GapsPage entries={gapEntries} drivers={currentDrivers} /> } />
           <Route path="gapchart" element={ <GapChartPage distances={driverDistances} drivers={currentDrivers} /> } />
-          <Route path="fuelcharts" element={ <FuelChartPage fuelLevels={fuelLevels} /> } />
+          <Route path="fuelcharts" element={ <FuelChartPage targetDriverDistances={downsample(targetDriverDistances)} fuelLevels={downsample(fuelLevels)} /> } />
           <Route path="trackmap" element={ <TrackMapPage /> } />
         </Route>
       </Routes>

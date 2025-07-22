@@ -8,15 +8,16 @@ import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
 import me.williamhester.kdash.enduranceweb.proto.CurrentDrivers
 import me.williamhester.kdash.enduranceweb.proto.Driver
 import me.williamhester.kdash.enduranceweb.proto.DriverDistances
-import me.williamhester.kdash.enduranceweb.proto.DriverFuelLevel
 import me.williamhester.kdash.enduranceweb.proto.Gaps
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryServiceGrpc.LiveTelemetryServiceImplBase
+import me.williamhester.kdash.enduranceweb.proto.MonitorTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
+import me.williamhester.kdash.enduranceweb.proto.TelemetryData
 import me.williamhester.kdash.web.monitors.DriverCarLapMonitor
 import me.williamhester.kdash.web.monitors.DriverDistancesMonitor
 import me.williamhester.kdash.web.monitors.DriverMonitor
-import me.williamhester.kdash.web.monitors.FuelUsageMonitor
+import me.williamhester.kdash.web.monitors.LiveTelemetryMonitor
 import me.williamhester.kdash.web.monitors.OtherCarsLapMonitor
 import me.williamhester.kdash.web.monitors.RelativeMonitor
 import me.williamhester.kdash.web.state.DataSnapshotQueue
@@ -36,7 +37,7 @@ class LiveTelemetryService(
   private lateinit var lapMonitor: DriverCarLapMonitor
   private lateinit var otherCarsLapMonitor: OtherCarsLapMonitor
   private lateinit var driverDistancesMonitor: DriverDistancesMonitor
-  private lateinit var fuelUsageMonitor: FuelUsageMonitor
+  private lateinit var liveTelemetryMonitor: LiveTelemetryMonitor
   private val driverMonitor = DriverMonitor(metadataHolder)
 
   private val lapEntryStreamObservers = CopyOnWriteArrayList<LapEntryStreamObserverProgressHolder>()
@@ -44,7 +45,7 @@ class LiveTelemetryService(
   private val gapsStreamObservers = CopyOnWriteArrayList<GapsStreamObserverRateLimitHolder>()
   private val currentDriversStreamObservers = CopyOnWriteArrayList<CurrentDriversStreamObserverHolder>()
   private val driverDistancesStreamObserverHolders = CopyOnWriteArrayList<DriverDistanceStreamObserverHolder>()
-  private val fuelLevelStreamObserverHolders = CopyOnWriteArrayList<FuelLevelStreamObserverProgressHolder>()
+  private val telemetryDataStreamObserverHolders = CopyOnWriteArrayList<TelemetryDataStreamObserverProgressHolder>()
   private val initializedLock = CountDownLatch(1)
 
   fun start(executor: Executor) {
@@ -57,17 +58,17 @@ class LiveTelemetryService(
     lapMonitor = DriverCarLapMonitor(metadataHolder, relativeMonitor)
     otherCarsLapMonitor = OtherCarsLapMonitor(metadataHolder, relativeMonitor)
     driverDistancesMonitor = DriverDistancesMonitor()
-    fuelUsageMonitor = FuelUsageMonitor(metadataHolder)
+    liveTelemetryMonitor = LiveTelemetryMonitor(metadataHolder)
     initializedLock.countDown()
 
-    val rateLimiter = RateLimiter.create(600.0)
+    val rateLimiter = RateLimiter.create(6000.0)
     for (dataSnapshot in dataSnapshotQueue) {
       logger.atInfo().atMostEvery(10, TimeUnit.SECONDS).log("Processing new buffer.")
       relativeMonitor.process(dataSnapshot)
       lapMonitor.process(dataSnapshot)
       otherCarsLapMonitor.process(dataSnapshot)
       driverDistancesMonitor.process(dataSnapshot)
-      fuelUsageMonitor.process(dataSnapshot)
+      liveTelemetryMonitor.process(dataSnapshot)
       rateLimiter.acquire()
     }
   }
@@ -85,7 +86,7 @@ class LiveTelemetryService(
     emitAllGapsRateLimited()
     emitNewDriversPerStream()
     emitDriverDistances()
-    emitFuelLevels()
+    emitTelemetryData()
   }
 
   private fun emitDriverLapLogs() {
@@ -96,7 +97,6 @@ class LiveTelemetryService(
       val lapsSent = responseObserverHolder.lapsSent
       while (lapEntries.size > lapsSent.get()) {
         try {
-          println("Emitting driver lap")
           responseObserverHolder.responseObserver.onNext(lapEntries[lapsSent.getAndIncrement()].toLapEntry())
         } catch (e: StatusRuntimeException) {
           responseObserversToRemove += responseObserverHolder
@@ -192,22 +192,22 @@ class LiveTelemetryService(
     driverDistancesStreamObserverHolders.removeAll(responseObserversToRemove)
   }
 
-  private fun emitFuelLevels() {
-    val fuelLevelsByDistance = fuelUsageMonitor.fuelLevelsByDistance
+  private fun emitTelemetryData() {
+    val telemetryData = liveTelemetryMonitor.telemetryData
 
-    val responseObserversToRemove = mutableSetOf<FuelLevelStreamObserverProgressHolder>()
-    for (responseObserverHolder in fuelLevelStreamObserverHolders) {
-      val fuelLevelsSent = responseObserverHolder.entriesSent
-      while (fuelLevelsByDistance.size > fuelLevelsSent.get()) {
+    val responseObserversToRemove = mutableSetOf<TelemetryDataStreamObserverProgressHolder>()
+    for (responseObserverHolder in telemetryDataStreamObserverHolders) {
+      val telemetryDataSent = responseObserverHolder.entriesSent
+      while (telemetryData.size > telemetryDataSent.get()) {
         try {
-          responseObserverHolder.responseObserver.onNext(fuelLevelsByDistance[fuelLevelsSent.getAndIncrement()].toDriverFuelLevel())
+          responseObserverHolder.sendIfNecessary(telemetryData[telemetryDataSent.getAndIncrement()])
         } catch (e: StatusRuntimeException) {
           responseObserversToRemove += responseObserverHolder
           break
         }
       }
     }
-    fuelLevelStreamObserverHolders.removeAll(responseObserversToRemove)
+    telemetryDataStreamObserverHolders.removeAll(responseObserversToRemove)
   }
 
   override fun monitorDriverLaps(
@@ -272,14 +272,28 @@ class LiveTelemetryService(
     var lastDriverDistance = AtomicInteger(0)
   }
 
-  override fun monitorFuelLevel(request: ConnectRequest, responseObserver: StreamObserver<DriverFuelLevel>) {
-    fuelLevelStreamObserverHolders.add(FuelLevelStreamObserverProgressHolder(responseObserver))
+  override fun monitorTelemetry(request: MonitorTelemetryRequest, responseObserver: StreamObserver<TelemetryData>) {
+    val hz = if (request.sampleRateHz > 0) request.sampleRateHz else 100.0
+    telemetryDataStreamObserverHolders.add(
+      TelemetryDataStreamObserverProgressHolder(responseObserver, hz)
+    )
   }
 
-  private class FuelLevelStreamObserverProgressHolder(
-    val responseObserver: StreamObserver<DriverFuelLevel>,
+  private class TelemetryDataStreamObserverProgressHolder(
+    private val responseObserver: StreamObserver<TelemetryData>,
+    sampleRateHz: Double,
   ) {
     val entriesSent = AtomicInteger(0)
+    private val delta = 1.0 / sampleRateHz
+    private var lastTime = -1.0
+
+    fun sendIfNecessary(telemetryData: TelemetryData) {
+      if (telemetryData.sessionTime > lastTime + delta) {
+        responseObserver.onNext(telemetryData)
+        lastTime += delta
+      }
+      entriesSent.getAndIncrement()
+    }
   }
 
   companion object {

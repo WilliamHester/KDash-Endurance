@@ -8,6 +8,10 @@ option java_package = "me.williamhester.kdash.enduranceweb.proto";
 option java_multiple_files = true;
 
 service LiveTelemetryService {
+   rpc MonitorTelemetry(MonitorTelemetryRequest) returns (stream TelemetryData);
+
+   rpc MonitorLaps(ConnectRequest) returns (stream LapData);
+
    rpc MonitorDriverLaps(ConnectRequest) returns (stream LapEntry);
 
    rpc MonitorOtherCarsLaps(ConnectRequest) returns (stream OtherCarLapEntry);
@@ -22,6 +26,47 @@ service LiveTelemetryService {
 }
 
 message ConnectRequest {}
+
+message MonitorTelemetryRequest {
+   // Rate at which data should be sampled.
+   // Default (zero) will send data at the max sample rate.
+   double sample_rate_hz = 1;
+
+   // The session time to start sending data from.
+   // Default (zero) will send data from the beginning of the session.
+   double min_session_time = 2;
+
+   // The session time at which the data should end.
+   // Default (zero) will stream live data.
+   double max_session_time = 3;
+}
+
+message TelemetryData {
+   // Each data point will contain the current session time.
+   // Required.
+   double session_time = 1;
+   // Each data point will contain the current driver's distance.
+   // Required.
+   float driver_distance = 2;
+
+   // The fuel level (in liters) remaining in the car
+   // Optional.
+   optional float fuel_level = 3;
+
+   // The fuel level (in liters) consumed since the same point in the previous lap.
+   // Optional.
+   optional float lap_over_lap_fuel_level = 4;
+
+   // All drivers' distances.
+   repeated DriverDistance distances = 5;
+}
+
+message LapData {
+   oneof lap {
+      LapEntry driver_lap = 1;
+      OtherCarLapEntry other_car_lap = 2;
+   }
+}
 
 message LapEntry {
    int32 lap_num = 1;

@@ -30,7 +30,7 @@ class Client {
 
   private val iRacingDataReader = IRacingLoggedDataReader(Paths.get("/Users/williamhester/Downloads/livedata.ibt")) // IRacingLiveDataReader()
   private val latch = CountDownLatch(1)
-  private val rateLimiter = RateLimiter.create(60.0)
+  private val rateLimiter = RateLimiter.create(600.0)
   private lateinit var outputStreamObserver: StreamObserver<SessionMetadataOrDataSnapshot>
   private val sessionMetadataMonitorExecutor = Executors.newSingleThreadScheduledExecutor()
   private var lastSessionMetadataVersion: Int = -1
