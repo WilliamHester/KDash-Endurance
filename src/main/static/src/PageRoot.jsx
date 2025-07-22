@@ -29,29 +29,24 @@ const downsample = (array) => {
 }
 
 export default function App2() {
-  const [sessionTimes, setSessionTimes] = useState([]);
+  const [sampleRateHz, setSampleRateHz] = useState(100);
   const [telemetryData, setTelemetryData] = useState([]);
-  const [targetDriverDistances, setTargetDriverDistances] = useState([]);
   const [gapEntries, setGapEntries] = useState([]);
   const [lapEntries, setLapEntries] = useState([]);
   const [otherCarLapEntries, setOtherCarLapEntries] = useState([]);
   const [currentDrivers, setCurrentDrivers] = useState(new Map());
   const [driverDistances, setDriverDistances] = useState([]);
-  const [fuelLevels, setFuelLevels] = useState([]);
 
-  const sampleRateHz = useRef(100);
+  const client = useRef(new LiveTelemetryServiceClient(`${location.origin}/api`)).current;
 
   const telemetryDataBuffer = useRef([]);
-  const sessionTimesBuffer = useRef([]);
-  const targetDriverDistancesBuffer = useRef([]);
   const gapBuffer = useRef([]);
   const lapBuffer = useRef([]);
   const otherCarLapBuffer = useRef([]);
   const driverDistancesBuffer = useRef([]);
-  const fuelBuffer = useRef([]);
 
   useEffect(() => {
-    const liveTelemetryServiceClient = new LiveTelemetryServiceClient(`${location.origin}/api`);
+    const liveTelemetryServiceClient = client;
 
     const setupStream = (rpcMethodName, buffer) => {
       const request = new ConnectRequest();
@@ -59,23 +54,17 @@ export default function App2() {
       stream.on('data', response => {
         buffer.current.push(response);
       });
+      return stream;
     };
 
     // We can't have more than 6 simultaneous TCP connections to the same domain. This means that we need to combine
     // the streams into a single stream. Having 6 causes the browser to lock up when refreshing the page,
     // presumably because the page itself would be a 7th connection.
     // setupStream('monitorCurrentGaps', gapBuffer);
-    setupStream('monitorDriverLaps', lapBuffer);
+    const driverLapsStream = setupStream('monitorDriverLaps', lapBuffer);
 //     setupStream('monitorOtherCarsLaps', otherCarLapBuffer);
     // setupStream('monitorDriverDistances', driverDistancesBuffer);
     // setupStream('monitorFuelLevel', fuelBuffer);
-
-    const request = new MonitorTelemetryRequest();
-    request.setSampleRateHz(sampleRateHz.current);
-    const stream = liveTelemetryServiceClient.monitorTelemetry(request, {});
-    stream.on('data', response => {
-      telemetryDataBuffer.current.push(response);
-    });
 
     // This stream updates state directly because it's a single map, not a growing list.
     // The workload is minimal.
@@ -98,13 +87,38 @@ export default function App2() {
           setCurrentDrivers(driverMap);
         }
     });
-  }, []);
+
+    return () => {
+      driverLapsStream.cancel();
+      driversStream.cancel();
+    };
+  }, [client]);
+
+  useEffect(() => {
+    const request = new MonitorTelemetryRequest();
+    request.setSampleRateHz(sampleRateHz);
+    const telemetryStream = client.monitorTelemetry(request, {});
+    telemetryStream.on('data', response => {
+      telemetryDataBuffer.current.push(response);
+    });
+
+    return () => {
+      telemetryStream.cancel();
+      telemetryDataBuffer.current = [];
+      setTelemetryData([]);
+    };
+  }, [client, sampleRateHz])
 
   useEffect(() => {
     const intervalId = setInterval(() => {
       if (telemetryDataBuffer.current.length > 0) {
         setTelemetryData(prev => {
           const updated = [...prev, ...telemetryDataBuffer.current];
+          if (updated.length > DOWNSAMPLE_THRESHOLD) {
+            // TODO: Update this with start and end times and a reasonable number of data points to request.
+            // The client won't really know the current rate unless we do some wacky math.
+            setSampleRateHz(current => Math.max(0.1, current / 2));
+          }
           telemetryDataBuffer.current = [];
           return updated;
         });
