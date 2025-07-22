@@ -30,6 +30,7 @@ const downsample = (array) => {
 
 export default function App2() {
   const [sessionTimes, setSessionTimes] = useState([]);
+  const [telemetryData, setTelemetryData] = useState([]);
   const [targetDriverDistances, setTargetDriverDistances] = useState([]);
   const [gapEntries, setGapEntries] = useState([]);
   const [lapEntries, setLapEntries] = useState([]);
@@ -40,6 +41,7 @@ export default function App2() {
 
   const sampleRateHz = useRef(100);
 
+  const telemetryDataBuffer = useRef([]);
   const sessionTimesBuffer = useRef([]);
   const targetDriverDistancesBuffer = useRef([]);
   const gapBuffer = useRef([]);
@@ -72,10 +74,7 @@ export default function App2() {
     request.setSampleRateHz(sampleRateHz.current);
     const stream = liveTelemetryServiceClient.monitorTelemetry(request, {});
     stream.on('data', response => {
-      sessionTimesBuffer.current.push(response.getSessionTime());
-      targetDriverDistancesBuffer.current.push(response.getDriverDistance());
-
-      fuelBuffer.current.push(response.getFuelLevel());
+      telemetryDataBuffer.current.push(response);
     });
 
     // This stream updates state directly because it's a single map, not a growing list.
@@ -103,24 +102,10 @@ export default function App2() {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (sessionTimesBuffer.current.length > 0) {
-        setSessionTimes(prev => {
-          const updated = [...prev, ...sessionTimesBuffer.current];
-          sessionTimesBuffer.current = [];
-          return updated;
-        });
-      }
-      if (targetDriverDistancesBuffer.current.length > 0) {
-        setTargetDriverDistances(prevLevels => {
-          const updated = [...prevLevels, ...targetDriverDistancesBuffer.current];
-          targetDriverDistancesBuffer.current = [];
-          return updated;
-        });
-      }
-      if (fuelBuffer.current.length > 0) {
-        setFuelLevels(prevLevels => {
-          const updated = [...prevLevels, ...fuelBuffer.current];
-          fuelBuffer.current = [];
+      if (telemetryDataBuffer.current.length > 0) {
+        setTelemetryData(prev => {
+          const updated = [...prev, ...telemetryDataBuffer.current];
+          telemetryDataBuffer.current = [];
           return updated;
         });
       }
@@ -193,7 +178,7 @@ export default function App2() {
           <Route path="otherlaps" element={ <OtherCarsLapLogPage entries={otherCarLapEntries} drivers={currentDrivers} /> } />
           <Route path="gaps" element={ <GapsPage entries={gapEntries} drivers={currentDrivers} /> } />
           <Route path="gapchart" element={ <GapChartPage distances={driverDistances} drivers={currentDrivers} /> } />
-          <Route path="fuelcharts" element={ <FuelChartPage targetDriverDistances={downsample(targetDriverDistances)} fuelLevels={downsample(fuelLevels)} /> } />
+          <Route path="fuelcharts" element={ <FuelChartPage telemetryData={telemetryData} /> } />
           <Route path="trackmap" element={ <TrackMapPage /> } />
         </Route>
       </Routes>

@@ -3,10 +3,10 @@ import "./FuelChartPage.css";
 import Chart2 from "../charts/Chart2";
 
 export default function FuelChartPage(props) {
-  const fuelLevels = props.fuelLevels;
+  const fuelLevels = props.telemetryData.map(data => data.getFuelLevel());
   const drivers = [{driverName: 'Hardcoded Driver Name'}];
 
-  const xAxis = props.targetDriverDistances;
+  const xAxis = props.telemetryData.map(data => data.getDriverDistance());
   const yAxis = fuelLevels;
 
   const data = [xAxis, yAxis];
