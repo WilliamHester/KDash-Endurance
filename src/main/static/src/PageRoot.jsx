@@ -14,22 +14,14 @@ import FuelChartPage from "./fuel/FuelChartPage";
 import TrackMapPage from "./trackmap/TrackMapPage";
 import App from "./App";
 
-const MAX_FUEL_POINTS = 1000;
 const MAX_GAP_POINTS = 1000;
-const DOWNSAMPLE_THRESHOLD = 1000;
+const DOWNSAMPLE_THRESHOLD = 2000;
 
-const downsample = (array) => {
-  // Every time an array grows to be larger than DOWNSAMPLE_THRESHOLD items, cut it in half.
-  if (array.length < DOWNSAMPLE_THRESHOLD) {
-    return array;
-  }
-  const factor = Math.floor(array.length / DOWNSAMPLE_THRESHOLD);
-  // console.log('Array length is %d downsampling', array.length);
-  return array.filter((_value, index) => index % factor === 0);
-}
 
 export default function App2() {
-  const [sampleRateHz, setSampleRateHz] = useState(100);
+  const [sampleRateHz, setSampleRateHz] = useState(8);
+  const [dataStart, setDataStart] = useState(0);
+
   const [telemetryData, setTelemetryData] = useState([]);
   const [gapEntries, setGapEntries] = useState([]);
   const [lapEntries, setLapEntries] = useState([]);
@@ -97,6 +89,7 @@ export default function App2() {
   useEffect(() => {
     const request = new MonitorTelemetryRequest();
     request.setSampleRateHz(sampleRateHz);
+    request.setMinSessionTime(dataStart);
     const telemetryStream = client.monitorTelemetry(request, {});
     telemetryStream.on('data', response => {
       telemetryDataBuffer.current.push(response);

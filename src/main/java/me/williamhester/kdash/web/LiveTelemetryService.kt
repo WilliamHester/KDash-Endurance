@@ -199,9 +199,12 @@ class LiveTelemetryService(
     for (responseObserverHolder in telemetryDataStreamObserverHolders) {
       val telemetryDataSent = responseObserverHolder.entriesSent
       while (telemetryData.size > telemetryDataSent.get()) {
-        try {
+        val shouldRemove = try {
           responseObserverHolder.sendIfNecessary(telemetryData[telemetryDataSent.getAndIncrement()])
         } catch (e: StatusRuntimeException) {
+          true
+        }
+        if (shouldRemove) {
           responseObserversToRemove += responseObserverHolder
           break
         }
@@ -274,25 +277,41 @@ class LiveTelemetryService(
 
   override fun monitorTelemetry(request: MonitorTelemetryRequest, responseObserver: StreamObserver<TelemetryData>) {
     val hz = if (request.sampleRateHz > 0) request.sampleRateHz else 100.0
+    val startTime = request.minSessionTime
+    val endTime = if (request.maxSessionTime > 0) request.maxSessionTime else Double.MAX_VALUE
     telemetryDataStreamObserverHolders.add(
-      TelemetryDataStreamObserverProgressHolder(responseObserver, hz)
+      TelemetryDataStreamObserverProgressHolder(
+        responseObserver = responseObserver,
+        sampleRateHz = hz,
+        startTime = startTime,
+        endTime = endTime,
+      )
     )
   }
 
   private class TelemetryDataStreamObserverProgressHolder(
     private val responseObserver: StreamObserver<TelemetryData>,
     sampleRateHz: Double,
+    startTime: Double,
+    private val endTime: Double,
   ) {
     val entriesSent = AtomicInteger(0)
     private val delta = 1.0 / sampleRateHz
-    private var lastTime = -1.0
+    private var lastTime = startTime
 
-    fun sendIfNecessary(telemetryData: TelemetryData) {
+    /** Send the telemetry data and return whether we are done sending data. */
+    fun sendIfNecessary(telemetryData: TelemetryData): Boolean {
       if (telemetryData.sessionTime > lastTime + delta) {
         responseObserver.onNext(telemetryData)
         lastTime += delta
       }
       entriesSent.getAndIncrement()
+      return if (lastTime > endTime) {
+        responseObserver.onCompleted()
+        true
+      } else {
+        false
+      }
     }
   }
 

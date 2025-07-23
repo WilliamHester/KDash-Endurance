@@ -152,11 +152,20 @@ export default function Chart2(title, driverDistances, drivers) {
 
                 let dx = xUnitsPerPx * (left1 - left0);
 
+                let min, max;
+                if (dx > 0) {
+                  min = Math.max(scXMin0 - dx, minX);
+                  max = min + xRange;
+                } else {
+                  max = Math.min(scXMax0 - dx, maxX);
+                  min = max - xRange;
+                }
+
                 setScales(
                   {
                     x: {
-                      min: Math.max(scXMin0 - dx, minX),
-                      max: Math.min(scXMax0 - dx, maxX),
+                      min: min,
+                      max: max,
                     }
                   }
                 );
