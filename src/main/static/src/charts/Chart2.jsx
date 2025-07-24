@@ -1,9 +1,30 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import UPlotReact from "uplot-react";
+import { ChartSyncContext } from './ChartSyncContext';
 
-export default function Chart2(title, driverDistances, drivers) {
+export default function Chart2({title, data, drivers}) {
+  const { scales, setScales } = useContext(ChartSyncContext);
+
+  let minX, maxX;
+  if (data.length > 0 && data[0].length > 0) {
+    minX = data[0][0];
+    maxX = data[0][data[0].length - 1];
+  } else {
+    minX = 0;
+    maxX = 0;
+  }
+  // If context is not available, this chart is not in a container.
+  if (!scales) {
+    setScales({
+      x: {
+        min: minX,
+        max: maxX,
+      },
+    });
+  }
+
   const [dimensions, setDimensions] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
@@ -33,21 +54,8 @@ export default function Chart2(title, driverDistances, drivers) {
     }
   }, [dimensions]);
 
-  const [scales, setScales] = useState({
-    x: {
-      auto: true,
-    },
-  });
-  let minX, maxX;
-  if (driverDistances.length > 0 && driverDistances[0].length > 0) {
-    minX = driverDistances[0][0];
-    maxX = driverDistances[0][driverDistances[0].length - 1];
-  } else {
-    minX = 0;
-    maxX = 0;
-  }
   const colors = [
-    '#DDDD00',
+    '#008AC5',
     '#f0f8ff',
     '#00ffff',
     '#7fffd4',
@@ -256,7 +264,7 @@ export default function Chart2(title, driverDistances, drivers) {
       <UPlotReact
         key="hooks-key"
         options={options}
-        data={driverDistances}
+        data={data}
       />
     </div>
   );

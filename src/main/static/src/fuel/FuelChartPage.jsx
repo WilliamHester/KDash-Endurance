@@ -1,6 +1,7 @@
 import React from "react";
 import "./FuelChartPage.css";
 import Chart2 from "../charts/Chart2";
+import { ChartContainer } from "../charts/ChartContainer";
 
 export default function FuelChartPage(props) {
   const fuelLevels = props.telemetryData.map(data => data.getFuelLevel());
@@ -28,9 +29,9 @@ export default function FuelChartPage(props) {
   }
 
   return (
-    <div>
-      {Chart2('Fuel remaining', data, drivers)}
-      {Chart2('Lap over Lap Fuel Usage', usageData, drivers)}
-    </div>
+    <ChartContainer data={data}>
+      <Chart2 title={'Fuel remaining'} data={data} drivers={drivers}></Chart2>
+      <Chart2 title={'Lap over Lap Fuel Usage'} data={usageData} drivers={drivers}></Chart2>
+    </ChartContainer>
   )
 }
