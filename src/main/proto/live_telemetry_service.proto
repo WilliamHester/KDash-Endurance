@@ -39,6 +39,14 @@ message QueryTelemetryRequest {
    // The session time at which the data should end.
    // Default (zero) will stream live data.
    double max_session_time = 3;
+
+   // The distance of the target driver to start sending data from.
+   // Default (zero) will send data from the beginning of the session.
+   double min_driver_distance = 4;
+
+   // The distance of the target driver at which the data should end.
+   // Default (zero) will stream live data.
+   double max_driver_distance = 5;
 }
 
 // The QueryTelemetryResponse. The first message will always be a DataRange. All other messages will be TelemetryData.

@@ -6,8 +6,13 @@ import { ChartSyncContext } from './ChartSyncContext';
 export default function Chart2({title, data, drivers}) {
   const { dataRange, dataWindow, setDataWindow } = useContext(ChartSyncContext);
 
+  // We don't want to update the chart every time anything moves, so set the cursor position using a reference.
+  // Any time the chart reloads, it can pull its current position from the reference.
+  const cursorPosition = useRef(null);
+
   const scales = {
     x: {
+      time: false,
       min: dataWindow[0],
       max: dataWindow[1],
     }
@@ -175,6 +180,7 @@ export default function Chart2({title, data, drivers}) {
 
               document.addEventListener("mousemove", onmove);
               document.addEventListener("mouseup", onup);
+              cursorPosition.current = [u.cursor.left, u.cursor.top];
             }
           });
 
@@ -207,6 +213,7 @@ export default function Chart2({title, data, drivers}) {
             }
 
             u.batch(() => {
+              cursorPosition.current = [u.cursor.left, u.cursor.top];
               setDataWindow([nxMin, nxMax]);
             });
           });
@@ -214,17 +221,22 @@ export default function Chart2({title, data, drivers}) {
       },
     };
   }
+  const cursorOptions = {
+    drag: {
+      x: true,
+      y: false,
+      setScale: false, // Disable uPlot's default drag-to-zoom
+    }
+  }
+  if (cursorPosition.current) {
+    cursorOptions.left = cursorPosition.current[0];
+    cursorOptions.top = cursorPosition.current[1];
+  }
   const options = {
     title: title,
     width: parentWidth,
     height: 300,
-    cursor: {
-      drag: {
-        x: true,
-        y: false,
-        setScale: false, // Disable uPlot's default drag-to-zoom
-      }
-    },
+    cursor: cursorOptions,
     axes: [
       {
         stroke: "white",
