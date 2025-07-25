@@ -4,7 +4,14 @@ import UPlotReact from "uplot-react";
 import { ChartSyncContext } from './ChartSyncContext';
 
 export default function Chart2({title, data, drivers}) {
-  const { scales, setScales, dataRange } = useContext(ChartSyncContext);
+  const { dataRange, dataWindow, setDataWindow } = useContext(ChartSyncContext);
+
+  const scales = {
+    x: {
+      min: dataWindow[0],
+      max: dataWindow[1],
+    }
+  }
 
   const minX = dataRange.min;
   let maxX;
@@ -158,14 +165,7 @@ export default function Chart2({title, data, drivers}) {
                   min = Math.max(minX, max - xRange);
                 }
 
-                setScales(
-                  {
-                    x: {
-                      min: min,
-                      max: max,
-                    }
-                  }
-                );
+                setDataWindow([min, max]);
               }
 
               function onup(e) {
@@ -207,12 +207,7 @@ export default function Chart2({title, data, drivers}) {
             }
 
             u.batch(() => {
-              setScales({
-                x: {
-                  min: nxMin,
-                  max: nxMax,
-                }
-              });
+              setDataWindow([nxMin, nxMax]);
             });
           });
         }

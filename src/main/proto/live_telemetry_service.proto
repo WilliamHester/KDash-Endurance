@@ -44,7 +44,7 @@ message QueryTelemetryRequest {
 // The QueryTelemetryResponse. The first message will always be a DataRange. All other messages will be TelemetryData.
 message QueryTelemetryResponse {
    oneof payload {
-      DataRange data_range = 1;
+      DataRanges data_ranges = 1;
       TelemetryData data = 2;
    }
 }
@@ -75,8 +75,14 @@ message DataRange {
    // Required.
    double min = 1;
    // The maximum value in the dataset.
-   // TODO: Required?
+   // Required.
    double max = 2;
+}
+
+// The ranges of data. There are ranges for both session time and driver distance (laps).
+message DataRanges {
+   DataRange session_time = 1;
+   DataRange driver_distance = 2;
 }
 
 message LapData {

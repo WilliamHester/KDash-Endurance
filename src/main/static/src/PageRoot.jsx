@@ -16,15 +16,21 @@ import App from "./App";
 
 const MAX_GAP_POINTS = 1000;
 const DOWNSAMPLE_THRESHOLD = 2000;
-const DEFAULT_WINDOW_SIZE_SECONDS = 2;
+const DEFAULT_WINDOW_SIZE_SECONDS = 300;
+const DEFAULT_WINDOW_SIZE_LAPS = 2;
 
 export default function App2() {
   const [sampleRateHz, setSampleRateHz] = useState(8);
   const [dataStart, setDataStart] = useState(-1.0);
-  const [windowSize, setWindowSize] = useState(DEFAULT_WINDOW_SIZE_SECONDS);
-  const [dataRange, setDataRange] = useState({
-    min: 0,
-    max: 0,
+  const [dataRanges, setDataRanges] = useState({
+    sessionTime: {
+      min: 0,
+      max: DEFAULT_WINDOW_SIZE_SECONDS,
+    },
+    driverDistance: {
+      min: 0,
+      max: DEFAULT_WINDOW_SIZE_LAPS,
+    },
   });
 
   const [telemetryData, setTelemetryData] = useState([]);
@@ -37,7 +43,7 @@ export default function App2() {
   const client = useRef(new LiveTelemetryServiceClient(`${location.origin}/api`)).current;
 
   const telemetryDataBuffer = useRef([]);
-  const dataRangeBuffer = useRef(dataRange);
+  const dataRangesBuffer = useRef(dataRanges);
   const gapBuffer = useRef([]);
   const lapBuffer = useRef([]);
   const otherCarLapBuffer = useRef([]);
@@ -98,16 +104,26 @@ export default function App2() {
     request.setMinSessionTime(dataStart);
     const telemetryStream = client.queryTelemetry(request, {});
     telemetryStream.on('data', response => {
-      if (response.hasDataRange()) {
-        const dataRange = response.getDataRange();
-        setDataRange({
-          min: dataRange.getMin(),
-          max: dataRange.getMax(),
-        });
+      if (response.hasDataRanges()) {
+        const dataRanges = response.getDataRanges();
+        const updatedDataRanges = {
+          sessionTime: {
+            min: dataRanges.getSessionTime().getMin(),
+            max: dataRanges.getSessionTime().getMax(),
+          },
+          driverDistance: {
+            min: dataRanges.getDriverDistance().getMin(),
+            max: dataRanges.getDriverDistance().getMax(),
+          },
+        };
+        dataRangesBuffer.current = updatedDataRanges;
       } else {
         const telemetryData = response.getData();
         telemetryDataBuffer.current.push(telemetryData);
-        dataRangeBuffer.current.max = Math.max(dataRangeBuffer.current.max, telemetryData.getDriverDistance());
+        const sessionTime = dataRangesBuffer.current.sessionTime;
+        const driverDistance = dataRangesBuffer.current.driverDistance;
+        dataRangesBuffer.current.driverDistance.max = Math.max(driverDistance.max, telemetryData.getDriverDistance());
+        dataRangesBuffer.current.sessionTime.max = Math.max(sessionTime.max, telemetryData.getSessionTime());
       }
     });
 
@@ -131,7 +147,7 @@ export default function App2() {
           telemetryDataBuffer.current = [];
           return updated;
         });
-        setDataRange(dataRangeBuffer.current);
+        setDataRanges(dataRangesBuffer.current);
       }
 
       // Process Gaps
@@ -202,7 +218,9 @@ export default function App2() {
           <Route path="otherlaps" element={ <OtherCarsLapLogPage entries={otherCarLapEntries} drivers={currentDrivers} /> } />
           <Route path="gaps" element={ <GapsPage entries={gapEntries} drivers={currentDrivers} /> } />
           <Route path="gapchart" element={ <GapChartPage distances={driverDistances} drivers={currentDrivers} /> } />
-          <Route path="fuelcharts" element={ <FuelChartPage telemetryData={telemetryData} windowSize={windowSize} dataRange={dataRange} /> } />
+          <Route path="fuelcharts" element={
+            <FuelChartPage telemetryData={telemetryData} dataRanges={dataRanges} />
+          } />
           <Route path="trackmap" element={ <TrackMapPage /> } />
         </Route>
       </Routes>

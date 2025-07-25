@@ -1,8 +1,8 @@
 import { ChartSyncContext } from './ChartSyncContext';
 
-export const ChartContainer = ({ data, children, scales, setScales, dataRange }) => {
+export const ChartContainer = ({ children, dataRange, dataWindow, setDataWindow }) => {
   return (
-    <ChartSyncContext.Provider value={{ scales, setScales, dataRange }}>
+    <ChartSyncContext.Provider value={{ dataRange, dataWindow, setDataWindow }}>
       {children}
     </ChartSyncContext.Provider>
   );

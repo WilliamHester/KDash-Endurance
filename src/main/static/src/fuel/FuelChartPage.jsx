@@ -3,7 +3,10 @@ import "./FuelChartPage.css";
 import Chart2 from "../charts/Chart2";
 import { ChartContainer } from "../charts/ChartContainer";
 
-export default function FuelChartPage({telemetryData, windowSize, dataRange}) {
+export default function FuelChartPage({telemetryData, dataRanges}) {
+  const dataRange = dataRanges.driverDistance;
+  const [dataWindow, setDataWindow] = useState([dataRange, dataRange]);
+
   const fuelLevels = telemetryData.map(data => data.getFuelLevel());
   const drivers = [{driverName: 'Hardcoded Driver Name'}];
 
@@ -27,18 +30,10 @@ export default function FuelChartPage({telemetryData, windowSize, dataRange}) {
     }
   }
 
-  const minX = dataRange.min;
-  const maxX = dataRange.max;
-
-  const [scales, setScales] = useState({
-    x: {
-      min: minX,
-      max: Math.min(minX + windowSize, maxX),
-    },
-  });
+  console.log(dataRange);
 
   return (
-    <ChartContainer data={data} scales={scales} setScales={setScales} dataRange={dataRange}>
+    <ChartContainer dataRange={dataRange} dataWindow={dataWindow} setDataWindow={setDataWindow} >
       <Chart2 title={'Fuel remaining'} data={data} drivers={drivers}></Chart2>
       <Chart2 title={'Lap over Lap Fuel Usage'} data={usageData} drivers={drivers}></Chart2>
     </ChartContainer>

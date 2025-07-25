@@ -6,7 +6,7 @@ import io.grpc.StatusRuntimeException
 import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
 import me.williamhester.kdash.enduranceweb.proto.CurrentDrivers
-import me.williamhester.kdash.enduranceweb.proto.DataRange
+import me.williamhester.kdash.enduranceweb.proto.DataRanges
 import me.williamhester.kdash.enduranceweb.proto.Driver
 import me.williamhester.kdash.enduranceweb.proto.DriverDistances
 import me.williamhester.kdash.enduranceweb.proto.Gaps
@@ -17,6 +17,7 @@ import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.TelemetryData
 import me.williamhester.kdash.enduranceweb.proto.dataRange
+import me.williamhester.kdash.enduranceweb.proto.dataRanges
 import me.williamhester.kdash.enduranceweb.proto.queryTelemetryResponse
 import me.williamhester.kdash.web.monitors.DriverCarLapMonitor
 import me.williamhester.kdash.web.monitors.DriverDistancesMonitor
@@ -297,9 +298,15 @@ class LiveTelemetryService(
     val endTime = if (request.maxSessionTime > 0) request.maxSessionTime else Double.MAX_VALUE
 
     wrappedObserver.onNext(
-      dataRange {
-        min = liveTelemetryMonitor.telemetryData.firstOrNull()?.driverDistance?.toDouble() ?: 0.0
-        max = liveTelemetryMonitor.telemetryData.lastOrNull()?.driverDistance?.toDouble() ?: 0.0
+      dataRanges {
+        sessionTime = dataRange {
+          min = liveTelemetryMonitor.telemetryData.firstOrNull()?.sessionTime ?: 0.0
+          max = liveTelemetryMonitor.telemetryData.lastOrNull()?.sessionTime ?: 0.0
+        }
+        driverDistance = dataRange {
+          min = liveTelemetryMonitor.telemetryData.firstOrNull()?.driverDistance?.toDouble() ?: 0.0
+          max = liveTelemetryMonitor.telemetryData.lastOrNull()?.driverDistance?.toDouble() ?: 0.0
+        }
       }
     )
 
@@ -318,7 +325,7 @@ class LiveTelemetryService(
   ) : StreamObserver<QueryTelemetryResponse> {
     fun onNext(value: TelemetryData) = onNext(queryTelemetryResponse { data = value })
 
-    fun onNext(value: DataRange) = onNext(queryTelemetryResponse { dataRange = value })
+    fun onNext(value: DataRanges) = onNext(queryTelemetryResponse { dataRanges = value })
 
     override fun onNext(value: QueryTelemetryResponse) = delegate.onNext(value)
 
