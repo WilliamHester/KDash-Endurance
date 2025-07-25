@@ -82,56 +82,56 @@ proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.me.williamhester.kdash.enduranceweb.MonitorTelemetryRequest,
- *   !proto.me.williamhester.kdash.enduranceweb.TelemetryData>}
+ *   !proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest,
+ *   !proto.me.williamhester.kdash.enduranceweb.QueryTelemetryResponse>}
  */
-const methodDescriptor_LiveTelemetryService_MonitorTelemetry = new grpc.web.MethodDescriptor(
-  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorTelemetry',
+const methodDescriptor_LiveTelemetryService_QueryTelemetry = new grpc.web.MethodDescriptor(
+  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/QueryTelemetry',
   grpc.web.MethodType.SERVER_STREAMING,
-  proto.me.williamhester.kdash.enduranceweb.MonitorTelemetryRequest,
-  proto.me.williamhester.kdash.enduranceweb.TelemetryData,
+  proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest,
+  proto.me.williamhester.kdash.enduranceweb.QueryTelemetryResponse,
   /**
-   * @param {!proto.me.williamhester.kdash.enduranceweb.MonitorTelemetryRequest} request
+   * @param {!proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest} request
    * @return {!Uint8Array}
    */
   function(request) {
     return request.serializeBinary();
   },
-  proto.me.williamhester.kdash.enduranceweb.TelemetryData.deserializeBinary
+  proto.me.williamhester.kdash.enduranceweb.QueryTelemetryResponse.deserializeBinary
 );
 
 
 /**
- * @param {!proto.me.williamhester.kdash.enduranceweb.MonitorTelemetryRequest} request The request proto
+ * @param {!proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.TelemetryData>}
+ * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.QueryTelemetryResponse>}
  *     The XHR Node Readable Stream
  */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.monitorTelemetry =
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.queryTelemetry =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorTelemetry',
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/QueryTelemetry',
       request,
       metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorTelemetry);
+      methodDescriptor_LiveTelemetryService_QueryTelemetry);
 };
 
 
 /**
- * @param {!proto.me.williamhester.kdash.enduranceweb.MonitorTelemetryRequest} request The request proto
+ * @param {!proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.TelemetryData>}
+ * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.QueryTelemetryResponse>}
  *     The XHR Node Readable Stream
  */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.monitorTelemetry =
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.queryTelemetry =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorTelemetry',
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/QueryTelemetry',
       request,
       metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorTelemetry);
+      methodDescriptor_LiveTelemetryService_QueryTelemetry);
 };
 
 

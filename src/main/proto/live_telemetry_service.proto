@@ -8,7 +8,7 @@ option java_package = "me.williamhester.kdash.enduranceweb.proto";
 option java_multiple_files = true;
 
 service LiveTelemetryService {
-   rpc MonitorTelemetry(MonitorTelemetryRequest) returns (stream TelemetryData);
+   rpc QueryTelemetry(QueryTelemetryRequest) returns (stream QueryTelemetryResponse);
 
    rpc MonitorLaps(ConnectRequest) returns (stream LapData);
 
@@ -27,7 +27,7 @@ service LiveTelemetryService {
 
 message ConnectRequest {}
 
-message MonitorTelemetryRequest {
+message QueryTelemetryRequest {
    // Rate at which data should be sampled.
    // Default (zero) will send data at the max sample rate.
    double sample_rate_hz = 1;
@@ -39,6 +39,14 @@ message MonitorTelemetryRequest {
    // The session time at which the data should end.
    // Default (zero) will stream live data.
    double max_session_time = 3;
+}
+
+// The QueryTelemetryResponse. The first message will always be a DataRange. All other messages will be TelemetryData.
+message QueryTelemetryResponse {
+   oneof payload {
+      DataRange data_range = 1;
+      TelemetryData data = 2;
+   }
 }
 
 message TelemetryData {
@@ -59,6 +67,16 @@ message TelemetryData {
 
    // All drivers' distances.
    repeated DriverDistance distances = 5;
+}
+
+// The range of the queried data, even if it's outside the query range.
+message DataRange {
+   // The minimum value in the dataset.
+   // Required.
+   double min = 1;
+   // The maximum value in the dataset.
+   // TODO: Required?
+   double max = 2;
 }
 
 message LapData {

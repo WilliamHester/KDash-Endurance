@@ -6,14 +6,18 @@ import io.grpc.StatusRuntimeException
 import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
 import me.williamhester.kdash.enduranceweb.proto.CurrentDrivers
+import me.williamhester.kdash.enduranceweb.proto.DataRange
 import me.williamhester.kdash.enduranceweb.proto.Driver
 import me.williamhester.kdash.enduranceweb.proto.DriverDistances
 import me.williamhester.kdash.enduranceweb.proto.Gaps
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryServiceGrpc.LiveTelemetryServiceImplBase
-import me.williamhester.kdash.enduranceweb.proto.MonitorTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
+import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryRequest
+import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.TelemetryData
+import me.williamhester.kdash.enduranceweb.proto.dataRange
+import me.williamhester.kdash.enduranceweb.proto.queryTelemetryResponse
 import me.williamhester.kdash.web.monitors.DriverCarLapMonitor
 import me.williamhester.kdash.web.monitors.DriverDistancesMonitor
 import me.williamhester.kdash.web.monitors.DriverMonitor
@@ -22,6 +26,7 @@ import me.williamhester.kdash.web.monitors.OtherCarsLapMonitor
 import me.williamhester.kdash.web.monitors.RelativeMonitor
 import me.williamhester.kdash.web.state.DataSnapshotQueue
 import me.williamhester.kdash.web.state.MetadataHolder
+import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
@@ -275,13 +280,32 @@ class LiveTelemetryService(
     var lastDriverDistance = AtomicInteger(0)
   }
 
-  override fun monitorTelemetry(request: MonitorTelemetryRequest, responseObserver: StreamObserver<TelemetryData>) {
+  override fun queryTelemetry(
+    request: QueryTelemetryRequest,
+    responseObserver: StreamObserver<QueryTelemetryResponse>,
+  ) {
+    val wrappedObserver = QueryTelemetryResponseStreamObserver(responseObserver)
+
     val hz = if (request.sampleRateHz > 0) request.sampleRateHz else 100.0
-    val startTime = request.minSessionTime
+    val startTime = if (request.minSessionTime == -1.0) {
+      // -1.0 means that we should just retrieve the last DEFAULT_SESSION_TIME_RANGE seconds.
+      val lastSessionTime = liveTelemetryMonitor.telemetryData.lastOrNull()?.sessionTime ?: 0.0
+      (lastSessionTime - DEFAULT_SESSION_TIME_RANGE.toSeconds()).coerceAtLeast(0.0)
+    } else {
+      request.minSessionTime
+    }
     val endTime = if (request.maxSessionTime > 0) request.maxSessionTime else Double.MAX_VALUE
+
+    wrappedObserver.onNext(
+      dataRange {
+        min = liveTelemetryMonitor.telemetryData.firstOrNull()?.driverDistance?.toDouble() ?: 0.0
+        max = liveTelemetryMonitor.telemetryData.lastOrNull()?.driverDistance?.toDouble() ?: 0.0
+      }
+    )
+
     telemetryDataStreamObserverHolders.add(
       TelemetryDataStreamObserverProgressHolder(
-        responseObserver = responseObserver,
+        responseObserver = wrappedObserver,
         sampleRateHz = hz,
         startTime = startTime,
         endTime = endTime,
@@ -289,8 +313,22 @@ class LiveTelemetryService(
     )
   }
 
+  private class QueryTelemetryResponseStreamObserver(
+    private val delegate: StreamObserver<QueryTelemetryResponse>,
+  ) : StreamObserver<QueryTelemetryResponse> {
+    fun onNext(value: TelemetryData) = onNext(queryTelemetryResponse { data = value })
+
+    fun onNext(value: DataRange) = onNext(queryTelemetryResponse { dataRange = value })
+
+    override fun onNext(value: QueryTelemetryResponse) = delegate.onNext(value)
+
+    override fun onError(t: Throwable?) = delegate.onError(t)
+
+    override fun onCompleted() = delegate.onCompleted()
+  }
+
   private class TelemetryDataStreamObserverProgressHolder(
-    private val responseObserver: StreamObserver<TelemetryData>,
+    private val responseObserver: QueryTelemetryResponseStreamObserver,
     sampleRateHz: Double,
     startTime: Double,
     private val endTime: Double,
@@ -306,16 +344,15 @@ class LiveTelemetryService(
         lastTime += delta
       }
       entriesSent.getAndIncrement()
-      return if (lastTime > endTime) {
-        responseObserver.onCompleted()
-        true
-      } else {
-        false
-      }
+      val shouldClose = lastTime > endTime
+      if (shouldClose) responseObserver.onCompleted()
+      return shouldClose
     }
   }
 
   companion object {
     private val logger = FluentLogger.forEnclosingClass()
+
+    private val DEFAULT_SESSION_TIME_RANGE = Duration.ofMinutes(2)
   }
 }

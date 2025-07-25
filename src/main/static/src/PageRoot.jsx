@@ -4,7 +4,7 @@ import {
   Routes,
   Route,
 } from "react-router-dom";
-import { ConnectRequest, MonitorTelemetryRequest } from "./live_telemetry_service_pb.js";
+import { ConnectRequest, QueryTelemetryRequest } from "./live_telemetry_service_pb.js";
 import { LiveTelemetryServiceClient } from "./live_telemetry_service_grpc_web_pb.js";
 import LapLogPage from "./laplog/LapLogPage";
 import OtherCarsLapLogPage from "./laplog/OtherCarsLapLogPage";
@@ -16,11 +16,16 @@ import App from "./App";
 
 const MAX_GAP_POINTS = 1000;
 const DOWNSAMPLE_THRESHOLD = 2000;
-
+const DEFAULT_WINDOW_SIZE_SECONDS = 2;
 
 export default function App2() {
   const [sampleRateHz, setSampleRateHz] = useState(8);
-  const [dataStart, setDataStart] = useState(0);
+  const [dataStart, setDataStart] = useState(-1.0);
+  const [windowSize, setWindowSize] = useState(DEFAULT_WINDOW_SIZE_SECONDS);
+  const [dataRange, setDataRange] = useState({
+    min: 0,
+    max: 0,
+  });
 
   const [telemetryData, setTelemetryData] = useState([]);
   const [gapEntries, setGapEntries] = useState([]);
@@ -32,6 +37,7 @@ export default function App2() {
   const client = useRef(new LiveTelemetryServiceClient(`${location.origin}/api`)).current;
 
   const telemetryDataBuffer = useRef([]);
+  const dataRangeBuffer = useRef(dataRange);
   const gapBuffer = useRef([]);
   const lapBuffer = useRef([]);
   const otherCarLapBuffer = useRef([]);
@@ -87,12 +93,22 @@ export default function App2() {
   }, [client]);
 
   useEffect(() => {
-    const request = new MonitorTelemetryRequest();
+    const request = new QueryTelemetryRequest();
     request.setSampleRateHz(sampleRateHz);
     request.setMinSessionTime(dataStart);
-    const telemetryStream = client.monitorTelemetry(request, {});
+    const telemetryStream = client.queryTelemetry(request, {});
     telemetryStream.on('data', response => {
-      telemetryDataBuffer.current.push(response);
+      if (response.hasDataRange()) {
+        const dataRange = response.getDataRange();
+        setDataRange({
+          min: dataRange.getMin(),
+          max: dataRange.getMax(),
+        });
+      } else {
+        const telemetryData = response.getData();
+        telemetryDataBuffer.current.push(telemetryData);
+        dataRangeBuffer.current.max = Math.max(dataRangeBuffer.current.max, telemetryData.getDriverDistance());
+      }
     });
 
     return () => {
@@ -115,6 +131,7 @@ export default function App2() {
           telemetryDataBuffer.current = [];
           return updated;
         });
+        setDataRange(dataRangeBuffer.current);
       }
 
       // Process Gaps
@@ -185,7 +202,7 @@ export default function App2() {
           <Route path="otherlaps" element={ <OtherCarsLapLogPage entries={otherCarLapEntries} drivers={currentDrivers} /> } />
           <Route path="gaps" element={ <GapsPage entries={gapEntries} drivers={currentDrivers} /> } />
           <Route path="gapchart" element={ <GapChartPage distances={driverDistances} drivers={currentDrivers} /> } />
-          <Route path="fuelcharts" element={ <FuelChartPage telemetryData={telemetryData} /> } />
+          <Route path="fuelcharts" element={ <FuelChartPage telemetryData={telemetryData} windowSize={windowSize} dataRange={dataRange} /> } />
           <Route path="trackmap" element={ <TrackMapPage /> } />
         </Route>
       </Routes>

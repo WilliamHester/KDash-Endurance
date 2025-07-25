@@ -1,28 +1,17 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
-import uPlot from "uplot";
+import { useContext, useEffect, useRef, useState } from "react";
 import "uplot/dist/uPlot.min.css";
 import UPlotReact from "uplot-react";
 import { ChartSyncContext } from './ChartSyncContext';
 
 export default function Chart2({title, data, drivers}) {
-  const { scales, setScales } = useContext(ChartSyncContext);
+  const { scales, setScales, dataRange } = useContext(ChartSyncContext);
 
-  let minX, maxX;
+  const minX = dataRange.min;
+  let maxX;
   if (data.length > 0 && data[0].length > 0) {
-    minX = data[0][0];
-    maxX = data[0][data[0].length - 1];
+    maxX = Math.max(dataRange.max, data[0][data[0].length - 1]);
   } else {
-    minX = 0;
-    maxX = 0;
-  }
-  // If context is not available, this chart is not in a container.
-  if (!scales) {
-    setScales({
-      x: {
-        min: minX,
-        max: maxX,
-      },
-    });
+    maxX = dataRange.max;
   }
 
   const [dimensions, setDimensions] = useState({
@@ -166,7 +155,7 @@ export default function Chart2({title, data, drivers}) {
                   max = min + xRange;
                 } else {
                   max = Math.min(scXMax0 - dx, maxX);
-                  min = max - xRange;
+                  min = Math.max(minX, max - xRange);
                 }
 
                 setScales(
@@ -193,16 +182,29 @@ export default function Chart2({title, data, drivers}) {
           over.addEventListener("wheel", e => {
             e.preventDefault();
 
-            let {left, top} = u.cursor;
+            let {left} = u.cursor;
 
             let leftPct = left / rect.width;
-            let btmPct = 1 - top / rect.height;
             let xVal = u.posToVal(left, "x");
             let oxRange = u.scales.x.max - u.scales.x.min;
 
-            let nxRange = e.deltaY < 0 ? oxRange * factor : oxRange / factor;
+            // 30
+            let nxRange = Math.min(e.deltaY < 0 ? oxRange * factor : oxRange / factor, maxX - minX);
             let nxMin = xVal - leftPct * nxRange;
             let nxMax = nxMin + nxRange;
+
+            // Adjust the next min and max in the case that we hit the ends of the ranges.
+            if (nxMax > maxX) {
+              // The next max value would be greater than the allowed max, so pin the max to the end...
+              nxMax = maxX;
+              // And set the min to be max minus the range.
+              nxMin = nxMax - nxRange;
+            } else if (nxMin < minX) {
+              // The next min value would be greater than the allowed minimum, so pin the min to the end...
+              nxMin = minX;
+              // And set the max to be the min plus the range.
+              nxMax = nxMin + nxRange;
+            }
 
             u.batch(() => {
               setScales({
