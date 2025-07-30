@@ -6,12 +6,14 @@ import { ChartSyncContext } from './ChartSyncContext';
 
 Chart2.propTypes = {
   title: PropTypes.string.isRequired,
-  data: PropTypes.array.isRequired,
+  xAxis: PropTypes.object.isRequired,
+  lines: PropTypes.array.isRequired,
   drivers: PropTypes.object.isRequired,
 };
 
-export default function Chart2({title, data, drivers}) {
+export default function Chart2({title, xAxis, lines, drivers}) {
   const { dataRange, dataWindow, setDataWindow } = useContext(ChartSyncContext);
+  const { sessionTimes, driverDistances } = xAxis;
 
   // We don't want to update the chart every time anything moves, so set the cursor position using a reference.
   // Any time the chart reloads, it can pull its current position from the reference.
@@ -27,8 +29,8 @@ export default function Chart2({title, data, drivers}) {
 
   const minX = dataRange.min;
   let maxX;
-  if (data.length > 0 && data[0].length > 0) {
-    maxX = Math.max(dataRange.max, data[0][data[0].length - 1]);
+  if (sessionTimes.length > 0) {
+    maxX = Math.max(dataRange.max, sessionTimes[sessionTimes.length - 1]);
   } else {
     maxX = dataRange.max;
   }
@@ -251,6 +253,10 @@ export default function Chart2({title, data, drivers}) {
           stroke: "rgba(255, 255, 255, 0.2)",
           width: 1,
         },
+        values: (u, ticks) => {
+          // TODO: Use this to optionally convert the session time to the driver's position for the ticks.
+          return ticks.map((val) => val);
+        } ,
       },
       {
         stroke: "white",
@@ -275,6 +281,12 @@ export default function Chart2({title, data, drivers}) {
       show: false,
     }
   };
+
+  const data = [
+    sessionTimes,
+    ...lines,
+  ];
+
   return (
     <div ref={parentRef}>
       <UPlotReact
