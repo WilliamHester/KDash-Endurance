@@ -1,7 +1,14 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import PropTypes from 'prop-types';
 import "uplot/dist/uPlot.min.css";
 import UPlotReact from "uplot-react";
 import { ChartSyncContext } from './ChartSyncContext';
+
+Chart2.propTypes = {
+  title: PropTypes.string.isRequired,
+  data: PropTypes.array.isRequired,
+  drivers: PropTypes.object.isRequired,
+};
 
 export default function Chart2({title, data, drivers}) {
   const { dataRange, dataWindow, setDataWindow } = useContext(ChartSyncContext);
@@ -173,7 +180,7 @@ export default function Chart2({title, data, drivers}) {
                 setDataWindow([min, max]);
               }
 
-              function onup(e) {
+              function onup() {
                 document.removeEventListener("mousemove", onmove);
                 document.removeEventListener("mouseup", onup);
               }
