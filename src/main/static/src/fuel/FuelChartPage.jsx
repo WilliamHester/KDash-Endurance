@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React from "react";
 import PropTypes from "prop-types";
 import "./FuelChartPage.css";
 import Chart2 from "../charts/Chart2";
@@ -6,13 +6,12 @@ import { ChartContainer } from "../charts/ChartContainer";
 
 FuelChartPage.propTypes = {
   telemetryData: PropTypes.array.isRequired,
-  dataRanges: PropTypes.array.isRequired,
+  dataRange: PropTypes.object.isRequired,
+  dataWindow: PropTypes.array.isRequired,
+  setDataWindow: PropTypes.func.isRequired,
 };
 
-export default function FuelChartPage({telemetryData, dataRanges}) {
-  const dataRange = dataRanges.driverDistance;
-  const [dataWindow, setDataWindow] = useState([dataRange, dataRange]);
-
+export default function FuelChartPage({telemetryData, dataRange, dataWindow, setDataWindow}) {
   const fuelLevels = telemetryData.map(data => data.getFuelLevel());
   const drivers = [{driverName: 'Hardcoded Driver Name'}];
 
@@ -37,8 +36,6 @@ export default function FuelChartPage({telemetryData, dataRanges}) {
   //     }
   //   }
   // }
-
-  console.log(dataRange);
 
   return (
     <ChartContainer dataRange={dataRange} dataWindow={dataWindow} setDataWindow={setDataWindow} >
