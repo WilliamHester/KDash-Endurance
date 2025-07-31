@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -18,6 +18,12 @@ const MAX_GAP_POINTS = 1000;
 const DOWNSAMPLE_THRESHOLD = 2000;
 const DEFAULT_WINDOW_SIZE_SECONDS = 300;
 
+const ALLOWED_HZ = [0.5, 1, 3, 6, 12, 30, 60];
+
+const coerceToAllowedHz = (goal) => ALLOWED_HZ.reduce(function(prev, curr) {
+  return (Math.abs(curr - goal) < Math.abs(prev - goal) ? curr : prev);
+});
+
 export default function App2() {
   const [sampleRateHz, setSampleRateHz] = useState(8);
   const [dataStart, setDataStart] = useState(-1.0);
@@ -26,6 +32,7 @@ export default function App2() {
     max: DEFAULT_WINDOW_SIZE_SECONDS,
   });
   const [dataWindow, setDataWindow] = useState([dataRange.min, dataRange.max]);
+  const [counter, setCounter] = useState(0);
 
   const [telemetryData, setTelemetryData] = useState([]);
   const [gapEntries, setGapEntries] = useState([]);
@@ -36,6 +43,8 @@ export default function App2() {
 
   const client = useRef(new LiveTelemetryServiceClient(`${location.origin}/api`)).current;
 
+  const timeoutRef = useRef(null);
+  const shouldClearData = useRef(false);
   const telemetryDataBuffer = useRef([]);
   const dataRangeBuffer = useRef(dataRange);
   const gapBuffer = useRef([]);
@@ -60,7 +69,7 @@ export default function App2() {
     // presumably because the page itself would be a 7th connection.
     // setupStream('monitorCurrentGaps', gapBuffer);
     const driverLapsStream = setupStream('monitorDriverLaps', lapBuffer);
-//     setupStream('monitorOtherCarsLaps', otherCarLapBuffer);
+    //     setupStream('monitorOtherCarsLaps', otherCarLapBuffer);
     // setupStream('monitorDriverDistances', driverDistancesBuffer);
     // setupStream('monitorFuelLevel', fuelBuffer);
 
@@ -69,21 +78,21 @@ export default function App2() {
     const driversRequest = new ConnectRequest();
     const driversStream = liveTelemetryServiceClient.monitorCurrentDrivers(driversRequest, {});
     driversStream.on('data', response => {
-        if (response && response.getDriversList()) {
-          const driverMap = new Map(
-            response.getDriversList().map((driver) => [
-              driver.getCarId(),
-              {
-                'carClassId': driver.getCarClassId(),
-                'carClassName': driver.getCarClassName(),
-                'driverName': driver.getDriverName(),
-                'teamName': driver.getTeamName(),
-                'carNumber': driver.getCarNumber()
-              }
-            ])
-          );
-          setCurrentDrivers(driverMap);
-        }
+      if (response && response.getDriversList()) {
+        const driverMap = new Map(
+          response.getDriversList().map((driver) => [
+            driver.getCarId(),
+            {
+              'carClassId': driver.getCarClassId(),
+              'carClassName': driver.getCarClassName(),
+              'driverName': driver.getDriverName(),
+              'teamName': driver.getTeamName(),
+              'carNumber': driver.getCarNumber()
+            }
+          ])
+        );
+        setCurrentDrivers(driverMap);
+      }
     });
 
     return () => {
@@ -96,6 +105,8 @@ export default function App2() {
     const request = new QueryTelemetryRequest();
     request.setSampleRateHz(sampleRateHz);
     request.setMinSessionTime(dataStart);
+
+    console.log('Querying for new data. dataStart: %s, sampleRateHz: %s', dataStart, sampleRateHz);
     const telemetryStream = client.queryTelemetry(request, {});
     telemetryStream.on('data', response => {
       if (response.hasDataRanges()) {
@@ -116,20 +127,49 @@ export default function App2() {
     return () => {
       telemetryStream.cancel();
       telemetryDataBuffer.current = [];
-      setTelemetryData([]);
+      shouldClearData.current = true;
     };
-  }, [client, sampleRateHz])
+  }, [client, counter]);
+
+  useEffect(() => {
+    if (telemetryData.length === 0) {
+      // Haven't loaded any telemetry data yet. Nothing to do.
+      return;
+    }
+    const min = telemetryData[0];
+    const max = telemetryData[telemetryData.length - 1];
+
+    const newHz = coerceToAllowedHz(1000 / (dataWindow[1] - dataWindow[0]));
+    
+    if (dataWindow[0] < min.getSessionTime() || dataWindow[1] > max.getSessionTime() || sampleRateHz != newHz) {
+      timeoutRef.current = setTimeout(() => {
+        setCounter(currentCount => currentCount + 1);
+        setDataStart(dataWindow[0]);
+        setSampleRateHz(newHz);
+      }, 500);
+      return () => {
+        clearTimeout(timeoutRef.current);
+      };
+    }
+  }, [dataWindow]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
       if (telemetryDataBuffer.current.length > 0) {
         setTelemetryData(prev => {
-          const updated = [...prev, ...telemetryDataBuffer.current];
-          if (updated.length > DOWNSAMPLE_THRESHOLD) {
-            // TODO: Update this with start and end times and a reasonable number of data points to request.
-            // The client won't really know the current rate unless we do some wacky math.
-            setSampleRateHz(current => Math.max(0.1, current / 2));
+          let dataToPrepend;
+          if (shouldClearData.current) {
+            dataToPrepend = [];
+            shouldClearData.current = false;
+          } else {
+            dataToPrepend = prev;
           }
+          const updated = [...dataToPrepend, ...telemetryDataBuffer.current];
+          // if (updated.length > DOWNSAMPLE_THRESHOLD) {
+          //   // TODO: Update this with start and end times and a reasonable number of data points to request.
+          //   // The client won't really know the current rate unless we do some wacky math.
+          //   setSampleRateHz(current => Math.max(0.1, current / 2));
+          // }
           telemetryDataBuffer.current = [];
           return updated;
         });
@@ -140,7 +180,7 @@ export default function App2() {
       if (gapBuffer.current.length > 0) {
         const lastMessage = gapBuffer.current[gapBuffer.current.length - 1];
         if (lastMessage && lastMessage.getGapsList) {
-            setGapEntries(lastMessage.getGapsList());
+          setGapEntries(lastMessage.getGapsList());
         }
         gapBuffer.current = []; // Clear buffer
       }
@@ -166,27 +206,27 @@ export default function App2() {
       // Process Driver Distances
       if (driverDistancesBuffer.current.length > 0) {
         setDriverDistances(prevData => {
-            let newData = [...prevData];
-            for (const response of driverDistancesBuffer.current) {
-                if (response && response.getSessionTime && response.getDistancesList) {
-                    const newRow = [response.getSessionTime(), ...response.getDistancesList().map(d => d.getDriverDistance())];
-                    if (newData.length === 0) {
-                        newData = newRow.map(value => [value]);
-                    } else {
-                        for (const [index, value] of newRow.entries()) {
-                            if (newData[index]) {
-                                newData[index].push(value);
-                            }
-                        }
-                    }
+          let newData = [...prevData];
+          for (const response of driverDistancesBuffer.current) {
+            if (response && response.getSessionTime && response.getDistancesList) {
+              const newRow = [response.getSessionTime(), ...response.getDistancesList().map(d => d.getDriverDistance())];
+              if (newData.length === 0) {
+                newData = newRow.map(value => [value]);
+              } else {
+                for (const [index, value] of newRow.entries()) {
+                  if (newData[index]) {
+                    newData[index].push(value);
+                  }
                 }
+              }
             }
-            driverDistancesBuffer.current = []; // Clear buffer
+          }
+          driverDistancesBuffer.current = []; // Clear buffer
 
-            if (newData.length > 0) {
-                newData = newData.map(column => column.slice(-MAX_GAP_POINTS));
-            }
-            return newData;
+          if (newData.length > 0) {
+            newData = newData.map(column => column.slice(-MAX_GAP_POINTS));
+          }
+          return newData;
         });
       }
 
@@ -195,19 +235,23 @@ export default function App2() {
     return () => clearInterval(intervalId); // Cleanup interval on unmount
   }, []); // Empty dependency array means this runs only once.
 
+  // useEffect(() => {
+  //   console.log('dataWindow: [%s, %s]', dataWindow[0], dataWindow[1]);
+  // }, [dataWindow]);
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={ <App/> }>
-          <Route path="" element={ <LapLogPage entries={lapEntries} /> } />
-          <Route path="laps" element={ <LapLogPage entries={lapEntries} /> } />
-          <Route path="otherlaps" element={ <OtherCarsLapLogPage entries={otherCarLapEntries} drivers={currentDrivers} /> } />
-          <Route path="gaps" element={ <GapsPage entries={gapEntries} drivers={currentDrivers} /> } />
-          <Route path="gapchart" element={ <GapChartPage distances={driverDistances} drivers={currentDrivers} /> } />
+        <Route path="/" element={<App />}>
+          <Route path="" element={<LapLogPage entries={lapEntries} />} />
+          <Route path="laps" element={<LapLogPage entries={lapEntries} />} />
+          <Route path="otherlaps" element={<OtherCarsLapLogPage entries={otherCarLapEntries} drivers={currentDrivers} />} />
+          <Route path="gaps" element={<GapsPage entries={gapEntries} drivers={currentDrivers} />} />
+          <Route path="gapchart" element={<GapChartPage distances={driverDistances} drivers={currentDrivers} />} />
           <Route path="fuelcharts" element={
             <FuelChartPage telemetryData={telemetryData} dataRange={dataRange} dataWindow={dataWindow} setDataWindow={setDataWindow} />
           } />
-          <Route path="trackmap" element={ <TrackMapPage /> } />
+          <Route path="trackmap" element={<TrackMapPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -24,6 +24,7 @@ export default function Chart2({title, xAxis, lines, drivers}) {
       time: false,
       min: dataWindow[0],
       max: dataWindow[1],
+      range: [dataWindow[0], dataWindow[1]],
     }
   }
 
