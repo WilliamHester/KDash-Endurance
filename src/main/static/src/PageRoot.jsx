@@ -15,23 +15,21 @@ import TrackMapPage from "./trackmap/TrackMapPage";
 import App from "./App";
 
 const MAX_GAP_POINTS = 1000;
-const DOWNSAMPLE_THRESHOLD = 2000;
-const DEFAULT_WINDOW_SIZE_SECONDS = 300;
+const MAX_DATA_POINTS = 3000;
 
 const ALLOWED_HZ = [0.5, 1, 3, 6, 12, 30, 60];
 
-const coerceToAllowedHz = (goal) => ALLOWED_HZ.reduce(function(prev, curr) {
+const coerceToAllowedHz = (goal) => ALLOWED_HZ.reduce(function (prev, curr) {
   return (Math.abs(curr - goal) < Math.abs(prev - goal) ? curr : prev);
 });
 
 export default function App2() {
   const [sampleRateHz, setSampleRateHz] = useState(8);
-  const [dataStart, setDataStart] = useState(-1.0);
   const [dataRange, setDataRange] = useState({
     min: 0,
-    max: DEFAULT_WINDOW_SIZE_SECONDS,
+    max: 300,
   });
-  const [dataWindow, setDataWindow] = useState([dataRange.min, dataRange.max]);
+  const [dataWindow, setDataWindow] = useState([-1, 0]);
   const [counter, setCounter] = useState(0);
 
   const [telemetryData, setTelemetryData] = useState([]);
@@ -104,9 +102,10 @@ export default function App2() {
   useEffect(() => {
     const request = new QueryTelemetryRequest();
     request.setSampleRateHz(sampleRateHz);
-    request.setMinSessionTime(dataStart);
+    request.setMinSessionTime(dataWindow[0]);
+    request.setMaxSessionTime(dataWindow[1]);
 
-    console.log('Querying for new data. dataStart: %s, sampleRateHz: %s', dataStart, sampleRateHz);
+    console.log('Querying for new data. dataStart: %s, dataEnd: %s, sampleRateHz: %s', dataWindow[0], dataWindow[1], sampleRateHz);
     const telemetryStream = client.queryTelemetry(request, {});
     telemetryStream.on('data', response => {
       if (response.hasDataRanges()) {
@@ -140,11 +139,12 @@ export default function App2() {
     const max = telemetryData[telemetryData.length - 1];
 
     const newHz = coerceToAllowedHz(1000 / (dataWindow[1] - dataWindow[0]));
-    
-    if (dataWindow[0] < min.getSessionTime() || dataWindow[1] > max.getSessionTime() || sampleRateHz != newHz) {
+
+    if (dataWindow[0] < min.getSessionTime()
+      || dataWindow[1] > max.getSessionTime()
+      || sampleRateHz != newHz) {
       timeoutRef.current = setTimeout(() => {
         setCounter(currentCount => currentCount + 1);
-        setDataStart(dataWindow[0]);
         setSampleRateHz(newHz);
       }, 500);
       return () => {
@@ -164,13 +164,11 @@ export default function App2() {
           } else {
             dataToPrepend = prev;
           }
-          const updated = [...dataToPrepend, ...telemetryDataBuffer.current];
-          // if (updated.length > DOWNSAMPLE_THRESHOLD) {
-          //   // TODO: Update this with start and end times and a reasonable number of data points to request.
-          //   // The client won't really know the current rate unless we do some wacky math.
-          //   setSampleRateHz(current => Math.max(0.1, current / 2));
-          // }
+          const updated = [...dataToPrepend, ...telemetryDataBuffer.current].slice(-MAX_DATA_POINTS);
           telemetryDataBuffer.current = [];
+          if (dataWindow[0] == -1 && dataWindow[1] == 0) {
+            setDataWindow([updated[0].getSessionTime(), updated[updated.length - 1].getSessionTime()]);
+          }
           return updated;
         });
         setDataRange(dataRangeBuffer.current);
@@ -234,10 +232,6 @@ export default function App2() {
 
     return () => clearInterval(intervalId); // Cleanup interval on unmount
   }, []); // Empty dependency array means this runs only once.
-
-  // useEffect(() => {
-  //   console.log('dataWindow: [%s, %s]', dataWindow[0], dataWindow[1]);
-  // }, [dataWindow]);
 
   return (
     <BrowserRouter>
