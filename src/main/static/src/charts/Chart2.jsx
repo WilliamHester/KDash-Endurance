@@ -254,10 +254,20 @@ export default function Chart2({title, xAxis, lines, drivers}) {
           stroke: "rgba(255, 255, 255, 0.2)",
           width: 1,
         },
+        // TODO: Use splits: to return a different array of session times to have the vertical lines.
+        // This could return values near round numbers (e.g. 1.0, 1.25, 1.50, ...) rather than random
+        // distances.
         values: (u, ticks) => {
           // TODO: Use this to optionally convert the session time to the driver's position for the ticks.
-          return ticks.map((val) => val);
-        } ,
+          return ticks.map((val) => {
+            const distance = driverDistances[u.valToIdx(val)]
+            if (distance !== undefined) {
+              return distance.toFixed(2);
+            } else {
+              return '';
+            }
+          });
+        },
       },
       {
         stroke: "white",

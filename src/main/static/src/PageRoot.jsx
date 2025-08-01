@@ -166,6 +166,7 @@ export default function App2() {
           }
           const updated = [...dataToPrepend, ...telemetryDataBuffer.current].slice(-MAX_DATA_POINTS);
           telemetryDataBuffer.current = [];
+          // TODO: Fix this. I think this needs a ref or something.
           if (dataWindow[0] == -1 && dataWindow[1] == 0) {
             setDataWindow([updated[0].getSessionTime(), updated[updated.length - 1].getSessionTime()]);
           }
@@ -231,7 +232,7 @@ export default function App2() {
     }, 250); // Update the UI 4 times per second. Adjust as needed.
 
     return () => clearInterval(intervalId); // Cleanup interval on unmount
-  }, []); // Empty dependency array means this runs only once.
+  }, [dataWindow]); // Maybe adding dataWindow here will solve it?
 
   return (
     <BrowserRouter>
