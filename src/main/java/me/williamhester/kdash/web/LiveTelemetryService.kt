@@ -19,6 +19,7 @@ import me.williamhester.kdash.enduranceweb.proto.TelemetryData
 import me.williamhester.kdash.enduranceweb.proto.dataRange
 import me.williamhester.kdash.enduranceweb.proto.dataRanges
 import me.williamhester.kdash.enduranceweb.proto.queryTelemetryResponse
+import me.williamhester.kdash.web.monitors.DataSnapshotMonitor
 import me.williamhester.kdash.web.monitors.DriverCarLapMonitor
 import me.williamhester.kdash.web.monitors.DriverDistancesMonitor
 import me.williamhester.kdash.web.monitors.DriverMonitor
@@ -44,6 +45,7 @@ class LiveTelemetryService(
   private lateinit var otherCarsLapMonitor: OtherCarsLapMonitor
   private lateinit var driverDistancesMonitor: DriverDistancesMonitor
   private lateinit var liveTelemetryMonitor: LiveTelemetryMonitor
+  private lateinit var dataSnapshotMonitor: DataSnapshotMonitor
   private val driverMonitor = DriverMonitor(metadataHolder)
 
   private val lapEntryStreamObservers = CopyOnWriteArrayList<LapEntryStreamObserverProgressHolder>()
@@ -65,6 +67,7 @@ class LiveTelemetryService(
     otherCarsLapMonitor = OtherCarsLapMonitor(metadataHolder, relativeMonitor)
     driverDistancesMonitor = DriverDistancesMonitor()
     liveTelemetryMonitor = LiveTelemetryMonitor(metadataHolder)
+    dataSnapshotMonitor = DataSnapshotMonitor(metadataHolder)
     initializedLock.countDown()
 
     val rateLimiter = RateLimiter.create(6000.0)
@@ -75,6 +78,7 @@ class LiveTelemetryService(
       otherCarsLapMonitor.process(dataSnapshot)
       driverDistancesMonitor.process(dataSnapshot)
       liveTelemetryMonitor.process(dataSnapshot)
+      dataSnapshotMonitor.process(dataSnapshot)
       rateLimiter.acquire()
     }
   }

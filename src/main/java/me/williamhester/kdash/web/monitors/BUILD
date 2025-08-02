@@ -9,6 +9,7 @@ kt_jvm_library(
         "//main/proto:live_telemetry_pusher_service_kt_proto",
         "//main/proto:live_telemetry_service_kt_proto",
         "//main/java/me/williamhester/kdash/web/extensions",
+        "//main/java/me/williamhester/kdash/web/models",
         "//main/java/me/williamhester/kdash/web/state",
     ],
 )
