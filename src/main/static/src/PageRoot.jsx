@@ -9,12 +9,11 @@ import { LiveTelemetryServiceClient } from "./live_telemetry_service_grpc_web_pb
 import LapLogPage from "./laplog/LapLogPage";
 import OtherCarsLapLogPage from "./laplog/OtherCarsLapLogPage";
 import GapsPage from "./gaps/GapsPage";
-import GapChartPage from "./gapchart/GapChartPage";
+// import GapChartPage from "./gapchart/GapChartPage";
 import FuelChartPage from "./fuel/FuelChartPage";
 import TrackMapPage from "./trackmap/TrackMapPage";
 import App from "./App";
 
-const MAX_GAP_POINTS = 1000;
 const MAX_DATA_POINTS = 3000;
 
 const ALLOWED_HZ = [0.5, 1, 3, 6, 12, 30, 60];
@@ -24,6 +23,14 @@ const coerceToAllowedHz = (goal) => ALLOWED_HZ.reduce(function (prev, curr) {
 });
 
 export default function App2() {
+  const telemetryQueries = [
+    'FuelLevel',
+    'LAP_DELTA(FuelLevel)',
+    'TrackTempCrew',
+    'Speed',
+    'LAP_DELTA(Speed)',
+  ];
+
   const [sampleRateHz, setSampleRateHz] = useState(8);
   const [dataRange, setDataRange] = useState({
     min: 0,
@@ -37,7 +44,6 @@ export default function App2() {
   const [lapEntries, setLapEntries] = useState([]);
   const [otherCarLapEntries, setOtherCarLapEntries] = useState([]);
   const [currentDrivers, setCurrentDrivers] = useState(new Map());
-  const [driverDistances, setDriverDistances] = useState([]);
 
   const client = useRef(new LiveTelemetryServiceClient(`${location.origin}/api`)).current;
 
@@ -48,7 +54,6 @@ export default function App2() {
   const gapBuffer = useRef([]);
   const lapBuffer = useRef([]);
   const otherCarLapBuffer = useRef([]);
-  const driverDistancesBuffer = useRef([]);
 
   useEffect(() => {
     const liveTelemetryServiceClient = client;
@@ -104,6 +109,7 @@ export default function App2() {
     request.setSampleRateHz(sampleRateHz);
     request.setMinSessionTime(dataWindow[0]);
     request.setMaxSessionTime(dataWindow[1]);
+    request.setQueriesList(telemetryQueries);
 
     console.log('Querying for new data. dataStart: %s, dataEnd: %s, sampleRateHz: %s', dataWindow[0], dataWindow[1], sampleRateHz);
     const telemetryStream = client.queryTelemetry(request, {});
@@ -167,7 +173,7 @@ export default function App2() {
           const updated = [...dataToPrepend, ...telemetryDataBuffer.current].slice(-MAX_DATA_POINTS);
           telemetryDataBuffer.current = [];
           // TODO: Fix this. I think this needs a ref or something.
-          if (dataWindow[0] == -1 && dataWindow[1] == 0) {
+          if (dataWindow[0] == -1 && dataWindow[1] == 0 && updated.length > 0) {
             setDataWindow([updated[0].getSessionTime(), updated[updated.length - 1].getSessionTime()]);
           }
           return updated;
@@ -201,34 +207,6 @@ export default function App2() {
           return updated;
         });
       }
-
-      // Process Driver Distances
-      if (driverDistancesBuffer.current.length > 0) {
-        setDriverDistances(prevData => {
-          let newData = [...prevData];
-          for (const response of driverDistancesBuffer.current) {
-            if (response && response.getSessionTime && response.getDistancesList) {
-              const newRow = [response.getSessionTime(), ...response.getDistancesList().map(d => d.getDriverDistance())];
-              if (newData.length === 0) {
-                newData = newRow.map(value => [value]);
-              } else {
-                for (const [index, value] of newRow.entries()) {
-                  if (newData[index]) {
-                    newData[index].push(value);
-                  }
-                }
-              }
-            }
-          }
-          driverDistancesBuffer.current = []; // Clear buffer
-
-          if (newData.length > 0) {
-            newData = newData.map(column => column.slice(-MAX_GAP_POINTS));
-          }
-          return newData;
-        });
-      }
-
     }, 250); // Update the UI 4 times per second. Adjust as needed.
 
     return () => clearInterval(intervalId); // Cleanup interval on unmount
@@ -242,7 +220,7 @@ export default function App2() {
           <Route path="laps" element={<LapLogPage entries={lapEntries} />} />
           <Route path="otherlaps" element={<OtherCarsLapLogPage entries={otherCarLapEntries} drivers={currentDrivers} />} />
           <Route path="gaps" element={<GapsPage entries={gapEntries} drivers={currentDrivers} />} />
-          <Route path="gapchart" element={<GapChartPage distances={driverDistances} drivers={currentDrivers} />} />
+          {/* <Route path="gapchart" element={<GapChartPage distances={driverDistances} drivers={currentDrivers} />} /> */}
           <Route path="fuelcharts" element={
             <FuelChartPage telemetryData={telemetryData} dataRange={dataRange} dataWindow={dataWindow} setDataWindow={setDataWindow} />
           } />

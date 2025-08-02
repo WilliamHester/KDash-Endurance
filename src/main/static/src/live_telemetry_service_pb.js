@@ -73,7 +73,7 @@ if (goog.DEBUG && !COMPILED) {
  * @constructor
  */
 proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.repeatedFields_, null);
 };
 goog.inherits(proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -479,6 +479,13 @@ proto.me.williamhester.kdash.enduranceweb.ConnectRequest.serializeBinaryToWriter
 
 
 
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.repeatedFields_ = [6];
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -512,7 +519,10 @@ proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.toObject = funct
   var f, obj = {
     sampleRateHz: jspb.Message.getFloatingPointFieldWithDefault(msg, 1, 0.0),
     minSessionTime: jspb.Message.getFloatingPointFieldWithDefault(msg, 2, 0.0),
-    maxSessionTime: jspb.Message.getFloatingPointFieldWithDefault(msg, 3, 0.0)
+    maxSessionTime: jspb.Message.getFloatingPointFieldWithDefault(msg, 3, 0.0),
+    minDriverDistance: jspb.Message.getFloatingPointFieldWithDefault(msg, 4, 0.0),
+    maxDriverDistance: jspb.Message.getFloatingPointFieldWithDefault(msg, 5, 0.0),
+    queriesList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -561,6 +571,18 @@ proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.deserializeBinar
       var value = /** @type {number} */ (reader.readDouble());
       msg.setMaxSessionTime(value);
       break;
+    case 4:
+      var value = /** @type {number} */ (reader.readDouble());
+      msg.setMinDriverDistance(value);
+      break;
+    case 5:
+      var value = /** @type {number} */ (reader.readDouble());
+      msg.setMaxDriverDistance(value);
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readString());
+      msg.addQueries(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -608,6 +630,27 @@ proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.serializeBinaryT
   if (f !== 0.0) {
     writer.writeDouble(
       3,
+      f
+    );
+  }
+  f = message.getMinDriverDistance();
+  if (f !== 0.0) {
+    writer.writeDouble(
+      4,
+      f
+    );
+  }
+  f = message.getMaxDriverDistance();
+  if (f !== 0.0) {
+    writer.writeDouble(
+      5,
+      f
+    );
+  }
+  f = message.getQueriesList();
+  if (f.length > 0) {
+    writer.writeRepeatedString(
+      6,
       f
     );
   }
@@ -665,6 +708,79 @@ proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.prototype.getMax
  */
 proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.prototype.setMaxSessionTime = function(value) {
   return jspb.Message.setProto3FloatField(this, 3, value);
+};
+
+
+/**
+ * optional double min_driver_distance = 4;
+ * @return {number}
+ */
+proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.prototype.getMinDriverDistance = function() {
+  return /** @type {number} */ (jspb.Message.getFloatingPointFieldWithDefault(this, 4, 0.0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest} returns this
+ */
+proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.prototype.setMinDriverDistance = function(value) {
+  return jspb.Message.setProto3FloatField(this, 4, value);
+};
+
+
+/**
+ * optional double max_driver_distance = 5;
+ * @return {number}
+ */
+proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.prototype.getMaxDriverDistance = function() {
+  return /** @type {number} */ (jspb.Message.getFloatingPointFieldWithDefault(this, 5, 0.0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest} returns this
+ */
+proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.prototype.setMaxDriverDistance = function(value) {
+  return jspb.Message.setProto3FloatField(this, 5, value);
+};
+
+
+/**
+ * repeated string queries = 6;
+ * @return {!Array<string>}
+ */
+proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.prototype.getQueriesList = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 6));
+};
+
+
+/**
+ * @param {!Array<string>} value
+ * @return {!proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest} returns this
+ */
+proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.prototype.setQueriesList = function(value) {
+  return jspb.Message.setField(this, 6, value || []);
+};
+
+
+/**
+ * @param {string} value
+ * @param {number=} opt_index
+ * @return {!proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest} returns this
+ */
+proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.prototype.addQueries = function(value, opt_index) {
+  return jspb.Message.addToRepeatedField(this, 6, value, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest} returns this
+ */
+proto.me.williamhester.kdash.enduranceweb.QueryTelemetryRequest.prototype.clearQueriesList = function() {
+  return this.setQueriesList([]);
 };
 
 
@@ -902,7 +1018,7 @@ proto.me.williamhester.kdash.enduranceweb.QueryTelemetryResponse.prototype.hasDa
  * @private {!Array<number>}
  * @const
  */
-proto.me.williamhester.kdash.enduranceweb.TelemetryData.repeatedFields_ = [5];
+proto.me.williamhester.kdash.enduranceweb.TelemetryData.repeatedFields_ = [3];
 
 
 
@@ -937,10 +1053,7 @@ proto.me.williamhester.kdash.enduranceweb.TelemetryData.toObject = function(incl
   var f, obj = {
     sessionTime: jspb.Message.getFloatingPointFieldWithDefault(msg, 1, 0.0),
     driverDistance: jspb.Message.getFloatingPointFieldWithDefault(msg, 2, 0.0),
-    fuelLevel: jspb.Message.getFloatingPointFieldWithDefault(msg, 3, 0.0),
-    lapOverLapFuelLevel: jspb.Message.getFloatingPointFieldWithDefault(msg, 4, 0.0),
-    distancesList: jspb.Message.toObjectList(msg.getDistancesList(),
-    proto.me.williamhester.kdash.enduranceweb.DriverDistance.toObject, includeInstance)
+    queryValuesList: (f = jspb.Message.getRepeatedFloatingPointField(msg, 3)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -986,17 +1099,10 @@ proto.me.williamhester.kdash.enduranceweb.TelemetryData.deserializeBinaryFromRea
       msg.setDriverDistance(value);
       break;
     case 3:
-      var value = /** @type {number} */ (reader.readFloat());
-      msg.setFuelLevel(value);
-      break;
-    case 4:
-      var value = /** @type {number} */ (reader.readFloat());
-      msg.setLapOverLapFuelLevel(value);
-      break;
-    case 5:
-      var value = new proto.me.williamhester.kdash.enduranceweb.DriverDistance;
-      reader.readMessage(value,proto.me.williamhester.kdash.enduranceweb.DriverDistance.deserializeBinaryFromReader);
-      msg.addDistances(value);
+      var values = /** @type {!Array<number>} */ (reader.isDelimited() ? reader.readPackedDouble() : [reader.readDouble()]);
+      for (var i = 0; i < values.length; i++) {
+        msg.addQueryValues(values[i]);
+      }
       break;
     default:
       reader.skipField();
@@ -1041,26 +1147,11 @@ proto.me.williamhester.kdash.enduranceweb.TelemetryData.serializeBinaryToWriter 
       f
     );
   }
-  f = /** @type {number} */ (jspb.Message.getField(message, 3));
-  if (f != null) {
-    writer.writeFloat(
+  f = message.getQueryValuesList();
+  if (f.length > 0) {
+    writer.writePackedDouble(
       3,
       f
-    );
-  }
-  f = /** @type {number} */ (jspb.Message.getField(message, 4));
-  if (f != null) {
-    writer.writeFloat(
-      4,
-      f
-    );
-  }
-  f = message.getDistancesList();
-  if (f.length > 0) {
-    writer.writeRepeatedMessage(
-      5,
-      f,
-      proto.me.williamhester.kdash.enduranceweb.DriverDistance.serializeBinaryToWriter
     );
   }
 };
@@ -1103,103 +1194,30 @@ proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.setDriverDista
 
 
 /**
- * optional float fuel_level = 3;
- * @return {number}
+ * repeated double query_values = 3;
+ * @return {!Array<number>}
  */
-proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.getFuelLevel = function() {
-  return /** @type {number} */ (jspb.Message.getFloatingPointFieldWithDefault(this, 3, 0.0));
+proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.getQueryValuesList = function() {
+  return /** @type {!Array<number>} */ (jspb.Message.getRepeatedFloatingPointField(this, 3));
+};
+
+
+/**
+ * @param {!Array<number>} value
+ * @return {!proto.me.williamhester.kdash.enduranceweb.TelemetryData} returns this
+ */
+proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.setQueryValuesList = function(value) {
+  return jspb.Message.setField(this, 3, value || []);
 };
 
 
 /**
  * @param {number} value
- * @return {!proto.me.williamhester.kdash.enduranceweb.TelemetryData} returns this
- */
-proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.setFuelLevel = function(value) {
-  return jspb.Message.setField(this, 3, value);
-};
-
-
-/**
- * Clears the field making it undefined.
- * @return {!proto.me.williamhester.kdash.enduranceweb.TelemetryData} returns this
- */
-proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.clearFuelLevel = function() {
-  return jspb.Message.setField(this, 3, undefined);
-};
-
-
-/**
- * Returns whether this field is set.
- * @return {boolean}
- */
-proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.hasFuelLevel = function() {
-  return jspb.Message.getField(this, 3) != null;
-};
-
-
-/**
- * optional float lap_over_lap_fuel_level = 4;
- * @return {number}
- */
-proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.getLapOverLapFuelLevel = function() {
-  return /** @type {number} */ (jspb.Message.getFloatingPointFieldWithDefault(this, 4, 0.0));
-};
-
-
-/**
- * @param {number} value
- * @return {!proto.me.williamhester.kdash.enduranceweb.TelemetryData} returns this
- */
-proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.setLapOverLapFuelLevel = function(value) {
-  return jspb.Message.setField(this, 4, value);
-};
-
-
-/**
- * Clears the field making it undefined.
- * @return {!proto.me.williamhester.kdash.enduranceweb.TelemetryData} returns this
- */
-proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.clearLapOverLapFuelLevel = function() {
-  return jspb.Message.setField(this, 4, undefined);
-};
-
-
-/**
- * Returns whether this field is set.
- * @return {boolean}
- */
-proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.hasLapOverLapFuelLevel = function() {
-  return jspb.Message.getField(this, 4) != null;
-};
-
-
-/**
- * repeated DriverDistance distances = 5;
- * @return {!Array<!proto.me.williamhester.kdash.enduranceweb.DriverDistance>}
- */
-proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.getDistancesList = function() {
-  return /** @type{!Array<!proto.me.williamhester.kdash.enduranceweb.DriverDistance>} */ (
-    jspb.Message.getRepeatedWrapperField(this, proto.me.williamhester.kdash.enduranceweb.DriverDistance, 5));
-};
-
-
-/**
- * @param {!Array<!proto.me.williamhester.kdash.enduranceweb.DriverDistance>} value
- * @return {!proto.me.williamhester.kdash.enduranceweb.TelemetryData} returns this
-*/
-proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.setDistancesList = function(value) {
-  return jspb.Message.setRepeatedWrapperField(this, 5, value);
-};
-
-
-/**
- * @param {!proto.me.williamhester.kdash.enduranceweb.DriverDistance=} opt_value
  * @param {number=} opt_index
- * @return {!proto.me.williamhester.kdash.enduranceweb.DriverDistance}
+ * @return {!proto.me.williamhester.kdash.enduranceweb.TelemetryData} returns this
  */
-proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.addDistances = function(opt_value, opt_index) {
-  return jspb.Message.addToRepeatedWrapperField(this, 5, opt_value, proto.me.williamhester.kdash.enduranceweb.DriverDistance, opt_index);
+proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.addQueryValues = function(value, opt_index) {
+  return jspb.Message.addToRepeatedField(this, 3, value, opt_index);
 };
 
 
@@ -1207,8 +1225,8 @@ proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.addDistances =
  * Clears the list making it empty but non-null.
  * @return {!proto.me.williamhester.kdash.enduranceweb.TelemetryData} returns this
  */
-proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.clearDistancesList = function() {
-  return this.setDistancesList([]);
+proto.me.williamhester.kdash.enduranceweb.TelemetryData.prototype.clearQueryValuesList = function() {
+  return this.setQueryValuesList([]);
 };
 
 

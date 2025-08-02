@@ -19,13 +19,16 @@ import me.williamhester.kdash.enduranceweb.proto.TelemetryData
 import me.williamhester.kdash.enduranceweb.proto.dataRange
 import me.williamhester.kdash.enduranceweb.proto.dataRanges
 import me.williamhester.kdash.enduranceweb.proto.queryTelemetryResponse
+import me.williamhester.kdash.enduranceweb.proto.telemetryData
+import me.williamhester.kdash.web.models.DataPoint
+import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.monitors.DataSnapshotMonitor
 import me.williamhester.kdash.web.monitors.DriverCarLapMonitor
 import me.williamhester.kdash.web.monitors.DriverDistancesMonitor
 import me.williamhester.kdash.web.monitors.DriverMonitor
-import me.williamhester.kdash.web.monitors.LiveTelemetryMonitor
 import me.williamhester.kdash.web.monitors.OtherCarsLapMonitor
 import me.williamhester.kdash.web.monitors.RelativeMonitor
+import me.williamhester.kdash.web.query.Query
 import me.williamhester.kdash.web.state.DataSnapshotQueue
 import me.williamhester.kdash.web.state.MetadataHolder
 import java.time.Duration
@@ -44,7 +47,6 @@ class LiveTelemetryService(
   private lateinit var lapMonitor: DriverCarLapMonitor
   private lateinit var otherCarsLapMonitor: OtherCarsLapMonitor
   private lateinit var driverDistancesMonitor: DriverDistancesMonitor
-  private lateinit var liveTelemetryMonitor: LiveTelemetryMonitor
   private lateinit var dataSnapshotMonitor: DataSnapshotMonitor
   private val driverMonitor = DriverMonitor(metadataHolder)
 
@@ -66,7 +68,6 @@ class LiveTelemetryService(
     lapMonitor = DriverCarLapMonitor(metadataHolder, relativeMonitor)
     otherCarsLapMonitor = OtherCarsLapMonitor(metadataHolder, relativeMonitor)
     driverDistancesMonitor = DriverDistancesMonitor()
-    liveTelemetryMonitor = LiveTelemetryMonitor(metadataHolder)
     dataSnapshotMonitor = DataSnapshotMonitor(metadataHolder)
     initializedLock.countDown()
 
@@ -77,7 +78,6 @@ class LiveTelemetryService(
       lapMonitor.process(dataSnapshot)
       otherCarsLapMonitor.process(dataSnapshot)
       driverDistancesMonitor.process(dataSnapshot)
-      liveTelemetryMonitor.process(dataSnapshot)
       dataSnapshotMonitor.process(dataSnapshot)
       rateLimiter.acquire()
     }
@@ -203,14 +203,14 @@ class LiveTelemetryService(
   }
 
   private fun emitTelemetryData() {
-    val telemetryData = liveTelemetryMonitor.telemetryData
+    val telemetryDataPoints = dataSnapshotMonitor.telemetryDataPoints
 
     val responseObserversToRemove = mutableSetOf<TelemetryDataStreamObserverProgressHolder>()
     for (responseObserverHolder in telemetryDataStreamObserverHolders) {
       val telemetryDataSent = responseObserverHolder.entriesSent
-      while (telemetryData.size > telemetryDataSent.get()) {
+      while (telemetryDataPoints.size > telemetryDataSent.get()) {
         val shouldRemove = try {
-          responseObserverHolder.sendIfNecessary(telemetryData[telemetryDataSent.getAndIncrement()])
+          responseObserverHolder.sendIfNecessary(telemetryDataPoints[telemetryDataSent.getAndIncrement()])
         } catch (e: StatusRuntimeException) {
           true
         }
@@ -294,7 +294,7 @@ class LiveTelemetryService(
     val hz = if (request.sampleRateHz > 0) request.sampleRateHz else 100.0
     val startTime = if (request.minSessionTime == -1.0) {
       // -1.0 means that we should just retrieve the last DEFAULT_SESSION_TIME_RANGE seconds.
-      val lastSessionTime = liveTelemetryMonitor.telemetryData.lastOrNull()?.sessionTime ?: 0.0
+      val lastSessionTime = dataSnapshotMonitor.telemetryDataPoints.lastOrNull()?.sessionTime ?: 0.0
       (lastSessionTime - DEFAULT_SESSION_TIME_RANGE.toSeconds()).coerceAtLeast(0.0)
     } else {
       request.minSessionTime
@@ -304,12 +304,12 @@ class LiveTelemetryService(
     wrappedObserver.onNext(
       dataRanges {
         sessionTime = dataRange {
-          min = liveTelemetryMonitor.telemetryData.firstOrNull()?.sessionTime ?: 0.0
-          max = liveTelemetryMonitor.telemetryData.lastOrNull()?.sessionTime ?: 0.0
+          min = dataSnapshotMonitor.telemetryDataPoints.firstOrNull()?.sessionTime ?: 0.0
+          max = dataSnapshotMonitor.telemetryDataPoints.lastOrNull()?.sessionTime ?: 0.0
         }
         driverDistance = dataRange {
-          min = liveTelemetryMonitor.telemetryData.firstOrNull()?.driverDistance?.toDouble() ?: 0.0
-          max = liveTelemetryMonitor.telemetryData.lastOrNull()?.driverDistance?.toDouble() ?: 0.0
+          min = dataSnapshotMonitor.telemetryDataPoints.firstOrNull()?.driverDistance?.toDouble() ?: 0.0
+          max = dataSnapshotMonitor.telemetryDataPoints.lastOrNull()?.driverDistance?.toDouble() ?: 0.0
         }
       }
     )
@@ -320,6 +320,7 @@ class LiveTelemetryService(
         sampleRateHz = hz,
         startTime = startTime,
         endTime = endTime,
+        queries = request.queriesList,
       )
     )
   }
@@ -331,7 +332,11 @@ class LiveTelemetryService(
 
     fun onNext(value: DataRanges) = onNext(queryTelemetryResponse { dataRanges = value })
 
-    override fun onNext(value: QueryTelemetryResponse) = delegate.onNext(value)
+    override fun onNext(value: QueryTelemetryResponse) = try {
+      delegate.onNext(value)
+    } catch (e: IllegalStateException) {
+      logger.atWarning().withCause(e).log("Error while sending next response.")
+    }
 
     override fun onError(t: Throwable?) = delegate.onError(t)
 
@@ -343,15 +348,23 @@ class LiveTelemetryService(
     sampleRateHz: Double,
     startTime: Double,
     private val endTime: Double,
+    queries: List<String>,
   ) {
     val entriesSent = AtomicInteger(0)
     private val delta = 1.0 / sampleRateHz
     private var lastTime = startTime
+    private val processors = queries.map(Query::parse)
 
     /** Send the telemetry data and return whether we are done sending data. */
-    fun sendIfNecessary(telemetryData: TelemetryData): Boolean {
-      if (telemetryData.sessionTime > lastTime + delta) {
-        responseObserver.onNext(telemetryData)
+    fun sendIfNecessary(telemetryDataPoint: TelemetryDataPoint): Boolean {
+      val results = processors.map { it.process(telemetryDataPoint) }
+      if (telemetryDataPoint.sessionTime > lastTime + delta) {
+        val firstResult = results.first()
+        responseObserver.onNext(telemetryData {
+          sessionTime = firstResult.sessionTime
+          driverDistance = firstResult.driverDistance
+          queryValues.addAll(results.map(DataPoint::value))
+        })
         lastTime += delta
       }
       entriesSent.getAndIncrement()

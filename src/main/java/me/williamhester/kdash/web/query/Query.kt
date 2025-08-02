@@ -1,6 +1,6 @@
 package me.williamhester.kdash.web.query
 
-internal object Query {
+object Query {
   private val LEGAL_CHARS = (('a'..'z') + ('A'..'Z') + '_')
   private val NUMBERS = (('0'..'9'))
 
@@ -63,9 +63,6 @@ internal object Query {
       "LAP_DELTA" -> {
         validateArguments(functionName, 1, args.size)
         val expression = parseInternal(args[0])
-        if (expression !is VariableExpression) {
-          throw QueryParseException("LAP_DELTA expected a variable but received $expression")
-        }
         FunctionExpression(functionName, listOf(expression))
       }
       "LAP_AVERAGE" -> {

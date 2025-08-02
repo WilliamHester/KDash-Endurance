@@ -5,8 +5,7 @@ import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryPusherServiceOuterClass
 import me.williamhester.kdash.web.models.DataPoint
 import me.williamhester.kdash.web.models.TelemetryDataPoint
-import java.util.Queue
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CopyOnWriteArrayList
 
 sealed interface Processor {
   fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint
@@ -16,30 +15,34 @@ sealed interface Processor {
 }
 
 internal class LapDeltaProcessor(private val childProcessor: Processor) : Processor {
-  private val queue: Queue<DataPoint> = ConcurrentLinkedQueue()
+  private val queue = CopyOnWriteArrayList<DataPoint>()
 
   override val requiredOffset: Float = 1.0F + childProcessor.requiredOffset
 
   override fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint {
     val current = childProcessor.process(telemetryDataPoint)
-    queue.offer(current)
+    queue.add(current)
 
     val currentDistance = telemetryDataPoint.driverDistance
     var oneLapAgoData: DataPoint? = null
-    while (queue.size > 0) {
-      val last = queue.peek()
+    var i = 0
+    while (i < queue.size) {
+      val last = queue[i]
       if (last.driverDistance <= currentDistance - 1) {
-        oneLapAgoData = queue.poll()
+        oneLapAgoData = last
       } else {
         break
       }
+      i++
     }
+    // At this point, i is 1 more than the oneLapAgo data position
+    for (unused in 0 until i - 1) queue.removeFirst()
 
     // Return 0 if we don't have a data point
     if (oneLapAgoData == null) return DataPoint(telemetryDataPoint.sessionTime, telemetryDataPoint.driverDistance, 0.0)
 
     val oldPoint1 = oneLapAgoData
-    val oldPoint2 = queue.peek()
+    val oldPoint2 = queue[1]
 
     val interpolatedValue = interpolateDistance(currentDistance - 1, oldPoint1, oldPoint2)
 
