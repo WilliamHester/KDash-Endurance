@@ -98,14 +98,12 @@ class Client {
       codedOutputStream.flush()
 
       val bytes = byteArrayOutputStream.toByteArray()
-      logger.atInfo().atMostEvery(10, TimeUnit.SECONDS).log("Bytes: %s", bytes.size)
       val dataSnapshot = DataSnapshot.parseFrom(bytes)
       outputStreamObserver.onNext(
         sessionMetadataOrDataSnapshot {
           this.dataSnapshot = dataSnapshot
         }
       )
-      logger.atInfo().atMostEvery(10, TimeUnit.SECONDS).log("Sending data snapshot: %s", dataSnapshot)
     }
   }
 
@@ -185,7 +183,7 @@ class Client {
           logger.atSevere().withCause(e).log("Uncaught exception")
       }
       Client().connect()
-      Thread.sleep(365 * 24 * 60 * 60 * 1000)
+      Thread.sleep(365 * 24 * 60 * 60 * 1000L)
     }
   }
 }

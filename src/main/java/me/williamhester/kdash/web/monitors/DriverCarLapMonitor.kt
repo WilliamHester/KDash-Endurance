@@ -33,7 +33,7 @@ class DriverCarLapMonitor(
   private var pitStartTime = 0.0
   private var maxSpeed = 0.0F
 
-  private var previousInPits = false
+  private var wasOnPitRoad = false
   private var wasInPitBox = false
   private var didAddFuel = false
   private var fuelUsedBeforeRefuel = 0.0F
@@ -47,7 +47,7 @@ class DriverCarLapMonitor(
     val currentLap = dataSnapshot.lap
     val fuelRemaining = dataSnapshot.fuelLevel
     // Check that currentLap > lapNum in case we tow. Tows actually go back to lap 0 temporarily.
-    if (currentLap != lapNum && currentLap > lapNum) {
+    if (currentLap > lapNum) {
       val sessionTime = dataSnapshot.sessionTime
       // Values that are accurate at the end of the previous lap
       position = dataSnapshot.playerCarPosition
@@ -113,10 +113,10 @@ class DriverCarLapMonitor(
       this.fuelRemaining = fuelRemaining
     }
 
-    val inPits = dataSnapshot.onPitRoad
+    val isOnPitRoad = dataSnapshot.onPitRoad
 
-    pitIn = pitIn || (!previousInPits && inPits)
-    pitOut = pitOut || (previousInPits && !inPits)
+    pitIn = pitIn || (!wasOnPitRoad && isOnPitRoad)
+    pitOut = pitOut || (wasOnPitRoad && !isOnPitRoad)
 
     val trackLocFlags = dataSnapshot.carIdxTrackSurfaceList[driverCarIdx]
     val isInPitBox = trackLocFlags == 1
@@ -132,7 +132,7 @@ class DriverCarLapMonitor(
     }
 
     wasInPitBox = isInPitBox
-    previousInPits = inPits
+    wasOnPitRoad = isOnPitRoad
 
     maxSpeed = max(maxSpeed, dataSnapshot.speed)
   }

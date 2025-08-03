@@ -27,7 +27,7 @@ class OtherCarsLapMonitor(
     var pitTime = 0.0
     var pitStartTime = 0.0
 
-    var previousInPits = false
+    var wasOnPitRoad = false
     var wasInPitBox = false
   }
 
@@ -39,7 +39,7 @@ class OtherCarsLapMonitor(
       carState.apply {
         val currentLap = dataSnapshot.getCarIdxLap(carIdx)
         // Check that currentLap > lapNum in case we tow. Tows actually go back to lap 0 temporarily.
-        if (currentLap != lapNum && currentLap > lapNum) {
+        if (currentLap > lapNum) {
           val sessionTime = dataSnapshot.sessionTime
           // Values that are accurate at the end of the previous lap
           position = dataSnapshot.getCarIdxPosition(carIdx)
@@ -76,10 +76,10 @@ class OtherCarsLapMonitor(
           pitOut = false
         }
 
-        val inPits = dataSnapshot.getCarIdxOnPitRoad(carIdx)
+        val onPitRoad = dataSnapshot.getCarIdxOnPitRoad(carIdx)
 
-        pitIn = pitIn || (!previousInPits && inPits)
-        pitOut = pitOut || (previousInPits && !inPits)
+        pitIn = pitIn || (!wasOnPitRoad && onPitRoad)
+        pitOut = pitOut || (wasOnPitRoad && !onPitRoad)
 
         val trackLocFlags = dataSnapshot.getCarIdxTrackSurface(carIdx)
         val isInPitBox = trackLocFlags == 1
@@ -91,7 +91,7 @@ class OtherCarsLapMonitor(
         }
 
         wasInPitBox = isInPitBox
-        previousInPits = inPits
+        wasOnPitRoad = onPitRoad
       }
     }
   }

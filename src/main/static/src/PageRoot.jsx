@@ -54,6 +54,7 @@ export default function App2() {
   const gapBuffer = useRef([]);
   const lapBuffer = useRef([]);
   const otherCarLapBuffer = useRef([]);
+  const driverDistancesBuffer = useRef([]);
 
   useEffect(() => {
     const liveTelemetryServiceClient = client;
@@ -73,7 +74,7 @@ export default function App2() {
     // setupStream('monitorCurrentGaps', gapBuffer);
     const driverLapsStream = setupStream('monitorDriverLaps', lapBuffer);
     //     setupStream('monitorOtherCarsLaps', otherCarLapBuffer);
-    // setupStream('monitorDriverDistances', driverDistancesBuffer);
+    setupStream('monitorDriverLaps', driverDistancesBuffer);
     // setupStream('monitorFuelLevel', fuelBuffer);
 
     // This stream updates state directly because it's a single map, not a growing list.
