@@ -1,8 +1,5 @@
 package me.williamhester.kdash.web.query
 
-import com.google.protobuf.Descriptors.FieldDescriptor
-import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
-import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryPusherServiceOuterClass
 import me.williamhester.kdash.web.models.DataPoint
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import java.util.concurrent.CopyOnWriteArrayList
@@ -64,28 +61,12 @@ private fun interpolateDistance(targetDistance: Float, dataPoint1: DataPoint, da
 }
 
 internal class VariableProcessor(variableName: String): Processor {
-  private var fieldDescriptor: FieldDescriptor? = null
-
-  init {
-    val fields = DataSnapshot.getDescriptor().fields
-    for (field in fields) {
-      val iRacingField = field.options.getExtension(LiveTelemetryPusherServiceOuterClass.iracingField)
-      if (iRacingField == variableName) {
-        fieldDescriptor = field
-        break
-      }
-    }
-    if (fieldDescriptor == null) {
-      throw VariableNotFoundException(variableName)
-    }
-  }
+  private val getter = VariableMapping.getGetter(variableName)
 
   override val requiredOffset: Float = 0.0F
 
   override fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint {
-    val fieldValue = (telemetryDataPoint.dataSnapshot.getField(fieldDescriptor) as Number).toDouble()
+    val fieldValue = getter(telemetryDataPoint)
     return DataPoint(telemetryDataPoint.sessionTime, telemetryDataPoint.driverDistance, fieldValue)
   }
 }
-
-private class VariableNotFoundException(varName: String) : Exception("Variable $varName not found.")
