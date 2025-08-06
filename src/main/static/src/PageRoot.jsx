@@ -13,6 +13,7 @@ import GapsPage from "./gaps/GapsPage";
 import TelemetryPage from "./telemetry/TelemetryPage.jsx";
 import TrackMapPage from "./trackmap/TrackMapPage";
 import App from "./App";
+import RaceOverviewPage from "./overview/RaceOverviewPage.jsx";
 
 export default function App2() {
   const [gapEntries, setGapEntries] = useState([]);
@@ -113,7 +114,7 @@ export default function App2() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />}>
-          <Route path="" element={<LapLogPage entries={lapEntries} />} />
+          <Route path="" element={<RaceOverviewPage lapLog={lapEntries} />} />
           <Route path="laps" element={<LapLogPage entries={lapEntries} />} />
           <Route path="otherlaps" element={<OtherCarsLapLogPage entries={otherCarLapEntries} drivers={currentDrivers} />} />
           <Route path="gaps" element={<GapsPage entries={gapEntries} drivers={currentDrivers} />} />

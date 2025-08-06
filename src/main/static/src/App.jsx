@@ -16,6 +16,7 @@ function App() {
 
       <div className="row">
         <div className="hamburgerMenu">
+          <NavLink className="no-style-link hamburgerMenuItem" to="/">Race Overview</NavLink>
           <NavLink className="no-style-link hamburgerMenuItem" to="/laps">Lap Records</NavLink>
           <NavLink className="no-style-link hamburgerMenuItem" to="/otherlaps">Other Cars' Laps</NavLink>
           <NavLink className="no-style-link hamburgerMenuItem" to="/gaps">Current Gaps</NavLink>
