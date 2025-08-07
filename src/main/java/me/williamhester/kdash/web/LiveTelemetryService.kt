@@ -13,11 +13,14 @@ import me.williamhester.kdash.enduranceweb.proto.Gaps
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryServiceGrpc.LiveTelemetryServiceImplBase
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
+import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryRequest
+import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.TelemetryData
 import me.williamhester.kdash.enduranceweb.proto.dataRange
 import me.williamhester.kdash.enduranceweb.proto.dataRanges
+import me.williamhester.kdash.enduranceweb.proto.queryRealtimeTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.queryTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.telemetryData
 import me.williamhester.kdash.web.models.DataPoint
@@ -56,6 +59,8 @@ class LiveTelemetryService(
   private val currentDriversStreamObservers = CopyOnWriteArrayList<CurrentDriversStreamObserverHolder>()
   private val driverDistancesStreamObserverHolders = CopyOnWriteArrayList<DriverDistanceStreamObserverHolder>()
   private val telemetryDataStreamObserverHolders = CopyOnWriteArrayList<TelemetryDataStreamObserverProgressHolder>()
+  private val realtimeTelemetryDataStreamObserverHolders =
+    CopyOnWriteArrayList<RealtimeTelemetryDataStreamObserverProgressHolder>()
   private val initializedLock = CountDownLatch(1)
 
   fun start(executor: Executor) {
@@ -97,6 +102,7 @@ class LiveTelemetryService(
     emitNewDriversPerStream()
     emitDriverDistances()
     emitTelemetryData()
+    emitRealtimeTelemetryData()
   }
 
   private fun emitDriverLapLogs() {
@@ -221,6 +227,28 @@ class LiveTelemetryService(
       }
     }
     telemetryDataStreamObserverHolders.removeAll(responseObserversToRemove)
+  }
+
+  private fun emitRealtimeTelemetryData() {
+    val telemetryDataPoints = dataSnapshotMonitor.telemetryDataPoints
+
+    val responseObserversToRemove = mutableSetOf<RealtimeTelemetryDataStreamObserverProgressHolder>()
+    for (responseObserverHolder in realtimeTelemetryDataStreamObserverHolders) {
+      val telemetryDataSent = responseObserverHolder.telemetryDataPosition
+      while (telemetryDataPoints.size > telemetryDataSent.get()) {
+        val shouldRemove = try {
+          responseObserverHolder.sendIfNecessary(telemetryDataPoints[telemetryDataSent.getAndIncrement()])
+          false
+        } catch (e: StatusRuntimeException) {
+          true
+        }
+        if (shouldRemove) {
+          responseObserversToRemove += responseObserverHolder
+          break
+        }
+      }
+    }
+    realtimeTelemetryDataStreamObserverHolders.removeAll(responseObserversToRemove)
   }
 
   override fun monitorDriverLaps(
@@ -371,6 +399,84 @@ class LiveTelemetryService(
       val shouldClose = lastTime > endTime
       if (shouldClose) responseObserver.onCompleted()
       return shouldClose
+    }
+  }
+
+  override fun queryRealtimeTelemetry(
+    request: QueryRealtimeTelemetryRequest,
+    responseObserver: StreamObserver<QueryRealtimeTelemetryResponse>,
+  ) {
+    val holder = RealtimeTelemetryDataStreamObserverProgressHolder(
+      responseObserver = responseObserver,
+      sampleRateHz = request.sampleRateHz,
+      queries = request.queriesList,
+    )
+
+    holder.initialize(dataSnapshotMonitor.telemetryDataPoints)
+
+    realtimeTelemetryDataStreamObserverHolders.add(holder)
+  }
+
+  private class RealtimeTelemetryDataStreamObserverProgressHolder(
+    private val responseObserver: StreamObserver<QueryRealtimeTelemetryResponse>,
+    sampleRateHz: Double,
+    queries: List<String>,
+  ) {
+    val telemetryDataPosition = AtomicInteger(0)
+    private val delta = 1.0 / sampleRateHz
+    private var lastTime = 0.0
+    private val processors = queries.map(Query::parse)
+    // Initialize a list of previous values to Double.NEGATIVE_INFINITY. This should ensure that the first values read
+    // are different from the values that already existed in the list.
+    private val previousValues = (1..queries.size).map { Double.NEGATIVE_INFINITY }.toMutableList()
+
+    /**
+     * The lap offset required to properly display the latest data.
+     *
+     * For example, if we are displaying a value that's the average of the last 5 laps, we need to process the previous
+     * 5 laps of data before we can properly display the results for this value.
+     */
+    val largestLapOffsetRequired = processors.maxOf { it.requiredOffset }
+
+    fun initialize(currentData: List<TelemetryDataPoint>) {
+      val latest = currentData.last()
+      val latestDistance = latest.driverDistance
+      val distanceToSkipTo = latestDistance - largestLapOffsetRequired
+      while (currentData[telemetryDataPosition.get()].driverDistance < distanceToSkipTo) {
+        telemetryDataPosition.getAndIncrement()
+      }
+      // Decrement by 1 to ensure that we're less than the distance to skip to.
+      telemetryDataPosition.getAndDecrement()
+
+      // Skip to - 1 in case we aren't currently processing data. This will cause the emit loop to emit the last record.
+      while (telemetryDataPosition.get() < currentData.size - 1) {
+        val pos = telemetryDataPosition.getAndIncrement()
+        processors.map {
+          it.process(currentData[pos])
+        }
+      }
+    }
+
+    /** Send the telemetry data and return whether we are done sending data. */
+    fun sendIfNecessary(telemetryDataPoint: TelemetryDataPoint) {
+      val results = processors.map { it.process(telemetryDataPoint) }
+      if (telemetryDataPoint.sessionTime > lastTime + delta) {
+        val resultValues = results.map(DataPoint::value)
+        val response = queryRealtimeTelemetryResponse {
+          var i = 0
+          for ((prev, cur) in previousValues.zip(resultValues)) {
+            if (prev != cur) {
+              previousValues[i] = cur
+              sparseQueryValues[i] = cur
+            }
+            i++
+          }
+        }
+        if (response.sparseQueryValuesCount > 0) {
+          responseObserver.onNext(response)
+        }
+        lastTime += delta
+      }
     }
   }
 

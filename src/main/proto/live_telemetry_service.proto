@@ -10,6 +10,8 @@ option java_multiple_files = true;
 service LiveTelemetryService {
    rpc QueryTelemetry(QueryTelemetryRequest) returns (stream QueryTelemetryResponse);
 
+   rpc QueryRealtimeTelemetry(QueryRealtimeTelemetryRequest) returns (stream QueryRealtimeTelemetryResponse);
+
    rpc MonitorLaps(ConnectRequest) returns (stream LapData);
 
    rpc MonitorDriverLaps(ConnectRequest) returns (stream LapEntry);
@@ -69,9 +71,25 @@ message TelemetryData {
    // Required.
    float driver_distance = 2;
 
-   // Values for each query requested in the QueryTelemetryRequest
+   // Values for each query requested in the QueryTelemetryRequest.
    // Required.
    repeated double query_values = 3;
+}
+
+message QueryRealtimeTelemetryRequest {
+   // A list of queries that should be executed for each telemetry value.
+   repeated string queries = 1;
+
+   // Rate at which data should be sampled.
+   // Default (zero) will send data at the max sample rate.
+   double sample_rate_hz = 2;
+}
+
+message QueryRealtimeTelemetryResponse {
+   // Values for each query requested in the QueryTelemetryRequest. Unlike query_values, values are only returned if
+   // they have changed from the previous value. Keys are the indices of the requests.
+   // Optional.
+   map<int32, double> sparse_query_values = 1;
 }
 
 // The range of the queried data, even if it's outside the query range.
