@@ -51,6 +51,18 @@ export default function RaceOverviewPage({lapLog}) {
       query: 'Lap',
       getterAndSetter: useState(0),
     },
+    {
+      name: 'Track Temp',
+      query: 'TrackTempCrew',
+      getterAndSetter: useState(0),
+      formatter: (value) => `${value.toFixed(1)}°C`,
+    },
+    {
+      name: 'Last Pit Lap',
+      query: 'LastPitLap',
+      getterAndSetter: useState(0),
+      // formatter: (value) => `${value.toFixed(1)}°C`,
+    },
   ];
 
   useEffect(() => {
@@ -82,7 +94,6 @@ export default function RaceOverviewPage({lapLog}) {
       </VariableBox>) }
       {/* <VariableBox title={'Sim Time'}>1:42 AM</VariableBox> */}
       <VariableBox title={'Stint Lap'}>6/24</VariableBox>
-      <VariableBox title={'Track Temp'}>21&deg;C</VariableBox>
       <VariableBox title={'Track Precip'}>0&#37;</VariableBox>
       <VariableBox title={'Avg 5 Lap Fuel'}>4.323</VariableBox>
       <VariableBox title={'Repairs (Optional)'}>6:35 (8:12)</VariableBox>

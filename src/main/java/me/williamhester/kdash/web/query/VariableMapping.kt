@@ -23,6 +23,7 @@ object VariableMapping {
   fun getGetter(fieldName: String): (TelemetryDataPoint) -> Double {
     return when (fieldName) {
       in rawTelemetryFields.keys -> rawTelemetryFields[fieldName]!!
+      "LastPitLap" -> { tdp: TelemetryDataPoint -> tdp.syntheticFields.lastPitLap.toDouble() }
       else -> throw VariableNotFoundException(fieldName)
     }
   }

@@ -6,4 +6,5 @@ data class TelemetryDataPoint(
   val sessionTime: Double,
   val driverDistance: Float,
   val dataSnapshot: DataSnapshot,
+  val syntheticFields: SyntheticFields,
 )
