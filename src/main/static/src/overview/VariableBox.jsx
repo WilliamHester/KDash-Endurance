@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import './VariableBox.css';
 
 export default function VariableBox({ title, children }) {
@@ -8,4 +8,8 @@ export default function VariableBox({ title, children }) {
       <div className="variable-box-contents">{children}</div>
     </div>
   );
+};
+
+export function TextBox({ title, children }) {
+  return <VariableBox title={title} className="text-box"><span className="variable-text">{children}</span></VariableBox>;
 };

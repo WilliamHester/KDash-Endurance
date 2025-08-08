@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
-import VariableBox from "./VariableBox";
+import VariableBox, { TextBox } from "./VariableBox";
 import Row from "../base/Row";
 import "./RaceOverviewPage.css";
-import LapLogPage from "../laplog/LapLogPage";
+import CarLapLog from "./CarLapLog";
 import { QueryRealtimeTelemetryRequest } from "../live_telemetry_service_pb.js";
 import { LiveTelemetryServiceClient } from "../live_telemetry_service_grpc_web_pb";
 
@@ -61,13 +61,11 @@ export default function RaceOverviewPage({lapLog}) {
       name: 'Last Pit Lap',
       query: 'LastPitLap',
       getterAndSetter: useState(0),
-      // formatter: (value) => `${value.toFixed(1)}°C`,
     },
     {
       name: 'Stint Completed Laps',
       query: 'Lap - LastPitLap',
       getterAndSetter: useState(0),
-      // formatter: (value) => `${value.toFixed(1)}°C`,
     },
   ];
 
@@ -91,24 +89,22 @@ export default function RaceOverviewPage({lapLog}) {
     };
   }, [client]);
 
-  // console.log(queryList);
-
   return <div>
     <Row>
-      { queryList.map(query => <VariableBox key={query.name} title={query.name}>
+      { queryList.map(query => <TextBox key={query.name} title={query.name}>
         { query.formatter ? query.formatter(query.getterAndSetter[0]) : query.getterAndSetter[0] }
-      </VariableBox>) }
-      {/* <VariableBox title={'Sim Time'}>1:42 AM</VariableBox> */}
-      <VariableBox title={'Stint Lap'}>6/24</VariableBox>
-      <VariableBox title={'Track Precip'}>0&#37;</VariableBox>
-      <VariableBox title={'Avg 5 Lap Fuel'}>4.323</VariableBox>
-      <VariableBox title={'Repairs (Optional)'}>6:35 (8:12)</VariableBox>
-      <VariableBox title={'Incidents (Current Driver)'}>31 (8)</VariableBox>
-      <VariableBox title={'Session'}>Race</VariableBox>
+      </TextBox>) }
+      {/* <TextBox title={'Sim Time'}>1:42 AM</TextBox> */}
+      <TextBox title={'Stint Lap'}>6/24</TextBox>
+      <TextBox title={'Track Precip'}>0&#37;</TextBox>
+      <TextBox title={'Avg 5 Lap Fuel'}>4.323</TextBox>
+      <TextBox title={'Repairs (Optional)'}>6:35 (8:12)</TextBox>
+      <TextBox title={'Incidents (Current Driver)'}>31 (8)</TextBox>
+      <TextBox title={'Session'}>Race</TextBox>
     </Row>
     <Row style={{'height': '500px'}}>
       <VariableBox title={'Laps'}>
-        <LapLogPage entries={lapLog}></LapLogPage>
+        <CarLapLog entries={lapLog}></CarLapLog>
       </VariableBox>
     </Row>
   </div>;
