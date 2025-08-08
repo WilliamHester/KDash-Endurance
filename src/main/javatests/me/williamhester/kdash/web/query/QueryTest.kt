@@ -30,4 +30,25 @@ class QueryTest {
         FunctionExpression("LAP_AVERAGE", listOf(VariableExpression("TelemetryVariable"), NumberExpression(5)))
       )
   }
+
+  @Test
+  fun parse_parsesSubtractionExpression() {
+    val expression = Query.parseInternal("A - B")
+
+    assertThat(expression).isEqualTo(SubtractionExpression(listOf(VariableExpression("A"), VariableExpression("B"))))
+  }
+
+  @Test
+  fun parse_parsesComplexSubtractionExpression() {
+    val expression = Query.parseInternal("A - LAP_AVERAGE(B, 1)")
+
+    assertThat(expression).isEqualTo(
+      SubtractionExpression(
+        listOf(
+          VariableExpression("A"),
+          FunctionExpression("LAP_AVERAGE", listOf(VariableExpression("B"), NumberExpression(1))),
+        )
+      )
+    )
+  }
 }

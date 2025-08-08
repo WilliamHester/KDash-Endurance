@@ -70,3 +70,18 @@ internal class VariableProcessor(variableName: String): Processor {
     return DataPoint(telemetryDataPoint.sessionTime, telemetryDataPoint.driverDistance, fieldValue)
   }
 }
+
+internal class SubtractionProcessor(private val processors: List<Processor>): Processor {
+  override val requiredOffset: Float = processors.maxOf(Processor::requiredOffset)
+
+  override fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint {
+    val iterator = processors.iterator()
+
+    val first = iterator.next().process(telemetryDataPoint)
+    var result = first.value
+    while (iterator.hasNext()) {
+      result -= iterator.next().process(telemetryDataPoint).value
+    }
+    return DataPoint(first.sessionTime, first.driverDistance, result)
+  }
+}

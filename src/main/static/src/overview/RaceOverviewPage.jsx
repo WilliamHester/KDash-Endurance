@@ -63,6 +63,12 @@ export default function RaceOverviewPage({lapLog}) {
       getterAndSetter: useState(0),
       // formatter: (value) => `${value.toFixed(1)}°C`,
     },
+    {
+      name: 'Stint Completed Laps',
+      query: 'Lap - LastPitLap',
+      getterAndSetter: useState(0),
+      // formatter: (value) => `${value.toFixed(1)}°C`,
+    },
   ];
 
   useEffect(() => {

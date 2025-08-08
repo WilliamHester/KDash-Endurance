@@ -16,12 +16,20 @@ object Query {
         "LAP_DELTA" -> LapDeltaProcessor(toProcessor(expression.params[0]))
         else -> TODO("Unimplemented function: ${expression.function}")
       }
+      is SubtractionExpression -> SubtractionProcessor(expression.expressions.map(this::toProcessor))
       is NumberExpression -> TODO("Implement NumberProcessor")
     }
   }
 
   internal fun parseInternal(query: String): Expression {
     val trimmed = query.trim()
+
+    // Note: This WILL NOT work if we have a query like "LAP_DELTA(Var - Var2)" since it will split the parentheses into
+    // separate subqueries.
+    val queryParts = trimmed.split('-')
+    if (queryParts.size > 1) {
+      return SubtractionExpression(queryParts.map(this::parseInternal))
+    }
 
     if (trimmed.isEmpty()) throw QueryParseException("Expression is empty")
     if (trimmed.firstOrNull() in NUMBERS) return toNumberExpression(trimmed)
@@ -99,5 +107,7 @@ internal data class VariableExpression(val value: String) : Expression
 internal data class FunctionExpression(val function: String, val params: List<Expression>) : Expression
 
 internal data class NumberExpression(val value: Int) : Expression
+
+internal data class SubtractionExpression(val expressions: List<Expression>) : Expression
 
 class QueryParseException(val error: String) : Exception(error)
