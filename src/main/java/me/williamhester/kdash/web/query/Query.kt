@@ -1,47 +1,177 @@
 package me.williamhester.kdash.web.query
 
+import me.williamhester.kdash.web.models.DataPoint
+import me.williamhester.kdash.web.models.TelemetryDataPoint
+
 object Query {
-  private val LEGAL_CHARS = (('a'..'z') + ('A'..'Z') + '_')
+  private val FUNCTION_OR_VARIABLE_NAMES = (('a'..'z') + ('A'..'Z') + '_')
   private val NUMBERS = (('0'..'9'))
+  private val OPERATOR_CHARACTERS = setOf('+', '-', '*', '/')
+  private val CONTROL_CHARACTERS = setOf(' ', '(', ')', ',') + OPERATOR_CHARACTERS
 
   fun parse(query: String): Processor {
-    val expression = parseInternal(query)
+    val expression = parseToExpression(query)
     return toProcessor(expression)
   }
 
   private fun toProcessor(expression: Expression): Processor {
-    return when (expression) {
-      is VariableExpression -> VariableProcessor(expression.value)
-      is FunctionExpression -> when (expression.function) {
-        "LAP_DELTA" -> LapDeltaProcessor(toProcessor(expression.params[0]))
-        else -> TODO("Unimplemented function: ${expression.function}")
+    val tokensIterator = expression.tokens.iterator()
+    if (!tokensIterator.hasNext()) throw QueryParseException("Empty query")
+
+    val processors = mutableListOf<OperatorAndProcessor>()
+
+    val processor = toProcessorNonOperator(tokensIterator.next())
+    processors += OperatorAndProcessor(OperatorToken.ADD, processor)
+
+    while (tokensIterator.hasNext()) {
+      val operatorToken = tokensIterator.next()
+      if (operatorToken !is OperatorToken) throw QueryParseException("Unexpected token: $operatorToken")
+
+      if (!tokensIterator.hasNext()) throw QueryParseException("Unexpected end of query.")
+
+      val nextProcessor = toProcessorNonOperator(tokensIterator.next())
+      processors += OperatorAndProcessor(operatorToken, nextProcessor)
+    }
+
+    return CompositeProcessor(processors)
+  }
+
+  private class CompositeProcessor(private val operatorsAndProcessors: List<OperatorAndProcessor>) : Processor {
+    override val requiredOffset: Float = operatorsAndProcessors.maxOf { it.processor.requiredOffset }
+
+    override fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint {
+      var result = 0.0
+      for ((operator, processor) in operatorsAndProcessors) {
+        val processorResult = processor.process(telemetryDataPoint)
+
+        when (operator) {
+          OperatorToken.ADD -> result += processorResult.value
+          OperatorToken.SUBTRACT -> result -= processorResult.value
+          OperatorToken.MULTIPLY -> result *= processorResult.value
+          OperatorToken.DIVIDE -> result /= processorResult.value
+        }
       }
-      is SubtractionExpression -> SubtractionProcessor(expression.expressions.map(this::toProcessor))
-      is NumberExpression -> TODO("Implement NumberProcessor")
+      return DataPoint(telemetryDataPoint.sessionTime, telemetryDataPoint.driverDistance, result)
     }
   }
 
-  internal fun parseInternal(query: String): Expression {
-    val trimmed = query.trim()
-
-    // Note: This WILL NOT work if we have a query like "LAP_DELTA(Var - Var2)" since it will split the parentheses into
-    // separate subqueries.
-    val queryParts = trimmed.split('-')
-    if (queryParts.size > 1) {
-      return SubtractionExpression(queryParts.map(this::parseInternal))
-    }
-
-    if (trimmed.isEmpty()) throw QueryParseException("Expression is empty")
-    if (trimmed.firstOrNull() in NUMBERS) return toNumberExpression(trimmed)
-
-    for (i in trimmed.indices) {
-      when (val char = trimmed[i]) {
-        '(' -> return toFunctionExpression(trimmed.substring(0, i), findParenContents(trimmed.substring(i + 1)))
-        ' ' -> return VariableExpression(trimmed.substring(0, i))
-        else -> validateLegalCharacter(char)
+  private fun toProcessorNonOperator(token: Token) = when (token) {
+    is NumberToken -> NumberProcessor(token.value)
+    is VariableToken -> VariableProcessor(token.value)
+    is FunctionToken -> when (token.value) {
+      "LAP_DELTA" -> {
+        validateArguments("LAP_DELTA", 1, token.tokens.size)
+        LapDeltaProcessor(toProcessor(token.tokens.first()))
       }
+      "LAP_AVERAGE" -> {
+        validateArguments("LAP_AVERAGE", 2, token.tokens.size)
+        val arg1 = token.tokens[0]
+        val arg2 = token.tokens[1].tokens[0]
+        if (arg2 !is NumberToken) throw QueryParseException("LAP_AVERAGE expects an integer for the second parameter.")
+        LapAverageProcessor(toProcessor(arg1), arg2.value)
+      }
+      else -> throw QueryParseException("Unknown function: ${token.value}")
     }
-    return VariableExpression(trimmed)
+    is OperatorToken -> throw QueryParseException("Unexpected operator: $token")
+  }
+
+  private data class OperatorAndProcessor(val operatorToken: OperatorToken, val processor: Processor)
+
+  internal fun parseToExpression(query: String): Expression = Expression(parseInternal(query).first)
+
+  internal fun parseInternal(query: String, terminatingChars: Set<Char> = setOf()): Pair<List<Token>, Int> {
+    val trimmed = query.trim()
+    if (trimmed.isEmpty()) {
+      throw QueryParseException("Empty query")
+    }
+
+    val tokens = mutableListOf<Token>()
+    var i = 0
+    var startOfExpression = 0
+    while (i < trimmed.length) {
+      val (token, charsToSkip) =
+        when (val char = trimmed[i]) {
+          in NUMBERS -> parseNumber(trimmed.substring(startOfExpression))
+          in FUNCTION_OR_VARIABLE_NAMES -> {
+            parseFunctionOrVariable(trimmed.substring(startOfExpression), terminatingChars)
+          }
+          in OPERATOR_CHARACTERS -> parseOperator(char)
+          ' ' -> {
+            startOfExpression = i + 1
+            i++
+            continue
+          }
+          in terminatingChars -> {
+            i++
+            break
+          }
+          else -> throw QueryParseException("Unexpected start of query: '$char'")
+        }
+      tokens += token
+      i += charsToSkip
+    }
+    return tokens to i + (query.length - trimmed.length)
+  }
+
+  internal fun parseNumber(query: String): Pair<Token, Int> {
+    var i = 1
+    while (i < query.length) {
+      when (val char = query[i]) {
+        in NUMBERS -> {} // Do nothing
+        in CONTROL_CHARACTERS -> break
+        else -> throw QueryParseException("Unexpected character while parsing number. Found '$char'.")
+      }
+      i++
+    }
+    return NumberToken(query.substring(0, i).toInt()) to i
+  }
+
+  internal fun parseFunctionOrVariable(query: String, terminatingChars: Set<Char> = setOf()): Pair<Token, Int> {
+    var i = 1
+    while (i < query.length) {
+      when (val char = query[i]) {
+        in FUNCTION_OR_VARIABLE_NAMES,
+        in NUMBERS -> {} // Do nothing
+        ' ' -> {
+          break
+        }
+        in terminatingChars -> {
+          break
+        }
+        '(' -> return parseFunction(query.substring(0, i), query.substring(i))
+        else -> throw QueryParseException("Unexpected character while parsing variable or function. Found '$char'.")
+      }
+      i++
+    }
+    return VariableToken(query.substring(0, i)) to i
+  }
+
+  internal fun parseOperator(char: Char): Pair<Token, Int> {
+    return when (char) {
+      '+' -> OperatorToken.ADD
+      '-' -> OperatorToken.SUBTRACT
+      '*' -> OperatorToken.MULTIPLY
+      '/' -> OperatorToken.DIVIDE
+      else -> throw AssertionError("Unsupported control character '$char'")
+    } to 1
+  }
+
+  internal fun parseFunction(functionName: String, remainingQuery: String): Pair<Token, Int> {
+    val afterParen = findParenContents(remainingQuery.substring(1))
+    val trimmed = afterParen.trim()
+
+    val expressions = mutableListOf<Expression>()
+    var i = 0
+    var startOfExpression = 0
+    while (i < trimmed.length) {
+      val (tokens, charsToSkip) = parseInternal(trimmed.substring(startOfExpression), setOf(','))
+      expressions += Expression(tokens)
+      i += charsToSkip
+      startOfExpression += charsToSkip
+    }
+    // Function name + params length + params surrounding whitespace length + 2 (one for each parenthesis)
+    val charsToSkip = functionName.length + i + (afterParen.length - trimmed.length) + 2
+    return FunctionToken(functionName, expressions) to charsToSkip
   }
 
   private fun findParenContents(afterParen: String): String {
@@ -65,49 +195,26 @@ object Query {
     throw QueryParseException("Unmatched right parentheses")
   }
 
-  private fun toFunctionExpression(functionName: String, parenContents: String): FunctionExpression {
-    val args = parenContents.split(',')
-    return when (functionName) {
-      "LAP_DELTA" -> {
-        validateArguments(functionName, 1, args.size)
-        val expression = parseInternal(args[0])
-        FunctionExpression(functionName, listOf(expression))
-      }
-      "LAP_AVERAGE" -> {
-        validateArguments(functionName, 2, args.size)
-        val expression1 = parseInternal(args[0])
-        val expression2 = parseInternal(args[1])
-        FunctionExpression(functionName, listOf(expression1, expression2))
-      }
-      else -> throw QueryParseException("Unknown function: '$functionName'")
-    }
-  }
-
-  private fun toNumberExpression(value: String): NumberExpression {
-    try {
-      return NumberExpression(value.toInt())
-    } catch (e: NumberFormatException) {
-      throw QueryParseException("Expression started with a number but was not a number: '$value'")
-    }
-  }
-
   private fun validateArguments(functionName: String, expectedArgs: Int, actualArgs: Int) {
-    if (actualArgs != expectedArgs) throw QueryParseException("$functionName expected 1 argument. Received $actualArgs")
-  }
-
-  private fun validateLegalCharacter(char: Char) {
-    if (char !in LEGAL_CHARS) throw QueryParseException("Illegal character: '$char'")
+    if (actualArgs != expectedArgs) throw QueryParseException("$functionName expected $expectedArgs argument. Received $actualArgs")
   }
 }
 
-internal sealed interface Expression
+internal sealed interface Token
 
-internal data class VariableExpression(val value: String) : Expression
+internal data class NumberToken(val value: Int) : Token
 
-internal data class FunctionExpression(val function: String, val params: List<Expression>) : Expression
+internal data class VariableToken(val value: String) : Token
 
-internal data class NumberExpression(val value: Int) : Expression
+internal data class FunctionToken(val value: String, val tokens: List<Expression>) : Token
 
-internal data class SubtractionExpression(val expressions: List<Expression>) : Expression
+internal enum class OperatorToken : Token {
+  ADD,
+  SUBTRACT,
+  MULTIPLY,
+  DIVIDE,
+}
+
+internal data class Expression(val tokens: List<Token>)
 
 class QueryParseException(val error: String) : Exception(error)

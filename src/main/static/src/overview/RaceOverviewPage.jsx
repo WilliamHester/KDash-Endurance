@@ -5,6 +5,7 @@ import "./RaceOverviewPage.css";
 import CarLapLog from "./CarLapLog";
 import { QueryRealtimeTelemetryRequest } from "../live_telemetry_service_pb.js";
 import { LiveTelemetryServiceClient } from "../live_telemetry_service_grpc_web_pb";
+import OtherCarsLapLog from "./OtherCarsLapLog";
 
 
 const fixedFormatter = (decimals) => (value) => {
@@ -19,7 +20,7 @@ const hourMinuteSecondFormatter = (value) => {
 };
 
 
-export default function RaceOverviewPage({lapLog}) {
+export default function RaceOverviewPage({drivers, lapLog, otherCarLapEntries}) {
   const client = useRef(new LiveTelemetryServiceClient(`${location.origin}/api`)).current;
   const queryList = [
     {
@@ -34,10 +35,15 @@ export default function RaceOverviewPage({lapLog}) {
       getterAndSetter: useState(0),
       formatter: hourMinuteSecondFormatter,
     },
-    // TODO: Fix this. It doesn't work when uncommented.
     { 
       name: 'Lap over lap fuel',
       query: 'LAP_DELTA(FuelLevel)',
+      getterAndSetter: useState(-1),
+      formatter: fixedFormatter(3),
+    },
+    { 
+      name: '2 lap average fuel',
+      query: 'LAP_AVERAGE(LAP_DELTA(FuelLevel), 2)',
       getterAndSetter: useState(-1),
       formatter: fixedFormatter(3),
     },
@@ -95,7 +101,6 @@ export default function RaceOverviewPage({lapLog}) {
         { query.formatter ? query.formatter(query.getterAndSetter[0]) : query.getterAndSetter[0] }
       </TextBox>) }
       {/* <TextBox title={'Sim Time'}>1:42 AM</TextBox> */}
-      <TextBox title={'Stint Lap'}>6/24</TextBox>
       <TextBox title={'Track Precip'}>0&#37;</TextBox>
       <TextBox title={'Avg 5 Lap Fuel'}>4.323</TextBox>
       <TextBox title={'Repairs (Optional)'}>6:35 (8:12)</TextBox>
@@ -105,6 +110,9 @@ export default function RaceOverviewPage({lapLog}) {
     <Row style={{'height': '500px'}}>
       <VariableBox title={'Laps'}>
         <CarLapLog entries={lapLog}></CarLapLog>
+      </VariableBox>
+      <VariableBox title="Other Team Laps">
+        <OtherCarsLapLog entries={otherCarLapEntries} drivers={drivers}></OtherCarsLapLog>
       </VariableBox>
     </Row>
   </div>;

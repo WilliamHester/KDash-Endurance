@@ -412,7 +412,7 @@ class LiveTelemetryService(
       queries = request.queriesList,
     )
 
-    holder.initialize(dataSnapshotMonitor.telemetryDataPoints)
+    holder.initialize(dataSnapshotMonitor.telemetryDataPoints.toList())
 
     realtimeTelemetryDataStreamObserverHolders.add(holder)
   }

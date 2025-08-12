@@ -45,7 +45,7 @@ export default function App2() {
     // presumably because the page itself would be a 7th connection.
     // setupStream('monitorCurrentGaps', gapBuffer);
     const driverLapsStream = setupStream('monitorDriverLaps', lapBuffer);
-    //     setupStream('monitorOtherCarsLaps', otherCarLapBuffer);
+    setupStream('monitorOtherCarsLaps', otherCarLapBuffer);
     setupStream('monitorDriverLaps', driverDistancesBuffer);
     // setupStream('monitorFuelLevel', fuelBuffer);
 
@@ -114,7 +114,7 @@ export default function App2() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />}>
-          <Route path="" element={<RaceOverviewPage lapLog={lapEntries} />} />
+          <Route path="" element={<RaceOverviewPage drivers={currentDrivers} lapLog={lapEntries} otherCarLapEntries={otherCarLapEntries} />} />
           <Route path="laps" element={<LapLogPage entries={lapEntries} />} />
           <Route path="otherlaps" element={<OtherCarsLapLogPage entries={otherCarLapEntries} drivers={currentDrivers} />} />
           <Route path="gaps" element={<GapsPage entries={gapEntries} drivers={currentDrivers} />} />

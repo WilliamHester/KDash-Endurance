@@ -28,7 +28,7 @@ export default function OtherCarsLapLogPage(props) {
         } else {
 //           console.log(lapEntry.getLapTime(), fastestLap);
         }
-        return <tr>
+        return <tr key={ lapEntry.getLapNum() }>
           <td className="number">{ lapEntry.getLapNum() }</td>
           <td>{ formatDriverName(lapEntry.getDriverName()) }</td>
           <td className="number">{ lapEntry.getPosition() }</td>
