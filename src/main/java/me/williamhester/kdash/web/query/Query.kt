@@ -58,6 +58,7 @@ object Query {
   private fun toProcessorNonOperator(token: Token) = when (token) {
     is NumberToken -> NumberProcessor(token.value)
     is VariableToken -> VariableProcessor(token.value)
+    is ParentheticalExpression -> toProcessor(token.expression)
     is FunctionToken -> when (token.value) {
       "LAP_DELTA" -> {
         validateArguments("LAP_DELTA", 1, token.tokens.size)
@@ -97,10 +98,11 @@ object Query {
           }
           in OPERATOR_CHARACTERS -> parseOperator(char)
           ' ' -> {
-            startOfExpression = i + 1
             i++
+            startOfExpression = i
             continue
           }
+          '(' -> parseParentheticalExpression(trimmed.substring(startOfExpression))
           in terminatingChars -> {
             i++
             break
@@ -156,6 +158,13 @@ object Query {
     } to 1
   }
 
+  internal fun parseParentheticalExpression(query: String): Pair<Token, Int> {
+    val contents = findParenContents(query.substring(1))
+    val (tokens, charsToSkip) = parseInternal(contents)
+    // +2 to account for the parentheses.
+    return ParentheticalExpression(Expression(tokens)) to charsToSkip + 2
+  }
+
   internal fun parseFunction(functionName: String, remainingQuery: String): Pair<Token, Int> {
     val afterParen = findParenContents(remainingQuery.substring(1))
     val trimmed = afterParen.trim()
@@ -207,6 +216,8 @@ internal data class NumberToken(val value: Int) : Token
 internal data class VariableToken(val value: String) : Token
 
 internal data class FunctionToken(val value: String, val tokens: List<Expression>) : Token
+
+internal data class ParentheticalExpression(val expression: Expression) : Token
 
 internal enum class OperatorToken : Token {
   ADD,

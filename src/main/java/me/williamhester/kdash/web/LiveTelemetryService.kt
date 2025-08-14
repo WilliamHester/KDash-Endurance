@@ -446,7 +446,7 @@ class LiveTelemetryService(
         telemetryDataPosition.getAndIncrement()
       }
       // Decrement by 1 to ensure that we're less than the distance to skip to.
-      telemetryDataPosition.getAndDecrement()
+      if (telemetryDataPosition.get() > 0) telemetryDataPosition.getAndDecrement()
 
       // Skip to - 1 in case we aren't currently processing data. This will cause the emit loop to emit the last record.
       while (telemetryDataPosition.get() < currentData.size - 1) {

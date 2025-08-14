@@ -130,6 +130,26 @@ class QueryTest {
   }
 
   @Test
+  fun parseToExpression_parsesParentheses() {
+    val expression = Query.parseToExpression("1 + (2 - 3)").tokens
+
+    assertThat(expression)
+      .containsExactly(
+        NumberToken(1),
+        OperatorToken.ADD,
+        ParentheticalExpression(
+          Expression(
+            listOf(
+              NumberToken(2),
+              OperatorToken.SUBTRACT,
+              NumberToken(3),
+            )
+          )
+        )
+      ).inOrder()
+  }
+
+  @Test
   fun parseToExpression_parsesFunctions2() {
     val expression = Query.parseToExpression("LAP_AVERAGE(LAP_DELTA(VarName), 1)").tokens
 

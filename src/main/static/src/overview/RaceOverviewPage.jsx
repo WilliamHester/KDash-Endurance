@@ -73,6 +73,11 @@ export default function RaceOverviewPage({drivers, lapLog, otherCarLapEntries}) 
       query: 'Lap - LastPitLap',
       getterAndSetter: useState(0),
     },
+    {
+      name: 'Math',
+      query: '1 - (2 - 3)',
+      getterAndSetter: useState(0),
+    },
   ];
 
   useEffect(() => {
