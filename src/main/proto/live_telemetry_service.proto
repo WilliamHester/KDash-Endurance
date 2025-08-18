@@ -112,6 +112,7 @@ message LapData {
    oneof lap {
       LapEntry driver_lap = 1;
       OtherCarLapEntry other_car_lap = 2;
+      StintEntry driver_stint = 3;
    }
 }
 
@@ -145,6 +146,18 @@ message OtherCarLapEntry {
    bool pit_in = 8;
    bool pit_out = 9;
    double pit_time = 10;
+}
+
+message StintEntry {
+   int32 out_lap = 1;
+   int32 in_lap = 2;
+   string driver_name = 3;
+   double total_time = 4;
+   repeated double lap_times = 5;
+   double average_lap_time = 6;
+   double fastest_lap_time = 7;
+   float track_temp = 8;
+   int32 incidents = 9;
 }
 
 message Gaps {

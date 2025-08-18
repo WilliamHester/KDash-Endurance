@@ -98,12 +98,12 @@ export default function RaceOverviewPage({drivers, lapLog, otherCarLapEntries}) 
     request.setSampleRateHz(1);
     request.setQueriesList(queryList.map(query => query.query));
 
-    console.log(`Queries: ${request.getQueriesList()}`);
+    // console.log(`Queries: ${request.getQueriesList()}`);
 
     const telemetryStream = client.queryRealtimeTelemetry(request, {});
     telemetryStream.on('data', response => {
       for (const [key, value] of response.getSparseQueryValuesMap().getEntryList()) {
-        console.log(`${key}: ${value}`);
+        // console.log(`${key}: ${value}`);
         queryList[key].getterAndSetter[1](value);
       }
     });

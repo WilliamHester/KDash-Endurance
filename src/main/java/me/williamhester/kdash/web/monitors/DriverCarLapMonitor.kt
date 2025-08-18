@@ -13,6 +13,8 @@ class DriverCarLapMonitor(
 
   private val _logEntries = mutableListOf<LogEntry>()
   val logEntries: List<LogEntry> = _logEntries
+  private val _stintEntries = mutableListOf<StintEntry>()
+  val stintEntries: List<StintEntry> = _stintEntries
 
   private var driverCarIdx = -1
 
@@ -32,6 +34,9 @@ class DriverCarLapMonitor(
   private var pitTime = 0.0
   private var pitStartTime = 0.0
   private var maxSpeed = 0.0F
+  private var pitOutLap = 0
+  private var pitInLap = 0
+  private var stintStartTime = 0.0
 
   private var wasOnPitRoad = false
   private var wasInPitBox = false
@@ -42,6 +47,7 @@ class DriverCarLapMonitor(
   fun process(dataSnapshot: DataSnapshot) {
     if (driverCarIdx == -1) {
       driverCarIdx = metadataHolder.metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
+      stintStartTime = dataSnapshot.sessionTime
     }
 
     val currentLap = dataSnapshot.lap
@@ -115,8 +121,14 @@ class DriverCarLapMonitor(
 
     val isOnPitRoad = dataSnapshot.onPitRoad
 
-    pitIn = pitIn || (!wasOnPitRoad && isOnPitRoad)
-    pitOut = pitOut || (wasOnPitRoad && !isOnPitRoad)
+    if (!wasOnPitRoad && isOnPitRoad) {
+      pitIn = true
+      pitInLap = currentLap
+    }
+    if (wasOnPitRoad && !isOnPitRoad) {
+      pitOut = true
+      pitOutLap = currentLap
+    }
 
     val trackLocFlags = dataSnapshot.carIdxTrackSurfaceList[driverCarIdx]
     val isInPitBox = trackLocFlags == 1
@@ -125,6 +137,23 @@ class DriverCarLapMonitor(
       pitStartTime = dataSnapshot.sessionTime
     } else if (wasInPitBox && !isInPitBox) {
       pitTime = dataSnapshot.sessionTime - pitStartTime
+
+      val stintTime = dataSnapshot.sessionTime - stintStartTime
+      _stintEntries.add(
+        StintEntry(
+          outLap = pitOutLap,
+          inLap = pitInLap,
+          driverName = metadataHolder.metadata["DriverInfo"]["Drivers"][driverCarIdx]["UserName"].value,
+          totalTime = stintTime,
+          lapTimes = listOf(),
+          averageLapTime = stintTime / ((pitInLap - pitOutLap) + 1),
+          fastestLapTime = 0.0,
+          trackTemp = 0.0F,
+          incidents = 0,
+        )
+      )
+
+      stintStartTime = dataSnapshot.sessionTime
     }
     if (dataSnapshot.pitstopActive) {
       optionalRepairsRemaining = dataSnapshot.pitOptRepairLeft

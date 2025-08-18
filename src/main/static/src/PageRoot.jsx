@@ -18,6 +18,7 @@ import RaceOverviewPage from "./overview/RaceOverviewPage.jsx";
 export default function App2() {
   const [gapEntries, setGapEntries] = useState([]);
   const [lapEntries, setLapEntries] = useState([]);
+  const [stintEntries, setStintEntries] = useState([]);
   const [otherCarLapEntries, setOtherCarLapEntries] = useState([]);
   const [currentDrivers, setCurrentDrivers] = useState(new Map());
 
@@ -25,8 +26,8 @@ export default function App2() {
 
   const gapBuffer = useRef([]);
   const lapBuffer = useRef([]);
+  const stintEntryBuffer = useRef([]);
   const otherCarLapBuffer = useRef([]);
-  const driverDistancesBuffer = useRef([]);
 
   useEffect(() => {
     const liveTelemetryServiceClient = client;
@@ -44,9 +45,19 @@ export default function App2() {
     // the streams into a single stream. Having 6 causes the browser to lock up when refreshing the page,
     // presumably because the page itself would be a 7th connection.
     // setupStream('monitorCurrentGaps', gapBuffer);
-    const driverLapsStream = setupStream('monitorDriverLaps', lapBuffer);
+    
+    const request = new ConnectRequest();
+    const driverLapsStream = liveTelemetryServiceClient.monitorLaps(request, {});
+    driverLapsStream.on('data', response => {
+      if (response.hasDriverLap()) {
+        lapBuffer.current.push(response.getDriverLap());
+      }
+      if (response.hasDriverStint()) {
+        stintEntryBuffer.current.push(response.getDriverStint());
+      }
+    });
+
     setupStream('monitorOtherCarsLaps', otherCarLapBuffer);
-    setupStream('monitorDriverLaps', driverDistancesBuffer);
     // setupStream('monitorFuelLevel', fuelBuffer);
 
     // This stream updates state directly because it's a single map, not a growing list.
@@ -93,6 +104,15 @@ export default function App2() {
         setLapEntries(prevEntries => {
           const updated = [...lapBuffer.current, ...prevEntries];
           lapBuffer.current = []; // Clear buffer
+          return updated;
+        });
+      }
+
+      if (stintEntryBuffer.current.length > 0) {
+        setStintEntries(prevEntries => {
+          const updated = [...stintEntryBuffer.current, ...prevEntries];
+          stintEntryBuffer.current = []; // Clear buffer
+          console.log(updated);
           return updated;
         });
       }
