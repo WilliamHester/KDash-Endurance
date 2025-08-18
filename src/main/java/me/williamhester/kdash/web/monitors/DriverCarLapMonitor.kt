@@ -155,4 +155,33 @@ class DriverCarLapMonitor(
     val pitTime: Double,
     val maxSpeed: Float,
   )
+
+  /**
+   * A stint counts from the lap the car exited the pits to the lap the car entered the pits. This means that if a
+   * car pits on lap 50, even if the pit box was across the line, the end lap is 50, and the start lap for the next
+   * stint is 51.
+   *
+   * Stints are only registered when the car enters the pit box. This allows for drive-throughs to be counted as a part
+   * of the stint (not creating a new one).
+   */
+  data class StintEntry(
+    /** The out lap number. */
+    val outLap: Int,
+    /** The in lap number. */
+    val inLap: Int,
+    /** The driver name that finished the stint. */
+    val driverName: String,
+    /** The total time of the stint, from the time it exits the pit box to the next time it exits the pit box. */
+    val totalTime: Double,
+    /** A list of all lap times, from the start lap to the end lap. */
+    val lapTimes: List<Double>,
+    /** Average lap time excludes in and out laps. */
+    val averageLapTime: Double,
+    /** The fastest lap of the stint. */
+    val fastestLapTime: Double,
+    /** Average track temperature, in Celsius. */
+    val trackTemp: Float,
+    /** Incidents accrued throughout the stint. */
+    val incidents: Int,
+  )
 }

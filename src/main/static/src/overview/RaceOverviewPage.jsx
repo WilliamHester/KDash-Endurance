@@ -74,9 +74,22 @@ export default function RaceOverviewPage({drivers, lapLog, otherCarLapEntries}) 
       getterAndSetter: useState(0),
     },
     {
-      name: 'Math',
-      query: '1 - (2 - 3)',
+      name: 'Speed',
+      query: 'Speed',
       getterAndSetter: useState(0),
+      formatter: fixedFormatter(0),
+    },
+    {
+      name: 'EstSpeed',
+      query: 'EstSpeed',
+      getterAndSetter: useState(0),
+      formatter: fixedFormatter(0),
+    },
+    {
+      name: 'Speed - EstSpeed',
+      query: 'Speed - EstSpeed',
+      getterAndSetter: useState(0),
+      formatter: fixedFormatter(1),
     },
   ];
 

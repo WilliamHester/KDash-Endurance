@@ -24,6 +24,7 @@ object VariableMapping {
     return when (fieldName) {
       in rawTelemetryFields.keys -> rawTelemetryFields[fieldName]!!
       "LastPitLap" -> { tdp: TelemetryDataPoint -> tdp.syntheticFields.lastPitLap.toDouble() }
+      "EstSpeed" -> { tdp: TelemetryDataPoint -> tdp.syntheticFields.estSpeed.toDouble() }
       else -> throw VariableNotFoundException(fieldName)
     }
   }
