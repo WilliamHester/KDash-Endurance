@@ -134,7 +134,9 @@ export default function App2() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />}>
-          <Route path="" element={<RaceOverviewPage drivers={currentDrivers} lapLog={lapEntries} otherCarLapEntries={otherCarLapEntries} />} />
+          <Route path="" element={
+            <RaceOverviewPage drivers={currentDrivers} lapLog={lapEntries} otherCarLapEntries={otherCarLapEntries} stintLog={stintEntries} />
+          } />
           <Route path="laps" element={<LapLogPage entries={lapEntries} />} />
           <Route path="otherlaps" element={<OtherCarsLapLogPage entries={otherCarLapEntries} drivers={currentDrivers} />} />
           <Route path="gaps" element={<GapsPage entries={gapEntries} drivers={currentDrivers} />} />
