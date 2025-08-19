@@ -12,7 +12,6 @@ import me.williamhester.kdash.enduranceweb.proto.DriverDistances
 import me.williamhester.kdash.enduranceweb.proto.Gaps
 import me.williamhester.kdash.enduranceweb.proto.LapData
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryServiceGrpc.LiveTelemetryServiceImplBase
-import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
 import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryRequest
@@ -55,7 +54,6 @@ class LiveTelemetryService(
   private val driverMonitor = DriverMonitor(metadataHolder)
 
   private val lapDataStreamObservers = CopyOnWriteArrayList<LapDataStreamObserverProgressHolder>()
-  private val otherCarLapEntryStreamObservers = CopyOnWriteArrayList<OtherCarLapEntryStreamObserverProgressHolder>()
   private val gapsStreamObservers = CopyOnWriteArrayList<GapsStreamObserverRateLimitHolder>()
   private val currentDriversStreamObservers = CopyOnWriteArrayList<CurrentDriversStreamObserverHolder>()
   private val driverDistancesStreamObserverHolders = CopyOnWriteArrayList<DriverDistanceStreamObserverHolder>()
@@ -98,7 +96,6 @@ class LiveTelemetryService(
 
   private fun emitAll() {
     emitLapLogs()
-    emitOtherCarsLapLogs()
     emitAllGapsRateLimited()
     emitNewDriversPerStream()
     emitDriverDistances()
@@ -109,11 +106,13 @@ class LiveTelemetryService(
   private fun emitLapLogs() {
     val lapEntries = lapMonitor.logEntries
     val stintEntries = lapMonitor.stintEntries
+    val otherCarLapEntries = otherCarsLapMonitor.logEntries
 
     val responseObserversToRemove = mutableSetOf<LapDataStreamObserverProgressHolder>()
     for (responseObserverHolder in lapDataStreamObservers) {
       val lapsSent = responseObserverHolder.lapsSent
       val stintsSent = responseObserverHolder.stintsSent
+      val otherCarLapsSent = responseObserverHolder.otherCarLapsSent
       try {
         while (lapEntries.size > lapsSent.get()) {
           responseObserverHolder.responseObserver.onNext(
@@ -129,30 +128,19 @@ class LiveTelemetryService(
             }
           )
         }
+        while (otherCarLapEntries.size > otherCarLapsSent.get()) {
+          responseObserverHolder.responseObserver.onNext(
+            lapData {
+              otherCarLap = otherCarLapEntries[otherCarLapsSent.getAndIncrement()].toOtherCarLapEntry()
+            }
+          )
+        }
       } catch (e: StatusRuntimeException) {
         responseObserversToRemove += responseObserverHolder
         break
       }
     }
     lapDataStreamObservers.removeAll(responseObserversToRemove)
-  }
-
-  private fun emitOtherCarsLapLogs() {
-    val lapEntries = otherCarsLapMonitor.logEntries
-
-    val responseObserversToRemove = mutableSetOf<OtherCarLapEntryStreamObserverProgressHolder>()
-    for (responseObserverHolder in otherCarLapEntryStreamObservers) {
-      val lapsSent = responseObserverHolder.lapsSent
-      while (lapEntries.size > lapsSent.get()) {
-        try {
-          responseObserverHolder.responseObserver.onNext(lapEntries[lapsSent.getAndIncrement()].toOtherCarLapEntry())
-        } catch (e: StatusRuntimeException) {
-          responseObserversToRemove += responseObserverHolder
-          break
-        }
-      }
-    }
-    otherCarLapEntryStreamObservers.removeAll(responseObserversToRemove)
   }
 
   private fun emitAllGapsRateLimited() {
@@ -270,7 +258,6 @@ class LiveTelemetryService(
     responseObserver: StreamObserver<LapData>,
   ) {
     lapDataStreamObservers.add(LapDataStreamObserverProgressHolder(responseObserver))
-
   }
 
   private class LapDataStreamObserverProgressHolder(
@@ -278,16 +265,7 @@ class LiveTelemetryService(
   ) {
     val lapsSent = AtomicInteger(0)
     val stintsSent = AtomicInteger(0)
-  }
-
-  override fun monitorOtherCarsLaps(request: ConnectRequest, responseObserver: StreamObserver<OtherCarLapEntry>) {
-    otherCarLapEntryStreamObservers.add(OtherCarLapEntryStreamObserverProgressHolder(responseObserver))
-  }
-
-  private class OtherCarLapEntryStreamObserverProgressHolder(
-    val responseObserver: StreamObserver<OtherCarLapEntry>,
-  ) {
-    val lapsSent = AtomicInteger(0)
+    val otherCarLapsSent = AtomicInteger(0)
   }
 
   override fun monitorCurrentGaps(

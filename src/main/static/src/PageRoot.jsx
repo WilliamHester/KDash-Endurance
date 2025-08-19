@@ -32,15 +32,6 @@ export default function App2() {
   useEffect(() => {
     const liveTelemetryServiceClient = client;
 
-    const setupStream = (rpcMethodName, buffer) => {
-      const request = new ConnectRequest();
-      const stream = liveTelemetryServiceClient[rpcMethodName](request, {});
-      stream.on('data', response => {
-        buffer.current.push(response);
-      });
-      return stream;
-    };
-
     // We can't have more than 6 simultaneous TCP connections to the same domain. This means that we need to combine
     // the streams into a single stream. Having 6 causes the browser to lock up when refreshing the page,
     // presumably because the page itself would be a 7th connection.
@@ -55,10 +46,10 @@ export default function App2() {
       if (response.hasDriverStint()) {
         stintEntryBuffer.current.push(response.getDriverStint());
       }
+      if (response.hasOtherCarLap()) {
+        otherCarLapBuffer.current.push(response.getOtherCarLap());
+      }
     });
-
-    setupStream('monitorOtherCarsLaps', otherCarLapBuffer);
-    // setupStream('monitorFuelLevel', fuelBuffer);
 
     // This stream updates state directly because it's a single map, not a growing list.
     // The workload is minimal.

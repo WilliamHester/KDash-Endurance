@@ -2,7 +2,6 @@ package me.williamhester.kdash.web
 
 import me.williamhester.kdash.enduranceweb.proto.DriverDistance
 import me.williamhester.kdash.enduranceweb.proto.DriverDistances
-import me.williamhester.kdash.enduranceweb.proto.DriverFuelLevel
 import me.williamhester.kdash.enduranceweb.proto.Gap
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
@@ -10,7 +9,6 @@ import me.williamhester.kdash.enduranceweb.proto.StintEntry
 import me.williamhester.kdash.enduranceweb.proto.stintEntry
 import me.williamhester.kdash.web.monitors.DriverCarLapMonitor
 import me.williamhester.kdash.web.monitors.DriverDistancesMonitor
-import me.williamhester.kdash.web.monitors.FuelUsageMonitor
 import me.williamhester.kdash.web.monitors.OtherCarsLapMonitor
 import me.williamhester.kdash.web.monitors.RelativeMonitor.GapToCarId
 
@@ -82,13 +80,5 @@ internal fun DriverDistancesMonitor.DriverDistances.toDriverDistances(): DriverD
     for (distance in driverDistances.distances) {
       addDistances(DriverDistance.newBuilder().setCarId(distance.carId).setDriverDistance(distance.distance))
     }
-  }.build()
-}
-
-internal fun FuelUsageMonitor.FuelLevelByDistance.toDriverFuelLevel(): DriverFuelLevel {
-  val fuelLevel = this
-  return DriverFuelLevel.newBuilder().apply {
-    driverDistance = fuelLevel.distance
-    this.fuelLevel = fuelLevel.fuelLevel
   }.build()
 }
