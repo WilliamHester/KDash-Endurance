@@ -56,6 +56,7 @@ message DataSnapshot {
   int32 lap = 1 [(iracing_field) = "Lap"];
   float fuel_level = 2 [(iracing_field) = "FuelLevel"];
   double session_time = 3 [(iracing_field) = "SessionTime"];
+  float session_time_of_day = 21 [(iracing_field) = "SessionTimeOfDay"];
   double session_time_remain = 20 [(iracing_field) = "SessionTimeRemain"];
   int32 player_car_position = 4 [(iracing_field) = "PlayerCarPosition"];
   float track_temp_crew = 5 [(iracing_field) = "TrackTempCrew"];

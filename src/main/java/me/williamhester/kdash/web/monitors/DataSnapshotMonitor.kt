@@ -9,7 +9,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 class DataSnapshotMonitor(
-  metadataHolder: MetadataHolder,
+  private val metadataHolder: MetadataHolder,
 ) {
   private val _telemetryDataPoints = mutableListOf<TelemetryDataPoint>()
   val telemetryDataPoints: List<TelemetryDataPoint> = _telemetryDataPoints
@@ -31,6 +31,8 @@ class DataSnapshotMonitor(
       mutableSyntheticFields.lastPitLap = dataSnapshot.lap
     }
     estimateSpeed(dataSnapshot, sessionTime)
+    mutableSyntheticFields.trackPrecip =
+      metadataHolder.metadata["WeekendInfo"]["TrackPrecipitation"].value.substringBefore(" %", "0").toDouble()
 
     _telemetryDataPoints.add(
       TelemetryDataPoint(sessionTime, driverDistance, dataSnapshot, mutableSyntheticFields.toSyntheticFields())
