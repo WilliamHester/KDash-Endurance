@@ -28,14 +28,14 @@ export default function StintLogPage({entries}) {
       <table className="lapLogTable">
         <thead>
           <tr>
-            <th>Out Lap</th>
-            <th>In Lap</th>
-            <th>Driver Name</th>
+            <th>Out</th>
+            <th>In</th>
+            <th>Driver</th>
             <th>Total Time</th>
-            <th>Average Lap Time</th>
-            <th>Fastest Lap Time</th>
+            <th>Avg Lap</th>
+            <th>Fast Lap</th>
             <th>Track Temp</th>
-            <th>Incidents</th>
+            <th>Inc</th>
           </tr>
         </thead>
         <tbody>
