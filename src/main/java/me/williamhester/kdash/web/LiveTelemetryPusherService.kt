@@ -5,11 +5,16 @@ import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.enduranceweb.proto.ControlMessage.ControlCommand
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryPusherServiceGrpc.LiveTelemetryPusherServiceImplBase
+import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadataOrDataSnapshot
+import me.williamhester.kdash.enduranceweb.proto.SessionMetadataOrDataSnapshot.ValueCase.DATA_SNAPSHOT
+import me.williamhester.kdash.enduranceweb.proto.SessionMetadataOrDataSnapshot.ValueCase.SESSION_METADATA
 import me.williamhester.kdash.enduranceweb.proto.VarBufferFieldsOrControlMessage
 import me.williamhester.kdash.enduranceweb.proto.controlMessage
 import me.williamhester.kdash.enduranceweb.proto.varBufferFields
 import me.williamhester.kdash.enduranceweb.proto.varBufferFieldsOrControlMessage
+import me.williamhester.kdash.web.extensions.get
+import me.williamhester.kdash.web.models.SessionInfo
 import me.williamhester.kdash.web.state.DataSnapshotQueue
 import me.williamhester.kdash.web.state.MetadataHolder
 import java.util.concurrent.CopyOnWriteArrayList
@@ -64,11 +69,11 @@ class LiveTelemetryPusherService(
     private var wasOnTrack = false
     var isSendingData = false
       private set
+    private lateinit var liveTelemetryDataWriter: LiveTelemetryDataWriter
 
     override fun onNext(sessionMetadataOrDataSnapshot: SessionMetadataOrDataSnapshot) {
-//      logger.atInfo().atMostEvery(10, TimeUnit.SECONDS).log("Received %s", sessionMetadataOrDataSnapshot)
-      when {
-        sessionMetadataOrDataSnapshot.hasDataSnapshot() -> {
+      when (sessionMetadataOrDataSnapshot.valueCase) {
+        DATA_SNAPSHOT -> {
           val isOnTrack = sessionMetadataOrDataSnapshot.dataSnapshot.isOnTrack
           if (isOnTrack && !wasOnTrack) {
             // Tell any other clients to stop publishing data, since the driver at this client is actually in the car.
@@ -77,11 +82,40 @@ class LiveTelemetryPusherService(
           }
           wasOnTrack = isOnTrack
           dataSnapshotQueue.add(sessionMetadataOrDataSnapshot.dataSnapshot)
+          liveTelemetryDataWriter.onDataSnapshot(sessionMetadataOrDataSnapshot.dataSnapshot)
         }
-        sessionMetadataOrDataSnapshot.hasSessionMetadata() -> {
-          metadataHolder.metadata = sessionMetadataOrDataSnapshot.sessionMetadata
+        SESSION_METADATA -> {
+          val metadata = sessionMetadataOrDataSnapshot.sessionMetadata
+          // Note: This makes a new LiveTelemetryDataWriter every time there's a new metadata string. This is really
+          // just out of convenience, because the session number may have changed (e.g. practice -> qualifying), and
+          // the LiveTelemetryDataWriter is otherwise stateless.
+          liveTelemetryDataWriter = LiveTelemetryDataWriter(metadata.sessionInfo())
+          metadataHolder.metadata = metadata
+        }
+        else -> {
+          logger.atWarning().log("Unknown value: %s", sessionMetadataOrDataSnapshot)
         }
       }
+    }
+
+    private fun SessionMetadata.sessionInfo(): SessionInfo {
+      val sessionId = this["WeekendInfo"]["SessionID"].value.toInt()
+      val subSessionId = this["WeekendInfo"]["SubSessionID"].value.toInt()
+      val simSessionNumber = this["SessionInfo"]["SimSessionNumber"].value.ifBlank { "0" }.toInt()
+      val driverCarIdx = this["DriverInfo"]["DriverCarIdx"].value.toInt()
+      // DriverInfo:Drivers:idx:CarNumber and ...:CarNumberRaw both exist. However, CarNumberRaw is sometimes over 1000
+      // and it's not clear why. Removing the quotes from CarNumber seems to more accurately get what's displayed.
+      val carNumber =
+        this["DriverInfo"]["Drivers"][driverCarIdx]["CarNumber"]
+          .value
+          .substringAfter('"')
+          .substringBefore('"')
+      return SessionInfo(
+        sessionId = sessionId,
+        subSessionId = subSessionId,
+        sessionNum = simSessionNumber,
+        carNumber = carNumber,
+      )
     }
 
     override fun onError(t: Throwable) {

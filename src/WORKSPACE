@@ -76,7 +76,6 @@ maven_install(
         "io.javalin:javalin:jar:4.6.0",
         "org.mindrot:jbcrypt:0.4",
         "org.slf4j:slf4j-simple:1.8.0-beta4",
-        "mysql:mysql-connector-java:8.0.29",
 
         # For testing
         "com.google.truth:truth:1.1.3",

@@ -6,7 +6,7 @@ kt_jvm_library(
     data = [":db.password"],
     visibility = ["//main/java/me/williamhester/kdash/web:__subpackages__"],
     runtime_deps = [
-        "@maven//:mysql_mysql_connector_java",
+        "@maven//:org_postgresql_postgresql",
     ],
     deps = [
         "@maven//:com_google_flogger_flogger",

@@ -3,6 +3,7 @@ package me.williamhester.kdash.web.query
 import com.google.common.truth.Truth.assertThat
 import me.williamhester.kdash.enduranceweb.proto.dataSnapshot
 import me.williamhester.kdash.web.models.DataPoint
+import me.williamhester.kdash.web.models.SyntheticFields
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -17,7 +18,8 @@ class ProcessorsTest {
       driverDistance = DRIVER_DISTANCE_1,
       dataSnapshot = dataSnapshot {
         fuelLevel = FUEL_LEVEL_1
-      }
+      },
+      syntheticFields = SYNTHETIC_FIELDS,
     )
 
     val processor = VariableProcessor("FuelLevel")
@@ -34,7 +36,8 @@ class ProcessorsTest {
       driverDistance = DRIVER_DISTANCE_1,
       dataSnapshot = dataSnapshot {
         fuelLevel = FUEL_LEVEL_1
-      }
+      },
+      syntheticFields = SYNTHETIC_FIELDS,
     )
 
     val processor = LapDeltaProcessor(VariableProcessor("FuelLevel"))
@@ -51,21 +54,24 @@ class ProcessorsTest {
       driverDistance = DRIVER_DISTANCE_1,
       dataSnapshot = dataSnapshot {
         fuelLevel = FUEL_LEVEL_1
-      }
+      },
+      syntheticFields = SYNTHETIC_FIELDS,
     )
     val telemetryDataPoint2 = TelemetryDataPoint(
       sessionTime = SESSION_TIME_1 + 1,
       driverDistance = DRIVER_DISTANCE_1 + 0.0001F,
       dataSnapshot = dataSnapshot {
         fuelLevel = FUEL_LEVEL_1 - 4.0F
-      }
+      },
+      syntheticFields = SYNTHETIC_FIELDS,
     )
     val telemetryDataPoint3 = TelemetryDataPoint(
       sessionTime = SESSION_TIME_1 + 2,
       driverDistance = DRIVER_DISTANCE_1 + 1F,
       dataSnapshot = dataSnapshot {
         fuelLevel = FUEL_LEVEL_1 - 4.0F
-      }
+      },
+      syntheticFields = SYNTHETIC_FIELDS,
     )
 
     val processor = LapDeltaProcessor(VariableProcessor("FuelLevel"))
@@ -84,21 +90,24 @@ class ProcessorsTest {
       driverDistance = DRIVER_DISTANCE_1 - 0.1F,
       dataSnapshot = dataSnapshot {
         fuelLevel = FUEL_LEVEL_1 + 0.25F
-      }
+      },
+      syntheticFields = SYNTHETIC_FIELDS,
     )
     val telemetryDataPoint2 = TelemetryDataPoint(
       sessionTime = SESSION_TIME_1 + 1,
       driverDistance = DRIVER_DISTANCE_1 + 0.3F,
       dataSnapshot = dataSnapshot {
         fuelLevel = FUEL_LEVEL_1 - 0.75F
-      }
+      },
+      syntheticFields = SYNTHETIC_FIELDS,
     )
     val telemetryDataPoint3 = TelemetryDataPoint(
       sessionTime = SESSION_TIME_1 + 2,
       driverDistance = DRIVER_DISTANCE_1 + 1F,
       dataSnapshot = dataSnapshot {
         fuelLevel = FUEL_LEVEL_1 - 4.0F
-      }
+      },
+      syntheticFields = SYNTHETIC_FIELDS,
     )
 
     val processor = LapDeltaProcessor(VariableProcessor("FuelLevel"))
@@ -114,5 +123,6 @@ class ProcessorsTest {
     private const val SESSION_TIME_1 = 1.0
     private const val DRIVER_DISTANCE_1 = 5.0F
     private const val FUEL_LEVEL_1 = 75.0F
+    private val SYNTHETIC_FIELDS = SyntheticFields(0, 0.0F, 0.0)
   }
 }
