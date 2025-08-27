@@ -25,6 +25,8 @@ CREATE TABLE SessionCars (
   SimSessionNumber INT NOT NULL,
   -- The number of the team
   CarNumber character varying (3) NOT NULL,
+  -- The current Session metadata proto, serialized to bytes.
+  Metadata bytea,
 
   PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber)
 );

@@ -3,6 +3,7 @@ package me.williamhester.kdash.web.store
 import com.google.common.base.Joiner
 import com.google.protobuf.Message
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
+import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import me.williamhester.kdash.web.models.SessionInfo
 import java.sql.Connection
 import java.sql.PreparedStatement
@@ -23,6 +24,17 @@ object Store {
       "CarNumber" to sessionInfo.carNumber,
       "SessionTime" to dataSnapshot.sessionTime,
       "Data" to dataSnapshot,
+    )
+  }
+
+  fun insertSessionMetadata(sessionInfo: SessionInfo, sessionMetadata: SessionMetadata) {
+    insertOrUpdate(
+      Table.SESSION_CARS,
+      "SessionID" to sessionInfo.sessionId,
+      "SubSessionID" to sessionInfo.subSessionId,
+      "SimSessionNumber" to sessionInfo.sessionNum,
+      "CarNumber" to sessionInfo.carNumber,
+      "Metadata" to sessionMetadata,
     )
   }
 
@@ -62,5 +74,6 @@ object Store {
 
   private enum class Table(val tableName: String) {
     TELEMETRY_DATA("TelemetryData"),
+    SESSION_CARS("SessionCars"),
   }
 }

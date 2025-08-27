@@ -90,6 +90,7 @@ class LiveTelemetryPusherService(
           // just out of convenience, because the session number may have changed (e.g. practice -> qualifying), and
           // the LiveTelemetryDataWriter is otherwise stateless.
           liveTelemetryDataWriter = LiveTelemetryDataWriter(metadata.sessionInfo())
+          liveTelemetryDataWriter.onSessionMetadata(metadata)
           metadataHolder.metadata = metadata
         }
         else -> {
