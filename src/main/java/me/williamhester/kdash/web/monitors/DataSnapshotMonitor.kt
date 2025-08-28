@@ -4,19 +4,19 @@ import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.web.extensions.get
 import me.williamhester.kdash.web.models.MutableSyntheticFields
 import me.williamhester.kdash.web.models.TelemetryDataPoint
-import me.williamhester.kdash.web.state.MetadataHolder
+import me.williamhester.kdash.web.state.MetadataFetcher
 import kotlin.math.max
 import kotlin.math.min
 
 class DataSnapshotMonitor(
-  private val metadataHolder: MetadataHolder,
+  private val metadataFetcher: MetadataFetcher,
 ) {
   private val _telemetryDataPoints = mutableListOf<TelemetryDataPoint>()
   val telemetryDataPoints: List<TelemetryDataPoint> = _telemetryDataPoints
 
-  private val driverCarIdx = metadataHolder.metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
+  private val driverCarIdx = metadataFetcher.metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
   private val trackLengthMeters =
-    metadataHolder.metadata["WeekendInfo"]["TrackLength"].value.substringBefore(" km").toDouble() * 1000
+    metadataFetcher.metadata["WeekendInfo"]["TrackLength"].value.substringBefore(" km").toDouble() * 1000
 
   private var lastLapDistMeters = 0.0
   private var lastSessionTime = 0.0
@@ -32,7 +32,7 @@ class DataSnapshotMonitor(
     }
     estimateSpeed(dataSnapshot, sessionTime)
     mutableSyntheticFields.trackPrecip =
-      metadataHolder.metadata["WeekendInfo"]["TrackPrecipitation"].value.substringBefore(" %", "0").toDouble()
+      metadataFetcher.metadata["WeekendInfo"]["TrackPrecipitation"].value.substringBefore(" %", "0").toDouble()
 
     _telemetryDataPoints.add(
       TelemetryDataPoint(sessionTime, driverDistance, dataSnapshot, mutableSyntheticFields.toSyntheticFields())

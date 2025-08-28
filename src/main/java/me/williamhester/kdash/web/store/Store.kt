@@ -6,14 +6,16 @@ import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import me.williamhester.kdash.web.models.SessionInfo
 import java.sql.Connection
+import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.time.Instant
 
 object Store {
-  private val connection: Connection
-    get() = ConnectionProvider.get()
+  private val connection: Connection by lazy {
+    DriverManager.getConnection("jdbc:postgresql://localhost:5432/williamhester")
+  }
 
   fun insertDataSnapshot(sessionInfo: SessionInfo, dataSnapshot: DataSnapshot) {
     insertOrUpdate(
@@ -36,6 +38,27 @@ object Store {
       "CarNumber" to sessionInfo.carNumber,
       "Metadata" to sessionMetadata,
     )
+  }
+
+  fun getMetadataForSession(sessionInfo: SessionInfo): SessionMetadata? {
+    return executeQuery(
+      """
+        SELECT Metadata
+        FROM SessionCars
+        WHERE
+          SessionID=? 
+          AND SubSessionID=? 
+          AND SimSessionNumber=? 
+          AND CarNumber=?
+      """.trimIndent(),
+      sessionInfo.sessionId,
+      sessionInfo.subSessionId,
+      sessionInfo.sessionNum,
+      sessionInfo.carNumber,
+    ) {
+      if (!it.next()) return@executeQuery null
+      SessionMetadata.parseFrom(it.getBytes(1))
+    }
   }
 
   private fun insertOrUpdate(table: Table, vararg args: Pair<String, Any>) {
