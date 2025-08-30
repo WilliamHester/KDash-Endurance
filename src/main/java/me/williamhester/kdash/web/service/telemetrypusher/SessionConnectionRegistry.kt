@@ -12,18 +12,19 @@ internal class SessionConnectionRegistry {
 
   /** Register a connection with the controller, for a given [SessionKey]. */
   fun register(connection: DriverConnection, sessionKey: SessionKey): LiveTelemetryDataWriter {
-    val previousSessionInfo = connectionIdsToCurrentSessionKey[connection.connectionId]
+    val previousSessionKey = connectionIdsToCurrentSessionKey[connection.connectionId]
 
-    if (previousSessionInfo == sessionKey) {
+    if (previousSessionKey == sessionKey) {
       // Session info didn't change. Nothing to update.
       return controllers[sessionKey]!!.liveTelemetryDataWriter
     }
-    if (previousSessionInfo != null) {
+    if (previousSessionKey != null) {
       // The connected driver's session changed. We need to update the session that it's connected to.
-      controllers[previousSessionInfo]?.removeConnection(connection)
+      controllers[previousSessionKey]?.removeConnection(connection)
     }
     val controller = controllers.computeIfAbsent(sessionKey) { SessionConnectionController(sessionKey) }
     controller.addConnection(connection)
+    connectionIdsToCurrentSessionKey[connection.connectionId] = sessionKey
     return controller.liveTelemetryDataWriter
   }
 

@@ -14,5 +14,6 @@ kt_jvm_library(
         "@maven//:com_google_protobuf_protobuf_java_util",
         "@kdash//main/java/me/williamhester/kdash/api",
         "//main/java/me/williamhester/kdash/web/models",
+        "//main/proto:storage_java_proto",
     ],
 )

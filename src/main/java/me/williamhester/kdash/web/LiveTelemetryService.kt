@@ -8,7 +8,6 @@ import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
 import me.williamhester.kdash.enduranceweb.proto.CurrentDrivers
 import me.williamhester.kdash.enduranceweb.proto.DataRanges
 import me.williamhester.kdash.enduranceweb.proto.Driver
-import me.williamhester.kdash.enduranceweb.proto.DriverDistances
 import me.williamhester.kdash.enduranceweb.proto.Gaps
 import me.williamhester.kdash.enduranceweb.proto.LapData
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryServiceGrpc.LiveTelemetryServiceImplBase
@@ -27,10 +26,13 @@ import me.williamhester.kdash.web.models.DataPoint
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.monitors.DataSnapshotMonitor
 import me.williamhester.kdash.web.monitors.DriverCarLapMonitor
-import me.williamhester.kdash.web.monitors.DriverDistancesMonitor
 import me.williamhester.kdash.web.monitors.DriverMonitor
 import me.williamhester.kdash.web.monitors.OtherCarsLapMonitor
 import me.williamhester.kdash.web.monitors.RelativeMonitor
+import me.williamhester.kdash.web.monitors.toGap
+import me.williamhester.kdash.web.monitors.toLapEntry
+import me.williamhester.kdash.web.monitors.toOtherCarLapEntry
+import me.williamhester.kdash.web.monitors.toStintEntry
 import me.williamhester.kdash.web.query.Query
 import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
@@ -43,14 +45,12 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
   private lateinit var relativeMonitor: RelativeMonitor
   private lateinit var lapMonitor: DriverCarLapMonitor
   private lateinit var otherCarsLapMonitor: OtherCarsLapMonitor
-  private lateinit var driverDistancesMonitor: DriverDistancesMonitor
   private lateinit var dataSnapshotMonitor: DataSnapshotMonitor
   private lateinit var driverMonitor: DriverMonitor
 
   private val lapDataStreamObservers = CopyOnWriteArrayList<LapDataStreamObserverProgressHolder>()
   private val gapsStreamObservers = CopyOnWriteArrayList<GapsStreamObserverRateLimitHolder>()
   private val currentDriversStreamObservers = CopyOnWriteArrayList<CurrentDriversStreamObserverHolder>()
-  private val driverDistancesStreamObserverHolders = CopyOnWriteArrayList<DriverDistanceStreamObserverHolder>()
   private val telemetryDataStreamObserverHolders = CopyOnWriteArrayList<TelemetryDataStreamObserverProgressHolder>()
   private val realtimeTelemetryDataStreamObserverHolders =
     CopyOnWriteArrayList<RealtimeTelemetryDataStreamObserverProgressHolder>()
@@ -71,7 +71,6 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
     emitLapLogs()
     emitAllGapsRateLimited()
     emitNewDriversPerStream()
-    emitDriverDistances()
     emitTelemetryData()
     emitRealtimeTelemetryData()
   }
@@ -163,26 +162,6 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
     currentDriversStreamObservers.removeAll(driverObserversToRemove)
   }
 
-  private fun emitDriverDistances() {
-    val lapEntries = driverDistancesMonitor.distances
-
-    val responseObserversToRemove = mutableSetOf<DriverDistanceStreamObserverHolder>()
-    for (responseObserverHolder in driverDistancesStreamObserverHolders) {
-      val ticksSent = responseObserverHolder.lastDriverDistance
-      while (ticksSent.get() < lapEntries.size) {
-        try {
-          responseObserverHolder.responseObserver.onNext(
-            lapEntries[ticksSent.getAndIncrement()].toDriverDistances()
-          )
-        } catch (e: StatusRuntimeException) {
-          responseObserversToRemove += responseObserverHolder
-          break
-        }
-      }
-    }
-    driverDistancesStreamObserverHolders.removeAll(responseObserversToRemove)
-  }
-
   private fun emitTelemetryData() {
     val telemetryDataPoints = dataSnapshotMonitor.telemetryDataPoints
 
@@ -265,19 +244,6 @@ class LiveTelemetryService : LiveTelemetryServiceImplBase() {
     val responseObserver: StreamObserver<CurrentDrivers>,
   ) {
     var previousDrivers = listOf<Driver>()
-  }
-
-  override fun monitorDriverDistances(
-    request: ConnectRequest,
-    responseObserver: StreamObserver<DriverDistances>
-  ) {
-    driverDistancesStreamObserverHolders.add(DriverDistanceStreamObserverHolder(responseObserver))
-  }
-
-  private class DriverDistanceStreamObserverHolder(
-    val responseObserver: StreamObserver<DriverDistances>,
-  ) {
-    var lastDriverDistance = AtomicInteger(0)
   }
 
   override fun queryTelemetry(

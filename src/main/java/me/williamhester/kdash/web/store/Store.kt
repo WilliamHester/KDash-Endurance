@@ -2,8 +2,11 @@ package me.williamhester.kdash.web.store
 
 import com.google.common.base.Joiner
 import com.google.protobuf.Message
-import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
+import me.williamhester.kdash.enduranceweb.proto.LapEntry
+import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
+import me.williamhester.kdash.enduranceweb.proto.StintEntry
+import me.williamhester.kdash.enduranceweb.proto.TelemetryDataPoint
 import me.williamhester.kdash.web.models.SessionKey
 import java.sql.Connection
 import java.sql.DriverManager
@@ -17,15 +20,58 @@ object Store {
     DriverManager.getConnection("jdbc:postgresql://localhost:5432/williamhester")
   }
 
-  fun insertDataSnapshot(sessionKey: SessionKey, dataSnapshot: DataSnapshot) {
+  fun insertTelemetryData(
+    sessionKey: SessionKey,
+    sessionTime: Double,
+    driverDistance: Float,
+    dataSnapshot: TelemetryDataPoint,
+  ) {
     insertOrUpdate(
       Table.TELEMETRY_DATA,
       "SessionID" to sessionKey.sessionId,
       "SubSessionID" to sessionKey.subSessionId,
       "SimSessionNumber" to sessionKey.sessionNum,
       "CarNumber" to sessionKey.carNumber,
-      "SessionTime" to dataSnapshot.sessionTime,
+      "SessionTime" to sessionTime,
+      "DriverDistance" to driverDistance,
       "Data" to dataSnapshot,
+    )
+  }
+
+  fun insertLapEntry(sessionKey: SessionKey, lapEntry: LapEntry) {
+    insertOrUpdate(
+      Table.DRIVER_LAPS,
+      "SessionID" to sessionKey.sessionId,
+      "SubSessionID" to sessionKey.subSessionId,
+      "SimSessionNumber" to sessionKey.sessionNum,
+      "CarNumber" to sessionKey.carNumber,
+      "LapNum" to lapEntry.lapNum,
+      "LapEntry" to lapEntry,
+    )
+  }
+
+  fun insertStintEntry(sessionKey: SessionKey, stintEntry: StintEntry) {
+    insertOrUpdate(
+      Table.DRIVER_STINTS,
+      "SessionID" to sessionKey.sessionId,
+      "SubSessionID" to sessionKey.subSessionId,
+      "SimSessionNumber" to sessionKey.sessionNum,
+      "CarNumber" to sessionKey.carNumber,
+      "InLapNum" to stintEntry.inLap,
+      "StintEntry" to stintEntry,
+    )
+  }
+
+  fun insertOtherCarLapEntry(sessionKey: SessionKey, otherCarLapEntry: OtherCarLapEntry) {
+    insertOrUpdate(
+      Table.OTHER_CAR_LAPS,
+      "SessionID" to sessionKey.sessionId,
+      "SubSessionID" to sessionKey.subSessionId,
+      "SimSessionNumber" to sessionKey.sessionNum,
+      "CarNumber" to sessionKey.carNumber,
+      "OtherCarIdx" to otherCarLapEntry.carId,
+      "LapNum" to otherCarLapEntry.lapNum,
+      "LapEntry" to otherCarLapEntry,
     )
   }
 
@@ -85,7 +131,8 @@ object Store {
         when (value) {
           is String -> statement.setString(paramIndex, value)
           is Int -> statement.setInt(paramIndex, value)
-          is Double -> statement.setFloat(paramIndex, value.toFloat())
+          is Float -> statement.setFloat(paramIndex, value)
+          is Double -> statement.setDouble(paramIndex, value)
           is Instant -> statement.setTimestamp(paramIndex, Timestamp.from(value))
           is Message -> statement.setBytes(paramIndex, value.toByteArray())
           else -> throw Exception("Unsupported arg type: ${value.javaClass.simpleName}")
@@ -98,5 +145,8 @@ object Store {
   private enum class Table(val tableName: String) {
     TELEMETRY_DATA("TelemetryData"),
     SESSION_CARS("SessionCars"),
+    DRIVER_LAPS("DriverLaps"),
+    DRIVER_STINTS("DriverStints"),
+    OTHER_CAR_LAPS("OtherCarLaps"),
   }
 }

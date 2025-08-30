@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package me.williamhester.kdash.enduranceweb;
+
+option java_package = "me.williamhester.kdash.enduranceweb.proto";
+option java_multiple_files = true;
+
+import "main/proto/live_telemetry_pusher_service.proto";
+
+message TelemetryDataPoint {
+  me.williamhester.kdash.enduranceweb.DataSnapshot data_snapshot = 1;
+  SyntheticFields synthetic_fields = 2;
+}
+
+message SyntheticFields {
+  int32 last_pit_lap = 1;
+  float est_speed = 2;
+  double track_precip = 3;
+}

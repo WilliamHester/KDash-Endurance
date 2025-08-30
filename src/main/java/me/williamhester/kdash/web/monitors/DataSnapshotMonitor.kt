@@ -1,18 +1,20 @@
 package me.williamhester.kdash.web.monitors
 
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
+import me.williamhester.kdash.enduranceweb.proto.syntheticFields
+import me.williamhester.kdash.enduranceweb.proto.telemetryDataPoint
 import me.williamhester.kdash.web.extensions.get
-import me.williamhester.kdash.web.models.MutableSyntheticFields
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.state.MetadataHolder
+import me.williamhester.kdash.web.store.SessionStore
 import kotlin.math.max
 import kotlin.math.min
 
 class DataSnapshotMonitor(
   private val metadataHolder: MetadataHolder,
+  private val sessionStore: SessionStore,
 ) {
-  private val _telemetryDataPoints = mutableListOf<TelemetryDataPoint>()
-  val telemetryDataPoints: List<TelemetryDataPoint> = _telemetryDataPoints
+  val telemetryDataPoints: List<TelemetryDataPoint> = emptyList()
 
   private val driverCarIdx = metadataHolder.metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
   private val trackLengthMeters =
@@ -34,8 +36,13 @@ class DataSnapshotMonitor(
     mutableSyntheticFields.trackPrecip =
       metadataHolder.metadata["WeekendInfo"]["TrackPrecipitation"].value.substringBefore(" %", "0").toDouble()
 
-    _telemetryDataPoints.add(
-      TelemetryDataPoint(sessionTime, driverDistance, dataSnapshot, mutableSyntheticFields.toSyntheticFields())
+    sessionStore.insertTelemetryData(
+      sessionTime,
+      driverDistance,
+      telemetryDataPoint {
+        this.dataSnapshot = dataSnapshot
+        this.syntheticFields = mutableSyntheticFields.toSyntheticFields()
+      },
     )
   }
 
@@ -59,5 +66,17 @@ class DataSnapshotMonitor(
 
     lastLapDistMeters = lapDistanceMeters
     lastSessionTime = sessionTime
+  }
+
+  class MutableSyntheticFields(
+    var lastPitLap: Int = 0,
+    var estSpeed: Float = 0.0F,
+    var trackPrecip: Double = 0.0,
+  ) {
+    fun toSyntheticFields() = syntheticFields {
+      lastPitLap = this@MutableSyntheticFields.lastPitLap
+      estSpeed = this@MutableSyntheticFields.estSpeed
+      trackPrecip = this@MutableSyntheticFields.trackPrecip
+    }
   }
 }

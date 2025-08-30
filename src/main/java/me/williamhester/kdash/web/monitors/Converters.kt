@@ -1,18 +1,13 @@
-package me.williamhester.kdash.web
+package me.williamhester.kdash.web.monitors
 
-import me.williamhester.kdash.enduranceweb.proto.DriverDistance
-import me.williamhester.kdash.enduranceweb.proto.DriverDistances
 import me.williamhester.kdash.enduranceweb.proto.Gap
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
 import me.williamhester.kdash.enduranceweb.proto.StintEntry
 import me.williamhester.kdash.enduranceweb.proto.stintEntry
-import me.williamhester.kdash.web.monitors.DriverCarLapMonitor
-import me.williamhester.kdash.web.monitors.DriverDistancesMonitor
-import me.williamhester.kdash.web.monitors.OtherCarsLapMonitor
 import me.williamhester.kdash.web.monitors.RelativeMonitor.GapToCarId
 
-internal fun DriverCarLapMonitor.LogEntry.toLapEntry(): LapEntry {
+fun DriverCarLapMonitor.LogEntry.toLapEntry(): LapEntry {
   val log = this
   return LapEntry.newBuilder().apply {
     lapNum = log.lapNum
@@ -34,7 +29,7 @@ internal fun DriverCarLapMonitor.LogEntry.toLapEntry(): LapEntry {
   }.build()
 }
 
-internal fun DriverCarLapMonitor.StintEntry.toStintEntry(): StintEntry {
+fun DriverCarLapMonitor.StintEntry.toStintEntry(): StintEntry {
   val stint = this
   return stintEntry {
     outLap = stint.outLap
@@ -49,7 +44,7 @@ internal fun DriverCarLapMonitor.StintEntry.toStintEntry(): StintEntry {
   }
 }
 
-internal fun OtherCarsLapMonitor.LogEntry.toOtherCarLapEntry(): OtherCarLapEntry {
+fun OtherCarsLapMonitor.LogEntry.toOtherCarLapEntry(): OtherCarLapEntry {
   val log = this
   return OtherCarLapEntry.newBuilder().apply {
     carId = log.carId
@@ -65,20 +60,10 @@ internal fun OtherCarsLapMonitor.LogEntry.toOtherCarLapEntry(): OtherCarLapEntry
   }.build()
 }
 
-internal fun GapToCarId.toGap(): Gap {
+fun GapToCarId.toGap(): Gap {
   val gapToCarId = this
   return Gap.newBuilder().apply {
     carId = gapToCarId.carId
     gap = gapToCarId.gap
-  }.build()
-}
-
-internal fun DriverDistancesMonitor.DriverDistances.toDriverDistances(): DriverDistances {
-  val driverDistances = this
-  return DriverDistances.newBuilder().apply {
-    sessionTime = driverDistances.sessionTime.toFloat()
-    for (distance in driverDistances.distances) {
-      addDistances(DriverDistance.newBuilder().setCarId(distance.carId).setDriverDistance(distance.distance))
-    }
   }.build()
 }

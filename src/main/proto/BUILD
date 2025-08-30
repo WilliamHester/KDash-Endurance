@@ -20,9 +20,7 @@ java_grpc_library(
 proto_library(
     name = "live_telemetry_service",
     srcs = ["live_telemetry_service.proto"],
-    deps = [
-        "@protobuf//:timestamp_proto",
-    ]
+    deps = []
 )
 
 kt_jvm_proto_library(
@@ -57,4 +55,22 @@ proto_library(
         "@protobuf//:any_proto",
         "@protobuf//:descriptor_proto",
     ]
+)
+
+proto_library(
+    name = "storage_proto",
+    srcs = ["storage.proto"],
+    deps = [":live_telemetry_pusher_service"],
+)
+
+java_proto_library(
+    name = "storage_java_proto",
+    deps = [":storage_proto"],
+    visibility = ["//visibility:public"],
+)
+
+kt_jvm_proto_library(
+    name = "storage_kt_proto",
+    deps = [":storage_proto"],
+    visibility = ["//visibility:public"],
 )

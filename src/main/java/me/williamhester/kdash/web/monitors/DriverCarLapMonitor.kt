@@ -3,12 +3,14 @@ package me.williamhester.kdash.web.monitors
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.web.extensions.get
 import me.williamhester.kdash.web.state.MetadataHolder
+import me.williamhester.kdash.web.store.SessionStore
 import kotlin.math.max
 import kotlin.math.min
 
 class DriverCarLapMonitor(
   private val metadataHolder: MetadataHolder,
   private val relativeMonitor: RelativeMonitor,
+  private val sessionStore: SessionStore,
 ) {
 
   private val _logEntries = mutableListOf<LogEntry>()
@@ -93,7 +95,10 @@ class DriverCarLapMonitor(
           maxSpeed = maxSpeed,
         )
       // Ignore laps before the start of the race
-      if (lapNum > 0) _logEntries.add(newEntry)
+      if (lapNum > 0) {
+        _logEntries.add(newEntry)
+        sessionStore.insertLapEntry(newEntry.toLapEntry())
+      }
 
       // Values that are only accurate at the start of the new lap
       lapNum = currentLap
@@ -139,7 +144,7 @@ class DriverCarLapMonitor(
       pitTime = dataSnapshot.sessionTime - pitStartTime
 
       val stintTime = dataSnapshot.sessionTime - stintStartTime
-      _stintEntries.add(
+      val newStintEntry =
         StintEntry(
           outLap = pitOutLap,
           inLap = pitInLap,
@@ -151,7 +156,8 @@ class DriverCarLapMonitor(
           trackTemp = 0.0F,
           incidents = 0,
         )
-      )
+      _stintEntries.add(newStintEntry)
+      sessionStore.insertStintEntry(newStintEntry.toStintEntry())
 
       stintStartTime = dataSnapshot.sessionTime
     }
