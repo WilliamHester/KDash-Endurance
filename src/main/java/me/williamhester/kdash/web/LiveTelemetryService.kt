@@ -24,7 +24,6 @@ import me.williamhester.kdash.enduranceweb.proto.queryRealtimeTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.queryTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.telemetryData
 import me.williamhester.kdash.web.models.DataPoint
-import me.williamhester.kdash.web.models.SessionInfo
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.monitors.DataSnapshotMonitor
 import me.williamhester.kdash.web.monitors.DriverCarLapMonitor
@@ -33,27 +32,20 @@ import me.williamhester.kdash.web.monitors.DriverMonitor
 import me.williamhester.kdash.web.monitors.OtherCarsLapMonitor
 import me.williamhester.kdash.web.monitors.RelativeMonitor
 import me.williamhester.kdash.web.query.Query
-import me.williamhester.kdash.web.state.DataSnapshotQueue
-import me.williamhester.kdash.web.state.MetadataFetcher
-import me.williamhester.kdash.web.state.MetadataHolder
 import java.time.Duration
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
-class LiveTelemetryService(
-  private val metadataHolder: MetadataHolder,
-  private val dataSnapshotQueue: DataSnapshotQueue,
-) : LiveTelemetryServiceImplBase() {
+class LiveTelemetryService : LiveTelemetryServiceImplBase() {
 
   private lateinit var relativeMonitor: RelativeMonitor
   private lateinit var lapMonitor: DriverCarLapMonitor
   private lateinit var otherCarsLapMonitor: OtherCarsLapMonitor
   private lateinit var driverDistancesMonitor: DriverDistancesMonitor
   private lateinit var dataSnapshotMonitor: DataSnapshotMonitor
-  private val driverMonitor = DriverMonitor(metadataHolder)
+  private lateinit var driverMonitor: DriverMonitor
 
   private val lapDataStreamObservers = CopyOnWriteArrayList<LapDataStreamObserverProgressHolder>()
   private val gapsStreamObservers = CopyOnWriteArrayList<GapsStreamObserverRateLimitHolder>()
@@ -65,28 +57,7 @@ class LiveTelemetryService(
   private val initializedLock = CountDownLatch(1)
 
   fun start(executor: Executor) {
-    executor.execute(this::monitor)
     executor.execute(this::emitLoop)
-  }
-
-  private fun monitor() {
-    relativeMonitor = RelativeMonitor()
-    lapMonitor = DriverCarLapMonitor(metadataHolder, relativeMonitor)
-    otherCarsLapMonitor = OtherCarsLapMonitor(metadataHolder, relativeMonitor)
-    driverDistancesMonitor = DriverDistancesMonitor()
-    dataSnapshotMonitor = DataSnapshotMonitor(MetadataFetcher(SessionInfo(0, 0, 0, "64")))
-    initializedLock.countDown()
-
-    val rateLimiter = RateLimiter.create(6000.0)
-    for (dataSnapshot in dataSnapshotQueue) {
-      logger.atInfo().atMostEvery(10, TimeUnit.SECONDS).log("Processing new buffer.")
-      relativeMonitor.process(dataSnapshot)
-      lapMonitor.process(dataSnapshot)
-      otherCarsLapMonitor.process(dataSnapshot)
-      driverDistancesMonitor.process(dataSnapshot)
-      dataSnapshotMonitor.process(dataSnapshot)
-      rateLimiter.acquire()
-    }
   }
 
   private fun emitLoop() {

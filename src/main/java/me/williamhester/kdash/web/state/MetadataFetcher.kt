@@ -1,16 +1,16 @@
 package me.williamhester.kdash.web.state
 
 import com.google.common.base.Stopwatch
-import me.williamhester.kdash.web.models.SessionInfo
+import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.store.Store
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
-class MetadataFetcher(private val sessionInfo: SessionInfo) {
+class MetadataFetcher(private val sessionKey: SessionKey) {
   val metadata by cached(Duration.ofSeconds(1)) {
-    Store.getMetadataForSession(sessionInfo)!!
+    Store.getMetadataForSession(sessionKey)!!
   }
 }
 

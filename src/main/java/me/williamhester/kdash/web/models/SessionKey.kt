@@ -1,6 +1,6 @@
 package me.williamhester.kdash.web.models
 
-data class SessionInfo(
+data class SessionKey(
   val sessionId: Int,
   val subSessionId: Int,
   val sessionNum: Int,

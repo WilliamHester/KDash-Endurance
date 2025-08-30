@@ -4,7 +4,7 @@ import com.google.common.base.Joiner
 import com.google.protobuf.Message
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
-import me.williamhester.kdash.web.models.SessionInfo
+import me.williamhester.kdash.web.models.SessionKey
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.PreparedStatement
@@ -17,30 +17,30 @@ object Store {
     DriverManager.getConnection("jdbc:postgresql://localhost:5432/williamhester")
   }
 
-  fun insertDataSnapshot(sessionInfo: SessionInfo, dataSnapshot: DataSnapshot) {
+  fun insertDataSnapshot(sessionKey: SessionKey, dataSnapshot: DataSnapshot) {
     insertOrUpdate(
       Table.TELEMETRY_DATA,
-      "SessionID" to sessionInfo.sessionId,
-      "SubSessionID" to sessionInfo.subSessionId,
-      "SimSessionNumber" to sessionInfo.sessionNum,
-      "CarNumber" to sessionInfo.carNumber,
+      "SessionID" to sessionKey.sessionId,
+      "SubSessionID" to sessionKey.subSessionId,
+      "SimSessionNumber" to sessionKey.sessionNum,
+      "CarNumber" to sessionKey.carNumber,
       "SessionTime" to dataSnapshot.sessionTime,
       "Data" to dataSnapshot,
     )
   }
 
-  fun insertSessionMetadata(sessionInfo: SessionInfo, sessionMetadata: SessionMetadata) {
+  fun insertSessionMetadata(sessionKey: SessionKey, sessionMetadata: SessionMetadata) {
     insertOrUpdate(
       Table.SESSION_CARS,
-      "SessionID" to sessionInfo.sessionId,
-      "SubSessionID" to sessionInfo.subSessionId,
-      "SimSessionNumber" to sessionInfo.sessionNum,
-      "CarNumber" to sessionInfo.carNumber,
+      "SessionID" to sessionKey.sessionId,
+      "SubSessionID" to sessionKey.subSessionId,
+      "SimSessionNumber" to sessionKey.sessionNum,
+      "CarNumber" to sessionKey.carNumber,
       "Metadata" to sessionMetadata,
     )
   }
 
-  fun getMetadataForSession(sessionInfo: SessionInfo): SessionMetadata? {
+  fun getMetadataForSession(sessionKey: SessionKey): SessionMetadata? {
     return executeQuery(
       """
         SELECT Metadata
@@ -51,10 +51,10 @@ object Store {
           AND SimSessionNumber=? 
           AND CarNumber=?
       """.trimIndent(),
-      sessionInfo.sessionId,
-      sessionInfo.subSessionId,
-      sessionInfo.sessionNum,
-      sessionInfo.carNumber,
+      sessionKey.sessionId,
+      sessionKey.subSessionId,
+      sessionKey.sessionNum,
+      sessionKey.carNumber,
     ) {
       if (!it.next()) return@executeQuery null
       SessionMetadata.parseFrom(it.getBytes(1))

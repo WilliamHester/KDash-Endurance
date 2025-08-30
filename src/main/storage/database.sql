@@ -18,15 +18,32 @@ CREATE TABLE TelemetryData (
 
 CREATE TABLE SessionCars (
   -- The SessionID variable from WeekendInfo in the session string
-  SessionID INT NOT NULL,
+  SessionID int NOT NULL,
   -- The SubSessionID variable from WeekendInfo in the session string
-  SubSessionID INT NOT NULL,
+  SubSessionID int NOT NULL,
   -- CurrentSessionNum from SessionInfo in the session string
-  SimSessionNumber INT NOT NULL,
+  SimSessionNumber int NOT NULL,
   -- The number of the team
   CarNumber character varying (3) NOT NULL,
   -- The current Session metadata proto, serialized to bytes.
-  Metadata bytea,
+  Metadata bytea NOT NULL,
 
   PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber)
+);
+
+CREATE TABLE DriverLaps (
+  -- The SessionID variable from WeekendInfo in the session string
+  SessionID int NOT NULL,
+  -- The SubSessionID variable from WeekendInfo in the session string
+  SubSessionID int NOT NULL,
+  -- CurrentSessionNum from SessionInfo in the session string
+  SimSessionNumber int NOT NULL,
+  -- The number of the team
+  CarNumber character varying (4) NOT NULL,
+  -- The lap number
+  LapNum int NOT NULL,
+  -- The lap data
+  LapData bytea NOT NULL,
+
+  PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber, LapNum)
 );
