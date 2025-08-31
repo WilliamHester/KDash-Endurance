@@ -3,9 +3,9 @@ package me.williamhester.kdash.web.service.telemetrypusher
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import me.williamhester.kdash.web.models.SessionKey
-import me.williamhester.kdash.web.monitors.DataSnapshotMonitor
-import me.williamhester.kdash.web.monitors.DriverCarLapMonitor
-import me.williamhester.kdash.web.monitors.OtherCarsLapMonitor
+import me.williamhester.kdash.web.monitors.DataSnapshotLogger
+import me.williamhester.kdash.web.monitors.DriverCarLapLogger
+import me.williamhester.kdash.web.monitors.OtherCarsLapLogger
 import me.williamhester.kdash.web.monitors.RelativeMonitor
 import me.williamhester.kdash.web.state.MetadataHolder
 import me.williamhester.kdash.web.store.SessionStore
@@ -34,15 +34,15 @@ internal class LiveTelemetryDataWriter(
     val metadataHolder = MetadataHolder(initialMetadata)
 
     private val relativeMonitor = RelativeMonitor()
-    private val lapMonitor = DriverCarLapMonitor(metadataHolder, relativeMonitor, sessionStore)
-    private val otherCarsLapMonitor = OtherCarsLapMonitor(metadataHolder, relativeMonitor, sessionStore)
-    private val dataSnapshotMonitor = DataSnapshotMonitor(metadataHolder, sessionStore)
+    private val lapMonitor = DriverCarLapLogger(metadataHolder, relativeMonitor, sessionStore)
+    private val otherCarsLapLogger = OtherCarsLapLogger(metadataHolder, relativeMonitor, sessionStore)
+    private val dataSnapshotLogger = DataSnapshotLogger(metadataHolder, sessionStore)
 
     fun process(dataSnapshot: DataSnapshot) {
       relativeMonitor.process(dataSnapshot)
       lapMonitor.process(dataSnapshot)
-      otherCarsLapMonitor.process(dataSnapshot)
-      dataSnapshotMonitor.process(dataSnapshot)
+      otherCarsLapLogger.process(dataSnapshot)
+      dataSnapshotLogger.process(dataSnapshot)
     }
   }
 }

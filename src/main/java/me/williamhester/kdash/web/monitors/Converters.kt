@@ -7,7 +7,7 @@ import me.williamhester.kdash.enduranceweb.proto.StintEntry
 import me.williamhester.kdash.enduranceweb.proto.stintEntry
 import me.williamhester.kdash.web.monitors.RelativeMonitor.GapToCarId
 
-fun DriverCarLapMonitor.LogEntry.toLapEntry(): LapEntry {
+fun DriverCarLapLogger.LogEntry.toLapEntry(): LapEntry {
   val log = this
   return LapEntry.newBuilder().apply {
     lapNum = log.lapNum
@@ -29,7 +29,7 @@ fun DriverCarLapMonitor.LogEntry.toLapEntry(): LapEntry {
   }.build()
 }
 
-fun DriverCarLapMonitor.StintEntry.toStintEntry(): StintEntry {
+fun DriverCarLapLogger.StintEntry.toStintEntry(): StintEntry {
   val stint = this
   return stintEntry {
     outLap = stint.outLap
@@ -44,7 +44,7 @@ fun DriverCarLapMonitor.StintEntry.toStintEntry(): StintEntry {
   }
 }
 
-fun OtherCarsLapMonitor.LogEntry.toOtherCarLapEntry(): OtherCarLapEntry {
+fun OtherCarsLapLogger.LogEntry.toOtherCarLapEntry(): OtherCarLapEntry {
   val log = this
   return OtherCarLapEntry.newBuilder().apply {
     carId = log.carId

@@ -6,15 +6,11 @@ import me.williamhester.kdash.web.state.MetadataHolder
 import me.williamhester.kdash.web.store.SessionStore
 import java.util.concurrent.ConcurrentHashMap
 
-class OtherCarsLapMonitor(
+class OtherCarsLapLogger(
   private val metadataHolder: MetadataHolder,
   private val relativeMonitor: RelativeMonitor,
   private val sessionStore: SessionStore,
 ) {
-
-  private val _logEntries = mutableListOf<LogEntry>()
-  val logEntries: List<LogEntry> = _logEntries
-
   private val carIdxStates = ConcurrentHashMap<Int, CarState>()
 
   private class CarState {
@@ -67,10 +63,7 @@ class OtherCarsLapMonitor(
               pitTime = pitTime,
             )
           // Ignore laps before the start of the race
-          if (lapNum > 0) {
-            _logEntries.add(newEntry)
-            sessionStore.insertOtherCarLapEntry(newEntry.toOtherCarLapEntry())
-          }
+          if (lapNum > 0) sessionStore.insertOtherCarLapEntry(newEntry.toOtherCarLapEntry())
 
           // Values that are only accurate at the start of the new lap
           lapNum = currentLap

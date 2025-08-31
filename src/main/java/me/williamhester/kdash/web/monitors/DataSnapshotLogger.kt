@@ -4,18 +4,15 @@ import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.syntheticFields
 import me.williamhester.kdash.enduranceweb.proto.telemetryDataPoint
 import me.williamhester.kdash.web.extensions.get
-import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.state.MetadataHolder
 import me.williamhester.kdash.web.store.SessionStore
 import kotlin.math.max
 import kotlin.math.min
 
-class DataSnapshotMonitor(
+class DataSnapshotLogger(
   private val metadataHolder: MetadataHolder,
   private val sessionStore: SessionStore,
 ) {
-  val telemetryDataPoints: List<TelemetryDataPoint> = emptyList()
-
   private val driverCarIdx = metadataHolder.metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
   private val trackLengthMeters =
     metadataHolder.metadata["WeekendInfo"]["TrackLength"].value.substringBefore(" km").toDouble() * 1000
