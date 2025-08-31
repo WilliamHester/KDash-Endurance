@@ -10,5 +10,6 @@ kt_jvm_library(
     deps = [
         "//main/proto:live_telemetry_service_java_grpc",
         "//main/proto:live_telemetry_pusher_service_java_proto",
+        "//main/proto:storage_java_proto",
     ],
 )

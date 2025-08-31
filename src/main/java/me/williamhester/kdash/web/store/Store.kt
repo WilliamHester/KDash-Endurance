@@ -6,14 +6,16 @@ import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import me.williamhester.kdash.enduranceweb.proto.StintEntry
-import me.williamhester.kdash.enduranceweb.proto.TelemetryDataPoint
 import me.williamhester.kdash.web.models.SessionKey
+import me.williamhester.kdash.web.models.TelemetryDataPoint
+import me.williamhester.kdash.web.models.TelemetryRange
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.time.Instant
+import me.williamhester.kdash.enduranceweb.proto.TelemetryDataPoint as TelemetryDataPointProto
 
 object Store {
   private val connection: Connection by lazy {
@@ -24,7 +26,7 @@ object Store {
     sessionKey: SessionKey,
     sessionTime: Double,
     driverDistance: Float,
-    dataSnapshot: TelemetryDataPoint,
+    dataSnapshot: TelemetryDataPointProto,
   ) {
     insertOrUpdate(
       Table.TELEMETRY_DATA,
@@ -104,6 +106,199 @@ object Store {
     ) {
       if (!it.next()) return@executeQuery null
       SessionMetadata.parseFrom(it.getBytes(1))
+    }
+  }
+
+  fun getSessionTelemetryRange(sessionKey: SessionKey): TelemetryRange? {
+    val (minSessionTime, maxSessionTime) = executeQuery("""
+      SELECT
+        MIN(SessionTime),
+        MAX(SessionTime)
+      FROM TelemetryData
+      WHERE
+          SessionID=? 
+          AND SubSessionID=? 
+          AND SimSessionNumber=? 
+          AND CarNumber=?
+    """.trimIndent(),
+      sessionKey.sessionId,
+      sessionKey.subSessionId,
+      sessionKey.sessionNum,
+      sessionKey.carNumber) {
+      if (!it.next()) return@executeQuery null to null
+      it.getDouble(1) to it.getDouble(2)
+    }
+    if (minSessionTime == null || maxSessionTime == null) return null
+    val minDistance = getDriverDistanceAtSessionTime(sessionKey, minSessionTime)
+    val maxDistance = getDriverDistanceAtSessionTime(sessionKey, maxSessionTime)
+    if (minDistance == null || maxDistance == null) return null
+    return TelemetryRange(minSessionTime, maxSessionTime, minDistance, maxDistance)
+  }
+
+  private fun getDriverDistanceAtSessionTime(sessionKey: SessionKey, sessionTime: Double): Float? {
+    return executeQuery("""
+        SELECT DriverDistance
+        FROM TelemetryData
+        WHERE
+            SessionID=? 
+            AND SubSessionID=? 
+            AND SimSessionNumber=? 
+            AND CarNumber=?
+            AND SessionTime=?
+      """.trimIndent(),
+      sessionKey.sessionId,
+      sessionKey.subSessionId,
+      sessionKey.sessionNum,
+      sessionKey.carNumber,
+      sessionTime) {
+      if (!it.next()) return@executeQuery null
+      it.getFloat(1)
+    }
+  }
+
+  fun getTelemetryForRange(
+    sessionKey: SessionKey,
+    startTime: Double,
+    endTime: Double,
+    responseListener: StreamedResponseListener<TelemetryDataPoint>,
+  ) {
+    return executeQuery("""
+        SELECT
+          SessionTime,
+          DriverDistance,
+          Data
+        FROM TelemetryData
+        WHERE
+          SessionID=? 
+          AND SubSessionID=? 
+          AND SimSessionNumber=? 
+          AND CarNumber=?
+          AND SessionTime>?
+          AND SessionTime<?
+      """.trimIndent(),
+      sessionKey.sessionId,
+      sessionKey.subSessionId,
+      sessionKey.sessionNum,
+      sessionKey.carNumber,
+      startTime,
+      endTime,
+    ) {
+      var sessionTime: Double? = null
+      while (it.next()) {
+        sessionTime = it.getDouble(1)
+        val telemetryDataPointProto = TelemetryDataPointProto.parseFrom(it.getBytes(3))
+        responseListener.onNext(
+          TelemetryDataPoint(
+            sessionTime,
+            it.getFloat(2),
+            telemetryDataPointProto.dataSnapshot,
+            telemetryDataPointProto.syntheticFields,
+          )
+        )
+      }
+    }
+  }
+
+  fun interface StreamedResponseListener<T> {
+    fun onNext(value: T)
+  }
+
+  fun getSessionTimeForTargetDistance(sessionKey: SessionKey, targetDistance: Float): Double? {
+    return executeQuery("""
+        SELECT
+          SessionTime
+        FROM
+          TelemetryData
+        WHERE
+          SessionID=?
+          AND SubSessionID=?
+          AND SimSessionNumber=?
+          AND CarNumber=?
+          AND DriverDistance<=?
+        ORDER BY
+          DriverDistance DESC
+        LIMIT 1;
+      """.trimIndent(),
+      sessionKey.sessionId,
+      sessionKey.subSessionId,
+      sessionKey.sessionNum,
+      sessionKey.carNumber,
+      targetDistance,
+    ) {
+      if (!it.next()) return@executeQuery null
+      return@executeQuery it.getDouble(1)
+    }
+  }
+
+  fun getDriverLaps(sessionKey: SessionKey, responseListener: StreamedResponseListener<LapEntry>) {
+    executeQuery("""
+        SELECT
+          LapNum,
+          LapEntry
+        FROM
+          DriverLaps
+        WHERE
+          SessionID=?
+          AND SubSessionID=?
+          AND SimSessionNumber=?
+          AND CarNumber=?
+      """.trimIndent(),
+      sessionKey.sessionId,
+      sessionKey.subSessionId,
+      sessionKey.sessionNum,
+      sessionKey.carNumber,
+    ) {
+      while (it.next()) {
+        responseListener.onNext(LapEntry.parseFrom(it.getBytes(2)))
+      }
+    }
+  }
+
+  fun getDriverStints(sessionKey: SessionKey, responseListener: StreamedResponseListener<StintEntry>) {
+    executeQuery("""
+        SELECT
+          InLapNum,
+          StintEntry
+        FROM
+          DriverStints
+        WHERE
+          SessionID=?
+          AND SubSessionID=?
+          AND SimSessionNumber=?
+          AND CarNumber=?
+      """.trimIndent(),
+      sessionKey.sessionId,
+      sessionKey.subSessionId,
+      sessionKey.sessionNum,
+      sessionKey.carNumber,
+    ) {
+      while (it.next()) {
+        responseListener.onNext(StintEntry.parseFrom(it.getBytes(2)))
+      }
+    }
+  }
+
+  fun getOtherCarLaps(sessionKey: SessionKey, responseListener: StreamedResponseListener<OtherCarLapEntry>) {
+    executeQuery("""
+        SELECT
+          LapNum,
+          LapEntry
+        FROM
+          OtherCarLaps
+        WHERE
+          SessionID=?
+          AND SubSessionID=?
+          AND SimSessionNumber=?
+          AND CarNumber=?
+      """.trimIndent(),
+      sessionKey.sessionId,
+      sessionKey.subSessionId,
+      sessionKey.sessionNum,
+      sessionKey.carNumber,
+    ) {
+      while (it.next()) {
+        responseListener.onNext(OtherCarLapEntry.parseFrom(it.getBytes(2)))
+      }
     }
   }
 

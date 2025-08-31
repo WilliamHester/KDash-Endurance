@@ -2,8 +2,8 @@ package me.williamhester.kdash.web.query
 
 import com.google.common.truth.Truth.assertThat
 import me.williamhester.kdash.enduranceweb.proto.dataSnapshot
+import me.williamhester.kdash.enduranceweb.proto.syntheticFields
 import me.williamhester.kdash.web.models.DataPoint
-import me.williamhester.kdash.web.models.SyntheticFields
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -123,6 +123,6 @@ class ProcessorsTest {
     private const val SESSION_TIME_1 = 1.0
     private const val DRIVER_DISTANCE_1 = 5.0F
     private const val FUEL_LEVEL_1 = 75.0F
-    private val SYNTHETIC_FIELDS = SyntheticFields(0, 0.0F, 0.0)
+    private val SYNTHETIC_FIELDS = syntheticFields { }
   }
 }

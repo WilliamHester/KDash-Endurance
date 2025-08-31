@@ -19,6 +19,7 @@ import me.williamhester.kdash.enduranceweb.proto.VarBufferFields
 import me.williamhester.kdash.enduranceweb.proto.VarBufferFieldsOrControlMessage
 import me.williamhester.kdash.enduranceweb.proto.sessionMetadata
 import me.williamhester.kdash.enduranceweb.proto.sessionMetadataOrDataSnapshot
+import me.williamhester.kdash.web.common.SynchronizedStreamObserver
 import java.io.ByteArrayOutputStream
 import java.nio.file.Paths
 import java.util.concurrent.CountDownLatch

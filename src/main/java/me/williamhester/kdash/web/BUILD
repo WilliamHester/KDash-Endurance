@@ -24,6 +24,7 @@ kt_jvm_library(
         "//main/java/me/williamhester/kdash/web/state",
         "//main/java/me/williamhester/kdash/web/store",
         "//main/java/me/williamhester/kdash/web/service/telemetrypusher",
+        "//main/java/me/williamhester/kdash/web/service/telemetry",
         "//main/proto:live_telemetry_service_java_grpc",
         "//main/proto:live_telemetry_service_kt_proto",
         "//main/proto:live_telemetry_pusher_service_kt_grpc",

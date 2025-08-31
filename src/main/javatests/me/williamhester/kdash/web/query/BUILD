@@ -24,6 +24,7 @@ kt_jvm_test(
         "//main/proto:live_telemetry_service_java_grpc",
         "//main/proto:live_telemetry_pusher_service_kt_grpc",
         "//main/proto:live_telemetry_pusher_service_kt_proto",
+        "//main/proto:storage_kt_proto",
         "//main/java/me/williamhester/kdash/web/models",
         "@maven//:com_google_truth_truth",
         "@maven//:junit_junit",

@@ -1,4 +1,4 @@
-package me.williamhester.kdash.web.client
+package me.williamhester.kdash.web.common
 
 import io.grpc.stub.StreamObserver
 
@@ -8,7 +8,7 @@ import io.grpc.stub.StreamObserver
  * StreamObserver by default is not thread safe. If [onNext] is called simultaneously, the proto serialization may
  * overwrite each other (partially), corrupting the data and/or dropping messages.
  */
-internal class SynchronizedStreamObserver<T>(private val delegate: StreamObserver<T>) : StreamObserver<T> {
+class SynchronizedStreamObserver<T>(private val delegate: StreamObserver<T>) : StreamObserver<T> {
   override fun onNext(value: T) = synchronized(this) {
     delegate.onNext(value)
   }

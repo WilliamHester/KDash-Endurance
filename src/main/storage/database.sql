@@ -19,6 +19,9 @@ CREATE TABLE TelemetryData (
   PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber, SessionTime)
 );
 
+CREATE INDEX TelemetryDataByDriverDistance
+ON TelemetryData (SessionID, SubSessionID, SimSessionNumber, CarNumber, DriverDistance DESC);
+
 CREATE TABLE SessionCars (
   -- The SessionID variable from WeekendInfo in the session string
   SessionID int NOT NULL,
