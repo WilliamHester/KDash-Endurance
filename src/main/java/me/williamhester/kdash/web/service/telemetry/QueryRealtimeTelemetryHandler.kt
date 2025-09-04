@@ -1,5 +1,6 @@
 package me.williamhester.kdash.web.service.telemetry
 
+import com.google.common.flogger.FluentLogger
 import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryResponse
@@ -10,12 +11,14 @@ import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.models.TelemetryRange
 import me.williamhester.kdash.web.query.Query
 import me.williamhester.kdash.web.store.Store
+import me.williamhester.kdash.web.store.StreamedResponseListener
 
 internal class QueryRealtimeTelemetryHandler(
   request: QueryRealtimeTelemetryRequest,
   private val responseObserver: StreamObserver<QueryRealtimeTelemetryResponse>,
-) : Runnable, Store.StreamedResponseListener<TelemetryDataPoint> {
-  private val delta = 1.0 / request.sampleRateHz
+) : Runnable, StreamedResponseListener<TelemetryDataPoint> {
+  private val sampleRateHz = request.sampleRateHz
+  private val delta = 1.0 / sampleRateHz
   private var lastTime = 0.0
   private val processors = request.queriesList.map(Query::parse)
   // Initialize a list of previous values to Double.NEGATIVE_INFINITY. This should ensure that the first values read
@@ -36,11 +39,12 @@ internal class QueryRealtimeTelemetryHandler(
         ?: range.minSessionTime
 
     // Send all data we're aware of except the last value to the processors only
-    Store.getTelemetryForRange(sessionKey, minTime, range.maxSessionTime - 0.001) {
+    Store.getTelemetryForRange(sessionKey, minTime, range.maxSessionTime - 0.001, sampleRateHz) {
       processors.map { p -> p.process(it) }
     }
     // Send data starting with the latest value.
-    Store.getTelemetryForRange(sessionKey, range.maxSessionTime - 0.001, Double.MAX_VALUE, this)
+    Store.getTelemetryForRange(sessionKey, range.maxSessionTime - 0.001, Double.MAX_VALUE, sampleRateHz, this)
+    logger.atInfo().log("Finished QueryRealTimeTelemetry")
   }
 
   override fun onNext(value: TelemetryDataPoint) {
@@ -62,5 +66,9 @@ internal class QueryRealtimeTelemetryHandler(
       }
       lastTime += delta
     }
+  }
+
+  companion object {
+    private val logger = FluentLogger.forEnclosingClass()
   }
 }

@@ -14,6 +14,7 @@ import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.models.TelemetryRange
 import me.williamhester.kdash.web.query.Query
 import me.williamhester.kdash.web.store.Store
+import me.williamhester.kdash.web.store.StreamedResponseListener
 import java.time.Duration
 
 internal class QueryTelemetryHandler(
@@ -28,7 +29,7 @@ internal class QueryTelemetryHandler(
     sendSessionDataRanges(range)
     val (hz, startTime, endTime) = getQueryParameters(range)
 
-    Store.getTelemetryForRange(sessionKey, startTime, endTime, TelemetryDataPointReceiver(hz))
+    Store.getTelemetryForRange(sessionKey, startTime, endTime, hz, TelemetryDataPointReceiver(hz))
   }
 
   private fun sendSessionDataRanges(range: TelemetryRange?) {
@@ -48,7 +49,7 @@ internal class QueryTelemetryHandler(
     )
   }
 
-  private inner class TelemetryDataPointReceiver(hz: Double) : Store.StreamedResponseListener<TelemetryDataPoint> {
+  private inner class TelemetryDataPointReceiver(hz: Double) : StreamedResponseListener<TelemetryDataPoint> {
     private val delta = 1.0 / hz
     private var lastTime = 0.0
 

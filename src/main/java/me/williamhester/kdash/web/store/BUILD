@@ -5,10 +5,8 @@ kt_jvm_library(
     srcs = glob(["*.kt"]),
     data = [":db.password"],
     visibility = ["//main/java/me/williamhester/kdash/web:__subpackages__"],
-    runtime_deps = [
-        "@maven//:org_postgresql_postgresql",
-    ],
     deps = [
+        "@maven//:com_impossibl_pgjdbc_ng_pgjdbc_ng",
         "@maven//:com_google_flogger_flogger",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_protobuf_protobuf_java_util",

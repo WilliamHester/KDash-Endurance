@@ -1,4 +1,18 @@
 
+CREATE TABLE SessionCars (
+  -- The SessionID variable from WeekendInfo in the session string
+  SessionID int NOT NULL,
+  -- The SubSessionID variable from WeekendInfo in the session string
+  SubSessionID int NOT NULL,
+  -- CurrentSessionNum from SessionInfo in the session string
+  SimSessionNumber int NOT NULL,
+  -- The number of the team
+  CarNumber character varying (3) NOT NULL,
+  -- The current Session metadata proto, serialized to bytes.
+  Metadata bytea NOT NULL,
+
+  PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber)
+);
 
 CREATE TABLE TelemetryData (
   -- The SessionID variable from WeekendInfo in the session string
@@ -22,20 +36,21 @@ CREATE TABLE TelemetryData (
 CREATE INDEX TelemetryDataByDriverDistance
 ON TelemetryData (SessionID, SubSessionID, SimSessionNumber, CarNumber, DriverDistance DESC);
 
-CREATE TABLE SessionCars (
-  -- The SessionID variable from WeekendInfo in the session string
-  SessionID int NOT NULL,
-  -- The SubSessionID variable from WeekendInfo in the session string
-  SubSessionID int NOT NULL,
-  -- CurrentSessionNum from SessionInfo in the session string
-  SimSessionNumber int NOT NULL,
-  -- The number of the team
-  CarNumber character varying (3) NOT NULL,
-  -- The current Session metadata proto, serialized to bytes.
-  Metadata bytea NOT NULL,
+CREATE OR REPLACE FUNCTION notify_on_telemetry_data()
+RETURNS TRIGGER AS $$
+DECLARE
+  channel_name TEXT;
+BEGIN
+  channel_name := format('td_%s_%s_%s_%s', NEW.SessionID, NEW.SubSessionID, NEW.SimSessionNumber, NEW.CarNumber);
+  PERFORM pg_notify(channel_name, NEW.SessionTime::TEXT);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-  PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber)
-);
+CREATE TRIGGER telemetry_data_insert_trigger
+AFTER INSERT ON TelemetryData
+FOR EACH ROW
+EXECUTE FUNCTION notify_on_telemetry_data();
 
 CREATE TABLE DriverLaps (
   -- The SessionID variable from WeekendInfo in the session string

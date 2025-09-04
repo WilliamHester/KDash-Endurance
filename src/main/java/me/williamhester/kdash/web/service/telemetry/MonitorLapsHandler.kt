@@ -4,48 +4,47 @@ import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListeningExecutorService
 import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.enduranceweb.proto.LapData
+import me.williamhester.kdash.enduranceweb.proto.LapEntry
+import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
+import me.williamhester.kdash.enduranceweb.proto.StintEntry
 import me.williamhester.kdash.enduranceweb.proto.lapData
 import me.williamhester.kdash.web.common.SynchronizedStreamObserver
 import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.store.Store
+import me.williamhester.kdash.web.store.StreamedResponseListener
+import kotlin.reflect.KClass
 
 internal class MonitorLapsHandler(
   responseObserver: StreamObserver<LapData>,
   private val threadPool: ListeningExecutorService,
-) : Runnable {
+) : Runnable, StreamedResponseListener<Any> {
   private val responseObserver = SynchronizedStreamObserver(responseObserver)
   private val sessionKey = SessionKey(0, 0, 0, "64")
 
   override fun run() {
-    val future1 = threadPool.submit {
-      Store.getDriverLaps(sessionKey) {
-        responseObserver.onNext(
-          lapData {
-            driverLap = it
-          }
-        )
-      }
-    }
-    val future2 = threadPool.submit {
-      Store.getDriverStints(sessionKey) {
-        responseObserver.onNext(
-          lapData {
-            driverStint = it
-          }
-        )
-      }
-    }
-    val future3 = threadPool.submit {
-      Store.getOtherCarLaps(sessionKey) {
-        responseObserver.onNext(
-          lapData {
-            otherCarLap = it
-          }
-        )
-      }
-    }
+    val future1 = threadPool.submit { Store.getDriverLaps(sessionKey, this) }
+    val future2 = threadPool.submit { Store.getDriverStints(sessionKey, this) }
+    val future3 = threadPool.submit { Store.getOtherCarLaps(sessionKey, this) }
 
-    // Block until all futures are done.
-    Futures.allAsList(future1, future2, future3).get()
+    val allFutures = Futures.allAsList(future1, future2, future3)
+    try {
+      allFutures.get()
+    } catch (e: InterruptedException) {
+      allFutures.cancel(true)
+    }
   }
+
+  override fun onNext(value: Any) {
+    val lapData = lapData {
+      when (value) {
+        is LapEntry -> driverLap = value
+        is StintEntry -> driverStint = value
+        is OtherCarLapEntry -> otherCarLap = value
+        else -> throw UnknownDataTypeException(value::class)
+      }
+    }
+    responseObserver.onNext(lapData)
+  }
+
+  private class UnknownDataTypeException(type: KClass<*>) : Exception("Unknown type: $type")
 }

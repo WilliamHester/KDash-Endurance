@@ -1,7 +1,9 @@
 package me.williamhester.kdash.web.service.telemetry
 
+import com.google.common.base.Stopwatch
 import com.google.common.flogger.FluentLogger
 import com.google.common.util.concurrent.ListeningExecutorService
+import io.grpc.stub.ServerCallStreamObserver
 import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
 import me.williamhester.kdash.enduranceweb.proto.CurrentDrivers
@@ -13,6 +15,8 @@ import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryResponse
+import java.time.Duration
+import java.util.concurrent.TimeUnit
 
 class LiveTelemetryService(
   private val executor: ListeningExecutorService,
@@ -22,22 +26,22 @@ class LiveTelemetryService(
     request: QueryTelemetryRequest,
     responseObserver: StreamObserver<QueryTelemetryResponse>
   ) {
-    executor.submit(Wrapper(responseObserver, QueryTelemetryHandler(request, responseObserver)))
+    executeHandler("QueryTelemetry", responseObserver, QueryTelemetryHandler(request, responseObserver))
   }
 
   override fun queryRealtimeTelemetry(
     request: QueryRealtimeTelemetryRequest,
     responseObserver: StreamObserver<QueryRealtimeTelemetryResponse>
   ) {
-    executor.submit(Wrapper(responseObserver, QueryRealtimeTelemetryHandler(request, responseObserver)))
+    executeHandler("QueryRealtimeTelemetry", responseObserver, QueryRealtimeTelemetryHandler(request, responseObserver))
   }
 
   override fun monitorLaps(request: ConnectRequest, responseObserver: StreamObserver<LapData>) {
-    executor.submit(Wrapper(responseObserver, MonitorLapsHandler(responseObserver, executor)))
+    executeHandler("MonitorLaps", responseObserver, MonitorLapsHandler(responseObserver, executor))
   }
 
   override fun monitorCurrentDrivers(request: ConnectRequest, responseObserver: StreamObserver<CurrentDrivers>) {
-    executor.submit(Wrapper(responseObserver, MonitorCurrentDriversHandler(responseObserver)))
+    executeHandler("MonitorCurrentDrivers", responseObserver, MonitorCurrentDriversHandler(responseObserver))
   }
 
   override fun monitorCurrentGaps(request: ConnectRequest, responseObserver: StreamObserver<Gaps>) {
@@ -48,16 +52,24 @@ class LiveTelemetryService(
     super.monitorDriverDistances(request, responseObserver)
   }
 
-  private class Wrapper(private val streamObserver: StreamObserver<*>, private val delegate: Runnable) : Runnable {
-    override fun run() {
+  private fun executeHandler(rpcName: String, streamObserver: StreamObserver<*>, delegate: Runnable) {
+    val future = executor.submit {
       try {
+        logger.atInfo().log("Handling LiveTelemetryService.%s on thread %s", rpcName, Thread.currentThread().name)
+        val stopwatch = Stopwatch.createStarted()
         delegate.run()
+        val durationMs = stopwatch.elapsed(TimeUnit.MILLISECONDS)
+        val duration = Duration.ofMillis(durationMs)
         streamObserver.onCompleted()
-        logger.atInfo().log("Completed.")
+        logger.atInfo().log("Completed LiveTelemetryService.%s\nDuration: %s", rpcName, duration)
       } catch (t: Throwable) {
-        logger.atWarning().withCause(t).log("Error while writing response.")
+        logger.atWarning().withCause(t).log("Error while writing response for LiveTelemetryService.%s", rpcName)
         streamObserver.onError(t)
       }
+    }
+    val serverCallStreamObserver = streamObserver as ServerCallStreamObserver
+    serverCallStreamObserver.setOnCancelHandler {
+      future.cancel(true)
     }
   }
 

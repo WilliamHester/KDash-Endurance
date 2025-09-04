@@ -1,7 +1,10 @@
 package me.williamhester.kdash.web.store
 
 import com.google.common.base.Joiner
+import com.google.common.util.concurrent.RateLimiter
 import com.google.protobuf.Message
+import com.impossibl.postgres.api.jdbc.PGConnection
+import com.impossibl.postgres.api.jdbc.PGNotificationListener
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
@@ -9,18 +12,25 @@ import me.williamhester.kdash.enduranceweb.proto.StintEntry
 import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.models.TelemetryRange
-import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
 import me.williamhester.kdash.enduranceweb.proto.TelemetryDataPoint as TelemetryDataPointProto
 
 object Store {
-  private val connection: Connection by lazy {
-    DriverManager.getConnection("jdbc:postgresql://localhost:5432/williamhester")
+  private val broadcastingListener = BroadcastingListener()
+  private val connection: PGConnection by lazy {
+    DriverManager.getConnection("jdbc:pgsql://localhost:5432/williamhester").unwrap(PGConnection::class.java).apply {
+      addNotificationListener(broadcastingListener)
+    }
   }
+  private val executor = Executors.newCachedThreadPool()
 
   fun insertTelemetryData(
     sessionKey: SessionKey,
@@ -30,10 +40,7 @@ object Store {
   ) {
     insertOrUpdate(
       Table.TELEMETRY_DATA,
-      "SessionID" to sessionKey.sessionId,
-      "SubSessionID" to sessionKey.subSessionId,
-      "SimSessionNumber" to sessionKey.sessionNum,
-      "CarNumber" to sessionKey.carNumber,
+      *sessionKey.toQueryParams(),
       "SessionTime" to sessionTime,
       "DriverDistance" to driverDistance,
       "Data" to dataSnapshot,
@@ -43,10 +50,7 @@ object Store {
   fun insertLapEntry(sessionKey: SessionKey, lapEntry: LapEntry) {
     insertOrUpdate(
       Table.DRIVER_LAPS,
-      "SessionID" to sessionKey.sessionId,
-      "SubSessionID" to sessionKey.subSessionId,
-      "SimSessionNumber" to sessionKey.sessionNum,
-      "CarNumber" to sessionKey.carNumber,
+      *sessionKey.toQueryParams(),
       "LapNum" to lapEntry.lapNum,
       "LapEntry" to lapEntry,
     )
@@ -55,10 +59,7 @@ object Store {
   fun insertStintEntry(sessionKey: SessionKey, stintEntry: StintEntry) {
     insertOrUpdate(
       Table.DRIVER_STINTS,
-      "SessionID" to sessionKey.sessionId,
-      "SubSessionID" to sessionKey.subSessionId,
-      "SimSessionNumber" to sessionKey.sessionNum,
-      "CarNumber" to sessionKey.carNumber,
+      *sessionKey.toQueryParams(),
       "InLapNum" to stintEntry.inLap,
       "StintEntry" to stintEntry,
     )
@@ -67,10 +68,7 @@ object Store {
   fun insertOtherCarLapEntry(sessionKey: SessionKey, otherCarLapEntry: OtherCarLapEntry) {
     insertOrUpdate(
       Table.OTHER_CAR_LAPS,
-      "SessionID" to sessionKey.sessionId,
-      "SubSessionID" to sessionKey.subSessionId,
-      "SimSessionNumber" to sessionKey.sessionNum,
-      "CarNumber" to sessionKey.carNumber,
+      *sessionKey.toQueryParams(),
       "OtherCarIdx" to otherCarLapEntry.carId,
       "LapNum" to otherCarLapEntry.lapNum,
       "LapEntry" to otherCarLapEntry,
@@ -80,10 +78,7 @@ object Store {
   fun insertSessionMetadata(sessionKey: SessionKey, sessionMetadata: SessionMetadata) {
     insertOrUpdate(
       Table.SESSION_CARS,
-      "SessionID" to sessionKey.sessionId,
-      "SubSessionID" to sessionKey.subSessionId,
-      "SimSessionNumber" to sessionKey.sessionNum,
-      "CarNumber" to sessionKey.carNumber,
+      *sessionKey.toQueryParams(),
       "Metadata" to sessionMetadata,
     )
   }
@@ -160,51 +155,64 @@ object Store {
     sessionKey: SessionKey,
     startTime: Double,
     endTime: Double,
+    queryRateHz: Double? = null,
     responseListener: StreamedResponseListener<TelemetryDataPoint>,
   ) {
-    return executeQuery("""
-        SELECT
-          SessionTime,
-          DriverDistance,
-          Data
-        FROM TelemetryData
-        WHERE
-          SessionID=? 
-          AND SubSessionID=? 
-          AND SimSessionNumber=? 
-          AND CarNumber=?
-          AND SessionTime>?
-          AND SessionTime<?
-      """.trimIndent(),
-      sessionKey.sessionId,
-      sessionKey.subSessionId,
-      sessionKey.sessionNum,
-      sessionKey.carNumber,
-      startTime,
-      endTime,
-    ) {
-      var sessionTime: Double? = null
-      while (it.next()) {
-        sessionTime = it.getDouble(1)
-        val telemetryDataPointProto = TelemetryDataPointProto.parseFrom(it.getBytes(3))
-        responseListener.onNext(
-          TelemetryDataPoint(
-            sessionTime,
-            it.getFloat(2),
-            telemetryDataPointProto.dataSnapshot,
-            telemetryDataPointProto.syntheticFields,
-          )
-        )
+    val channelName = with(sessionKey) { "td_${sessionId}_${subSessionId}_${sessionNum}_${carNumber}" }
+    val blockingQueue = LinkedBlockingQueue<String?>()
+
+    broadcastingListener.register(channelName, blockingQueue).use {
+      val rateLimiter = RateLimiter.create(queryRateHz ?: 60.0)
+      var lastSessionTime = startTime
+      while (!Thread.currentThread().isInterrupted) {
+        rateLimiter.acquire()
+        executeQuery(
+          """
+          SELECT
+            SessionTime,
+            DriverDistance,
+            Data
+          FROM TelemetryData
+          WHERE
+            SessionID = ?
+            AND SubSessionID = ? 
+            AND SimSessionNumber = ? 
+            AND CarNumber = ?
+            AND SessionTime > ?
+            AND SessionTime - 0.01 <= ?
+        """.trimIndent(),
+          sessionKey.sessionId,
+          sessionKey.subSessionId,
+          sessionKey.sessionNum,
+          sessionKey.carNumber,
+          lastSessionTime,
+          endTime,
+        ) {
+          while (it.next()) {
+            lastSessionTime = it.getDouble(1)
+            val telemetryDataPointProto = TelemetryDataPointProto.parseFrom(it.getBytes(3))
+            responseListener.onNext(
+              TelemetryDataPoint(
+                lastSessionTime,
+                it.getFloat(2),
+                telemetryDataPointProto.dataSnapshot,
+                telemetryDataPointProto.syntheticFields,
+              )
+            )
+          }
+        }
+        if (lastSessionTime >= endTime - 0.001) break
+
+        do {
+          blockingQueue.take()
+        } while (blockingQueue.isNotEmpty())
       }
     }
   }
 
-  fun interface StreamedResponseListener<T> {
-    fun onNext(value: T)
-  }
-
   fun getSessionTimeForTargetDistance(sessionKey: SessionKey, targetDistance: Float): Double? {
-    return executeQuery("""
+    return executeQuery(
+      """
         SELECT
           SessionTime
         FROM
@@ -337,6 +345,14 @@ object Store {
     }
   }
 
+  private fun listen(channelName: String) {
+    connection.createStatement().use { it.executeUpdate("LISTEN $channelName") }
+  }
+
+  private fun unlisten(channelName: String) {
+    connection.createStatement().use { it.executeUpdate("UNLISTEN $channelName") }
+  }
+
   private enum class Table(val tableName: String) {
     TELEMETRY_DATA("TelemetryData"),
     SESSION_CARS("SessionCars"),
@@ -344,4 +360,50 @@ object Store {
     DRIVER_STINTS("DriverStints"),
     OTHER_CAR_LAPS("OtherCarLaps"),
   }
+
+  private class BroadcastingListener : PGNotificationListener {
+    private val registry = ConcurrentHashMap<String, CopyOnWriteArrayList<LinkedBlockingQueue<String?>>>()
+
+    fun register(channelName: String, blockingQueue: LinkedBlockingQueue<String?>): AutoCloseable {
+      registry.compute(channelName) { key, oldValue ->
+        val list =
+          if (oldValue == null) {
+            listen(channelName)
+            CopyOnWriteArrayList<LinkedBlockingQueue<String?>>()
+          } else {
+            oldValue
+          }
+        list.add(blockingQueue)
+        list
+      }
+      return AutoCloseable {
+        registry.compute(channelName) { key, oldValue ->
+          oldValue?.remove(blockingQueue)
+          if (oldValue?.isNotEmpty() == true) {
+            oldValue
+          } else {
+            unlisten(channelName)
+            null
+          }
+        }
+      }
+    }
+
+    override fun notification(processId: Int, channelName: String?, payload: String?) {
+      if (channelName == null) return
+
+      executor.submit {
+        registry[channelName]?.map { it.add(payload) }
+      }
+    }
+  }
+}
+
+private fun SessionKey.toQueryParams(): Array<Pair<String, Any>> {
+  return arrayOf(
+    "SessionID" to sessionId,
+    "SubSessionID" to subSessionId,
+    "SimSessionNumber" to sessionNum,
+    "CarNumber" to carNumber,
+  )
 }
