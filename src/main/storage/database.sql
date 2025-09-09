@@ -61,6 +61,8 @@ CREATE TABLE DriverLaps (
   SimSessionNumber int NOT NULL,
   -- The number of the team
   CarNumber character varying (4) NOT NULL,
+  -- The globally unique ID of the lap, incrementing every time a new lap is added to the database
+  LapID SERIAL,
   -- The lap number
   LapNum int NOT NULL,
   -- The lap data
@@ -68,6 +70,22 @@ CREATE TABLE DriverLaps (
 
   PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber, LapNum)
 );
+
+CREATE OR REPLACE FUNCTION notify_on_driver_lap()
+RETURNS TRIGGER AS $$
+DECLARE
+  channel_name TEXT;
+BEGIN
+  channel_name := format('dl_%s_%s_%s_%s', NEW.SessionID, NEW.SubSessionID, NEW.SimSessionNumber, NEW.CarNumber);
+  PERFORM pg_notify(channel_name, NEW.LapID::TEXT);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER driver_lap_insert_trigger
+AFTER INSERT ON DriverLaps
+FOR EACH ROW
+EXECUTE FUNCTION notify_on_driver_lap();
 
 CREATE TABLE DriverStints (
   -- The SessionID variable from WeekendInfo in the session string
@@ -78,6 +96,8 @@ CREATE TABLE DriverStints (
   SimSessionNumber int NOT NULL,
   -- The number of the team
   CarNumber character varying (4) NOT NULL,
+  -- The globally unique ID of the stint, incrementing every time a new stint is added to the database
+  StintID SERIAL,
   -- The in-lap number of the stint
   InLapNum int NOT NULL,
   -- The stint data
@@ -85,6 +105,22 @@ CREATE TABLE DriverStints (
 
   PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber, InLapNum)
 );
+
+CREATE OR REPLACE FUNCTION notify_on_driver_stint()
+RETURNS TRIGGER AS $$
+DECLARE
+  channel_name TEXT;
+BEGIN
+  channel_name := format('ds_%s_%s_%s_%s', NEW.SessionID, NEW.SubSessionID, NEW.SimSessionNumber, NEW.CarNumber);
+  PERFORM pg_notify(channel_name, NEW.StintID::TEXT);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER driver_stint_insert_trigger
+AFTER INSERT ON DriverStints
+FOR EACH ROW
+EXECUTE FUNCTION notify_on_driver_stint();
 
 CREATE TABLE OtherCarLaps (
   -- The SessionID variable from WeekendInfo in the session string
@@ -95,6 +131,8 @@ CREATE TABLE OtherCarLaps (
   SimSessionNumber int NOT NULL,
   -- The number of the team
   CarNumber character varying (4) NOT NULL,
+  -- The globally unique ID of the lap, incrementing every time a new lap is added to the database
+  LapID SERIAL,
   -- The index of the other car
   OtherCarIdx int NOT NULL,
   -- The lap number
@@ -104,3 +142,19 @@ CREATE TABLE OtherCarLaps (
 
   PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber, OtherCarIdx, LapNum)
 );
+
+CREATE OR REPLACE FUNCTION notify_on_other_car_lap()
+RETURNS TRIGGER AS $$
+DECLARE
+  channel_name TEXT;
+BEGIN
+  channel_name := format('ocl_%s_%s_%s_%s', NEW.SessionID, NEW.SubSessionID, NEW.SimSessionNumber, NEW.CarNumber);
+  PERFORM pg_notify(channel_name, NEW.LapID::TEXT);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER other_car_lap_insert_trigger
+AFTER INSERT ON OtherCarLaps
+FOR EACH ROW
+EXECUTE FUNCTION notify_on_other_car_lap();

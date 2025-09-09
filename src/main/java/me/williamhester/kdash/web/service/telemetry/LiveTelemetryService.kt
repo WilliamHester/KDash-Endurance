@@ -16,7 +16,7 @@ import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryResponse
 import java.time.Duration
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 class LiveTelemetryService(
   private val executor: ListeningExecutorService,
@@ -54,14 +54,18 @@ class LiveTelemetryService(
 
   private fun executeHandler(rpcName: String, streamObserver: StreamObserver<*>, delegate: Runnable) {
     val future = executor.submit {
+      val stopwatch = Stopwatch.createStarted()
       try {
         logger.atInfo().log("Handling LiveTelemetryService.%s on thread %s", rpcName, Thread.currentThread().name)
-        val stopwatch = Stopwatch.createStarted()
         delegate.run()
-        val durationMs = stopwatch.elapsed(TimeUnit.MILLISECONDS)
+        val durationMs = stopwatch.elapsed(MILLISECONDS)
         val duration = Duration.ofMillis(durationMs)
-        streamObserver.onCompleted()
         logger.atInfo().log("Completed LiveTelemetryService.%s\nDuration: %s", rpcName, duration)
+        streamObserver.onCompleted()
+      } catch (e: InterruptedException) {
+        logger.atInfo().log(
+          "Cancelled LiveTelemetryService.%s\nDuration: %s", rpcName, stopwatch.elapsed(MILLISECONDS).toDuration())
+        streamObserver.onError(e)
       } catch (t: Throwable) {
         logger.atWarning().withCause(t).log("Error while writing response for LiveTelemetryService.%s", rpcName)
         streamObserver.onError(t)
@@ -77,3 +81,5 @@ class LiveTelemetryService(
     private val logger = FluentLogger.forEnclosingClass()
   }
 }
+
+private fun Long.toDuration(): Duration = Duration.ofMillis(this)

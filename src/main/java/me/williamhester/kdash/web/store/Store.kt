@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
+import kotlin.math.max
 import me.williamhester.kdash.enduranceweb.proto.TelemetryDataPoint as TelemetryDataPointProto
 
 object Store {
@@ -180,6 +181,7 @@ object Store {
             AND CarNumber = ?
             AND SessionTime > ?
             AND SessionTime - 0.01 <= ?
+          ORDER BY SessionTime
         """.trimIndent(),
           sessionKey.sessionId,
           sessionKey.subSessionId,
@@ -188,7 +190,7 @@ object Store {
           lastSessionTime,
           endTime,
         ) {
-          while (it.next()) {
+          while (it.next() && !Thread.currentThread().isInterrupted) {
             lastSessionTime = it.getDouble(1)
             val telemetryDataPointProto = TelemetryDataPointProto.parseFrom(it.getBytes(3))
             responseListener.onNext(
@@ -239,34 +241,61 @@ object Store {
   }
 
   fun getDriverLaps(sessionKey: SessionKey, responseListener: StreamedResponseListener<LapEntry>) {
-    executeQuery("""
-        SELECT
-          LapNum,
-          LapEntry
-        FROM
-          DriverLaps
-        WHERE
-          SessionID=?
-          AND SubSessionID=?
-          AND SimSessionNumber=?
-          AND CarNumber=?
-      """.trimIndent(),
-      sessionKey.sessionId,
-      sessionKey.subSessionId,
-      sessionKey.sessionNum,
-      sessionKey.carNumber,
-    ) {
-      while (it.next()) {
-        responseListener.onNext(LapEntry.parseFrom(it.getBytes(2)))
+    val channelName = with(sessionKey) { "dl_${sessionId}_${subSessionId}_${sessionNum}_${carNumber}" }
+    val blockingQueue = LinkedBlockingQueue<String?>()
+
+    broadcastingListener.register(channelName, blockingQueue).use {
+      var lastLapId = -1
+      while (!Thread.currentThread().isInterrupted) {
+        executeQuery(
+          """
+          SELECT
+            LapNum,
+            LapEntry,
+            LapID
+          FROM
+            DriverLaps
+          WHERE
+            SessionID=?
+            AND SubSessionID=?
+            AND SimSessionNumber=?
+            AND CarNumber=?
+            AND LapID>?
+          ORDER BY LapID DESC
+        """.trimIndent(),
+          sessionKey.sessionId,
+          sessionKey.subSessionId,
+          sessionKey.sessionNum,
+          sessionKey.carNumber,
+          lastLapId,
+        ) {
+          while (it.next() && !Thread.currentThread().isInterrupted) {
+            val newLapId = it.getInt(3)
+            responseListener.onNext(LapEntry.parseFrom(it.getBytes(2)))
+            lastLapId = max(newLapId, lastLapId)
+          }
+        }
+
+        do {
+          val lapId = blockingQueue.take()!!.toInt()
+        } while (lapId <= lastLapId)
       }
     }
   }
 
   fun getDriverStints(sessionKey: SessionKey, responseListener: StreamedResponseListener<StintEntry>) {
-    executeQuery("""
+    val channelName = with(sessionKey) { "ds_${sessionId}_${subSessionId}_${sessionNum}_${carNumber}" }
+    val blockingQueue = LinkedBlockingQueue<String?>()
+
+    broadcastingListener.register(channelName, blockingQueue).use {
+      var lastStintId = -1
+      while (!Thread.currentThread().isInterrupted) {
+        executeQuery(
+          """
         SELECT
           InLapNum,
-          StintEntry
+          StintEntry,
+          StintID
         FROM
           DriverStints
         WHERE
@@ -274,23 +303,43 @@ object Store {
           AND SubSessionID=?
           AND SimSessionNumber=?
           AND CarNumber=?
+          AND StintID>?
+        ORDER BY StintID DESC
       """.trimIndent(),
-      sessionKey.sessionId,
-      sessionKey.subSessionId,
-      sessionKey.sessionNum,
-      sessionKey.carNumber,
-    ) {
-      while (it.next()) {
-        responseListener.onNext(StintEntry.parseFrom(it.getBytes(2)))
+          sessionKey.sessionId,
+          sessionKey.subSessionId,
+          sessionKey.sessionNum,
+          sessionKey.carNumber,
+          lastStintId
+        ) {
+          while (it.next() && !Thread.currentThread().isInterrupted) {
+            val newStintId = it.getInt(3)
+            responseListener.onNext(StintEntry.parseFrom(it.getBytes(2)))
+            lastStintId = max(newStintId, lastStintId)
+          }
+        }
       }
+
+      do {
+        val stintId = blockingQueue.take()!!.toInt()
+      } while (stintId < lastStintId)
     }
   }
 
   fun getOtherCarLaps(sessionKey: SessionKey, responseListener: StreamedResponseListener<OtherCarLapEntry>) {
-    executeQuery("""
+    val channelName = with(sessionKey) { "ocl_${sessionId}_${subSessionId}_${sessionNum}_${carNumber}" }
+    val blockingQueue = LinkedBlockingQueue<String?>()
+
+    broadcastingListener.register(channelName, blockingQueue).use {
+      var lastOtherCarLapId = -1
+
+      while (!Thread.currentThread().isInterrupted) {
+        executeQuery(
+          """
         SELECT
           LapNum,
-          LapEntry
+          LapEntry,
+          LapID
         FROM
           OtherCarLaps
         WHERE
@@ -298,15 +347,26 @@ object Store {
           AND SubSessionID=?
           AND SimSessionNumber=?
           AND CarNumber=?
+          AND LapID>?
+        ORDER BY LapID DESC
       """.trimIndent(),
-      sessionKey.sessionId,
-      sessionKey.subSessionId,
-      sessionKey.sessionNum,
-      sessionKey.carNumber,
-    ) {
-      while (it.next()) {
-        responseListener.onNext(OtherCarLapEntry.parseFrom(it.getBytes(2)))
+          sessionKey.sessionId,
+          sessionKey.subSessionId,
+          sessionKey.sessionNum,
+          sessionKey.carNumber,
+          lastOtherCarLapId,
+        ) {
+          while (it.next() && !Thread.currentThread().isInterrupted) {
+            val newLapId = it.getInt(3)
+            responseListener.onNext(OtherCarLapEntry.parseFrom(it.getBytes(2)))
+            lastOtherCarLapId = max(newLapId, lastOtherCarLapId)
+          }
+        }
       }
+
+      do {
+        val lapId = blockingQueue.take()!!.toInt()
+      } while (lapId < lastOtherCarLapId)
     }
   }
 
