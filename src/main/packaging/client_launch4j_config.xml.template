@@ -1,0 +1,8 @@
+<launch4jConfig>
+    <headerType>console</headerType>
+    <jar>__JAR_PATH__</jar>
+    <outfile>__OUT_FILE__</outfile>
+    <jre>
+        <minVersion>1.8.0</minVersion>
+    </jre>
+</launch4jConfig>

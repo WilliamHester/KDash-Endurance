@@ -30,6 +30,7 @@ java_binary(
     name = "local_client",
     main_class = "me.williamhester.kdash.web.client.LocalClient",
     runtime_deps = [":client"],
+    visibility = ["//visibility:public"],
 )
 
 java_binary(
