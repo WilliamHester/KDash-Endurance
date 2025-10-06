@@ -1,8 +1,10 @@
+load("@rules_java//java:defs.bzl", "java_binary")
 load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
 
 kt_jvm_library(
     name = "client",
     srcs = glob(["*.kt"]),
+    data = [":localhost.crt"],
     runtime_deps = [
         "@maven//:com_google_flogger_flogger_system_backend",
         "@maven//:org_slf4j_slf4j_simple",
@@ -25,13 +27,13 @@ kt_jvm_library(
 )
 
 java_binary(
-    name = "client_main",
-    main_class = "me.williamhester.kdash.web.client.Client",
+    name = "local_client",
+    main_class = "me.williamhester.kdash.web.client.LocalClient",
     runtime_deps = [":client"],
 )
 
-#java_binary(
-#    name = "desktop_client_main",
-#    main_class = "me.williamhester.kdash.web.DesktopMainKt",
-#    runtime_deps = [":web"],
-#)
+java_binary(
+    name = "prod_client",
+    main_class = "me.williamhester.kdash.web.client.ProdClient",
+    runtime_deps = [":client"],
+)

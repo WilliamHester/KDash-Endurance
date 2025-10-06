@@ -5,10 +5,9 @@ import com.google.common.util.concurrent.RateLimiter
 import com.google.protobuf.ByteString
 import com.google.protobuf.CodedOutputStream
 import com.google.protobuf.DescriptorProtos
-import io.grpc.netty.NettyChannelBuilder
+import io.grpc.ManagedChannel
 import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.api.IRacingDataReader
-import me.williamhester.kdash.api.IRacingLoggedDataReader
 import me.williamhester.kdash.api.VarBuffer
 import me.williamhester.kdash.enduranceweb.proto.ControlMessage
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
@@ -21,15 +20,16 @@ import me.williamhester.kdash.enduranceweb.proto.sessionMetadata
 import me.williamhester.kdash.enduranceweb.proto.sessionMetadataOrDataSnapshot
 import me.williamhester.kdash.web.common.SynchronizedStreamObserver
 import java.io.ByteArrayOutputStream
-import java.nio.file.Paths
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
-class Client {
 
-  private val iRacingDataReader = IRacingLoggedDataReader(Paths.get("/Users/williamhester/Downloads/livedata.ibt")) // IRacingLiveDataReader()
+internal class Client(
+  private val iRacingDataReader: IRacingDataReader,
+  private val channel: ManagedChannel,
+) {
   private val latch = CountDownLatch(1)
   private val rateLimiter = RateLimiter.create(600.0)
   private lateinit var outputStreamObserver: StreamObserver<SessionMetadataOrDataSnapshot>
@@ -39,7 +39,6 @@ class Client {
   private var shouldSend = false
 
   fun connect() {
-    val channel = NettyChannelBuilder.forTarget("localhost:8081").usePlaintext().build()
     val client = LiveTelemetryPusherServiceGrpc.newStub(channel)
 
     val responseObserver = object : StreamObserver<VarBufferFieldsOrControlMessage> {
@@ -176,16 +175,6 @@ class Client {
 
   companion object {
     private val logger = FluentLogger.forEnclosingClass()
-
-    @JvmStatic
-    fun main(args: Array<String>) {
-      Thread.setDefaultUncaughtExceptionHandler {
-        _, e ->
-          logger.atSevere().withCause(e).log("Uncaught exception")
-      }
-      Client().connect()
-      Thread.sleep(365 * 24 * 60 * 60 * 1000L)
-    }
   }
 }
 

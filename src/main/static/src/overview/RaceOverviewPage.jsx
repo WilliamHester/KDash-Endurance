@@ -33,7 +33,7 @@ const timeOfDayFormatter = (value) => {
 };
 
 
-export default function RaceOverviewPage({drivers, lapLog, stintLog, otherCarLapEntries}) {
+export default function RaceOverviewPage({session, drivers, lapLog, stintLog, otherCarLapEntries}) {
   const client = useRef(new LiveTelemetryServiceClient(`${location.origin}/api`)).current;
   const [queryMap, setQueryMap] = useState(new Map());
 
@@ -51,6 +51,7 @@ export default function RaceOverviewPage({drivers, lapLog, stintLog, otherCarLap
 
   useEffect(() => {
     const request = new QueryRealtimeTelemetryRequest();
+    request.setSessionIdentifier(session);
     request.setSampleRateHz(1);
     const queryList = Array.from(queryMap.keys());
     request.setQueriesList(queryList);

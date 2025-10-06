@@ -24,7 +24,9 @@ internal class QueryRealtimeTelemetryHandler(
   // Initialize a list of previous values to Double.NEGATIVE_INFINITY. This should ensure that the first values read
   // are different from the values that already existed in the list.
   private val previousValues = (1..request.queriesCount).map { Double.NEGATIVE_INFINITY }.toMutableList()
-  private val sessionKey = SessionKey(0, 0, 0, "64")
+  private val sessionKey = with(request.sessionIdentifier) {
+    SessionKey(sessionId, subSessionId, simSessionNumber, carNumber)
+  }
 
   override fun run() {
     // The lap offset required to properly display the latest data.

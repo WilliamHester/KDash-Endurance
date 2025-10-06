@@ -1,14 +1,18 @@
 package me.williamhester.kdash.web.store
 
 import com.google.common.base.Joiner
+import com.google.common.flogger.FluentLogger
 import com.google.common.util.concurrent.RateLimiter
 import com.google.protobuf.Message
 import com.impossibl.postgres.api.jdbc.PGConnection
 import com.impossibl.postgres.api.jdbc.PGNotificationListener
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
+import me.williamhester.kdash.enduranceweb.proto.Session
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import me.williamhester.kdash.enduranceweb.proto.StintEntry
+import me.williamhester.kdash.enduranceweb.proto.session
+import me.williamhester.kdash.web.extensions.get
 import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.models.TelemetryRange
@@ -21,13 +25,16 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 import kotlin.math.max
 import me.williamhester.kdash.enduranceweb.proto.TelemetryDataPoint as TelemetryDataPointProto
 
 object Store {
+  private val logger = FluentLogger.forEnclosingClass()
   private val broadcastingListener = BroadcastingListener()
   private val connection: PGConnection by lazy {
-    DriverManager.getConnection("jdbc:pgsql://localhost:5432/williamhester").unwrap(PGConnection::class.java).apply {
+    // TODO: Replace this with an env variable of some kind to target the right database for each environment.
+    DriverManager.getConnection("jdbc:pgsql://localhost:5432/postgres").unwrap(PGConnection::class.java).apply {
       addNotificationListener(broadcastingListener)
     }
   }
@@ -39,7 +46,7 @@ object Store {
     driverDistance: Float,
     dataSnapshot: TelemetryDataPointProto,
   ) {
-    insertOrUpdate(
+    insertOrSkip(
       Table.TELEMETRY_DATA,
       *sessionKey.toQueryParams(),
       "SessionTime" to sessionTime,
@@ -49,7 +56,7 @@ object Store {
   }
 
   fun insertLapEntry(sessionKey: SessionKey, lapEntry: LapEntry) {
-    insertOrUpdate(
+    insertOrSkip(
       Table.DRIVER_LAPS,
       *sessionKey.toQueryParams(),
       "LapNum" to lapEntry.lapNum,
@@ -58,7 +65,7 @@ object Store {
   }
 
   fun insertStintEntry(sessionKey: SessionKey, stintEntry: StintEntry) {
-    insertOrUpdate(
+    insertOrSkip(
       Table.DRIVER_STINTS,
       *sessionKey.toQueryParams(),
       "InLapNum" to stintEntry.inLap,
@@ -67,7 +74,7 @@ object Store {
   }
 
   fun insertOtherCarLapEntry(sessionKey: SessionKey, otherCarLapEntry: OtherCarLapEntry) {
-    insertOrUpdate(
+    insertOrSkip(
       Table.OTHER_CAR_LAPS,
       *sessionKey.toQueryParams(),
       "OtherCarIdx" to otherCarLapEntry.carId,
@@ -76,11 +83,39 @@ object Store {
     )
   }
 
+  fun listSessionCars(): List<Session> {
+    return executeQuery(
+      """
+        SELECT
+          SessionID, 
+          SubSessionID, 
+          SimSessionNumber, 
+          CarNumber,
+          Metadata
+        FROM SessionCars
+      """.trimIndent(),
+    ) {
+      val sessionCars = mutableListOf<Session>()
+      while (it.next()) {
+        sessionCars += session {
+          sessionId = it.getInt(1)
+          subSessionId = it.getInt(2)
+          simSessionNumber = it.getInt(3)
+          carNumber = it.getString(4)
+          // TODO: Probably move this somewhere else, but it's 12:35 AM on a Thursday night, before a race on Saturday.
+          trackName = SessionMetadata.parseFrom(it.getBytes(5))["WeekendInfo"]["TrackDisplayName"].value
+        }
+      }
+      return@executeQuery sessionCars
+    }
+  }
+
   fun insertSessionMetadata(sessionKey: SessionKey, sessionMetadata: SessionMetadata) {
+    val queryParams = sessionKey.toQueryParams().map { Column(it.first, false) to it.second }.toMutableList()
+    queryParams += Column("Metadata", true) to sessionMetadata
     insertOrUpdate(
       Table.SESSION_CARS,
-      *sessionKey.toQueryParams(),
-      "Metadata" to sessionMetadata,
+      *queryParams.toTypedArray(),
     )
   }
 
@@ -274,11 +309,11 @@ object Store {
             responseListener.onNext(LapEntry.parseFrom(it.getBytes(2)))
             lastLapId = max(newLapId, lastLapId)
           }
-        }
 
-        do {
-          val lapId = blockingQueue.take()!!.toInt()
-        } while (lapId <= lastLapId)
+          do {
+            val lapId = blockingQueue.take()!!.toInt()
+          } while (lapId <= lastLapId)
+        }
       }
     }
   }
@@ -318,11 +353,11 @@ object Store {
             lastStintId = max(newStintId, lastStintId)
           }
         }
-      }
 
-      do {
-        val stintId = blockingQueue.take()!!.toInt()
-      } while (stintId < lastStintId)
+        do {
+          val stintId = blockingQueue.take()!!.toInt()
+        } while (stintId < lastStintId)
+      }
     }
   }
 
@@ -362,15 +397,15 @@ object Store {
             lastOtherCarLapId = max(newLapId, lastOtherCarLapId)
           }
         }
-      }
 
-      do {
-        val lapId = blockingQueue.take()!!.toInt()
-      } while (lapId < lastOtherCarLapId)
+        do {
+          val lapId = blockingQueue.take()!!.toInt()
+        } while (lapId < lastOtherCarLapId)
+      }
     }
   }
 
-  private fun insertOrUpdate(table: Table, vararg args: Pair<String, Any>) {
+  private fun insertOrSkip(table: Table, vararg args: Pair<String, Any>) {
     val columns = Joiner.on(", ").join(args.map { it.first })
     val questionMarks = Joiner.on(", ").join(args.map { "?" })
     val queryWithValuesString =
@@ -380,9 +415,33 @@ object Store {
     }
   }
 
+  private data class Column(val name: String, val overwrite: Boolean)
+
+  private fun insertOrUpdate(table: Table, vararg args: Pair<Column, Any>) {
+    val columns = Joiner.on(", ").join(args.map { it.first.name })
+    val keyColumns = args.filterNot { it.first.overwrite }.joinToString(", ") { it.first.name }
+    val questionMarks = Joiner.on(", ").join(args.map { "?" })
+
+    val argsToUpdate = args.filter { it.first.overwrite }
+    val doPart = if (argsToUpdate.isNotEmpty()) {
+      val setPart = argsToUpdate.joinToString(", ") { "${it.first.name} = EXCLUDED.${it.first.name}" }
+      "UPDATE SET $setPart"
+    } else {
+      "NOTHING"
+    }
+    val queryWithValuesString =
+      "INSERT INTO ${table.tableName} ($columns) VALUES ($questionMarks) ON CONFLICT ($keyColumns) DO $doPart"
+    useStatement(queryWithValuesString, *args.map { it.second }.toTypedArray()) {
+      it.executeUpdate()
+    }
+  }
+
   private fun <T> executeQuery(query: String, vararg args: Any, block: (ResultSet) -> T): T {
-    return useStatement(query, *args) {
-      return@useStatement block(it.executeQuery())
+    logger.atInfo().atMostEvery(10, TimeUnit.SECONDS).log("Executing query: %s", query)
+    return useStatement(query, *args) { statement ->
+      statement.use {
+        return@useStatement block(it.executeQuery())
+      }
     }
   }
 

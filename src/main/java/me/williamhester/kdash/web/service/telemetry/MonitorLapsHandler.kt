@@ -3,6 +3,7 @@ package me.williamhester.kdash.web.service.telemetry
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListeningExecutorService
 import io.grpc.stub.StreamObserver
+import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
 import me.williamhester.kdash.enduranceweb.proto.LapData
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
@@ -15,11 +16,14 @@ import me.williamhester.kdash.web.store.StreamedResponseListener
 import kotlin.reflect.KClass
 
 internal class MonitorLapsHandler(
+  request: ConnectRequest,
   responseObserver: StreamObserver<LapData>,
   private val threadPool: ListeningExecutorService,
 ) : Runnable, StreamedResponseListener<Any> {
   private val responseObserver = SynchronizedStreamObserver(responseObserver)
-  private val sessionKey = SessionKey(0, 0, 0, "64")
+  private val sessionKey = with(request.sessionIdentifier) {
+    SessionKey(sessionId, subSessionId, simSessionNumber, carNumber)
+  }
 
   override fun run() {
     val future1 = threadPool.submit { Store.getDriverLaps(sessionKey, this) }

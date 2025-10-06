@@ -6,6 +6,7 @@ import me.williamhester.kdash.enduranceweb.proto.ControlMessage.ControlCommand
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadataOrDataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadataOrDataSnapshot.ValueCase.DATA_SNAPSHOT
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadataOrDataSnapshot.ValueCase.SESSION_METADATA
+import me.williamhester.kdash.enduranceweb.proto.SessionMetadataOrDataSnapshot.ValueCase.VALUE_NOT_SET
 import me.williamhester.kdash.enduranceweb.proto.VarBufferFieldsOrControlMessage
 import me.williamhester.kdash.enduranceweb.proto.controlMessage
 import me.williamhester.kdash.enduranceweb.proto.varBufferFieldsOrControlMessage
@@ -40,6 +41,7 @@ internal class DriverConnection(
         liveTelemetryDataWriter = sessionConnectionRegistry.register(this, metadata.toSessionKey())
         liveTelemetryDataWriter.onSessionMetadata(metadata)
       }
+      VALUE_NOT_SET -> {} // Ignore. Probably just a ping from the client that it is setting up the connection.
       else -> {
         logger.atWarning().log("Unknown value: %s", sessionMetadataOrDataSnapshot)
       }

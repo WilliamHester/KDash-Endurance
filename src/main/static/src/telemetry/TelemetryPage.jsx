@@ -33,7 +33,7 @@ const telemetryQueries = [
   'LAP_DELTA(Speed)',
 ];
 
-export default function TelemetryPage() {
+export default function TelemetryPage({session}) {
   const [telemetryData, setTelemetryData] = useState([]);
   const [sampleRateHz, setSampleRateHz] = useState(8);
   const [dataRange, setDataRange] = useState({
@@ -52,6 +52,7 @@ export default function TelemetryPage() {
 
   useEffect(() => {
     const request = new QueryTelemetryRequest();
+    request.setSessionIdentifier(session);
     request.setSampleRateHz(sampleRateHz);
     request.setMinSessionTime(dataWindow[0]);
     request.setMaxSessionTime(dataWindow[1]);

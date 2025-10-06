@@ -11,7 +11,9 @@ kt_jvm_library(
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_protobuf_protobuf_java_util",
         "@kdash//main/java/me/williamhester/kdash/api",
+        "//main/java/me/williamhester/kdash/web/extensions",
         "//main/java/me/williamhester/kdash/web/models",
+        "//main/proto:live_telemetry_service_kt_proto",
         "//main/proto:storage_java_proto",
     ],
 )

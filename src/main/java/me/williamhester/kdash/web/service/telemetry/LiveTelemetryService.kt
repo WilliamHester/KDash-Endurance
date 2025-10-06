@@ -7,9 +7,9 @@ import io.grpc.stub.ServerCallStreamObserver
 import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
 import me.williamhester.kdash.enduranceweb.proto.CurrentDrivers
-import me.williamhester.kdash.enduranceweb.proto.DriverDistances
-import me.williamhester.kdash.enduranceweb.proto.Gaps
 import me.williamhester.kdash.enduranceweb.proto.LapData
+import me.williamhester.kdash.enduranceweb.proto.ListSessionsRequest
+import me.williamhester.kdash.enduranceweb.proto.ListSessionsResponse
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryServiceGrpc.LiveTelemetryServiceImplBase
 import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryResponse
@@ -37,19 +37,15 @@ class LiveTelemetryService(
   }
 
   override fun monitorLaps(request: ConnectRequest, responseObserver: StreamObserver<LapData>) {
-    executeHandler("MonitorLaps", responseObserver, MonitorLapsHandler(responseObserver, executor))
+    executeHandler("MonitorLaps", responseObserver, MonitorLapsHandler(request, responseObserver, executor))
   }
 
   override fun monitorCurrentDrivers(request: ConnectRequest, responseObserver: StreamObserver<CurrentDrivers>) {
-    executeHandler("MonitorCurrentDrivers", responseObserver, MonitorCurrentDriversHandler(responseObserver))
+    executeHandler("MonitorCurrentDrivers", responseObserver, MonitorCurrentDriversHandler(request, responseObserver))
   }
 
-  override fun monitorCurrentGaps(request: ConnectRequest, responseObserver: StreamObserver<Gaps>) {
-    super.monitorCurrentGaps(request, responseObserver)
-  }
-
-  override fun monitorDriverDistances(request: ConnectRequest, responseObserver: StreamObserver<DriverDistances>) {
-    super.monitorDriverDistances(request, responseObserver)
+  override fun listSessions(request: ListSessionsRequest, responseObserver: StreamObserver<ListSessionsResponse>) {
+    executeHandler("ListSessions", responseObserver, ListSessionsHandler(responseObserver))
   }
 
   private fun executeHandler(rpcName: String, streamObserver: StreamObserver<*>, delegate: Runnable) {

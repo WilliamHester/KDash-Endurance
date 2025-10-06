@@ -21,7 +21,9 @@ internal class QueryTelemetryHandler(
   private val request: QueryTelemetryRequest,
   private val responseObserver: StreamObserver<QueryTelemetryResponse>,
 ): Runnable {
-  private val sessionKey = SessionKey(0, 0, 0, "64")
+  private val sessionKey = with(request.sessionIdentifier) {
+    SessionKey(sessionId, subSessionId, simSessionNumber, carNumber)
+  }
   private val processors = request.queriesList.map(Query::parse)
 
   override fun run() {

@@ -19,8 +19,6 @@
 const grpc = {};
 grpc.web = require('grpc-web');
 
-
-var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js')
 const proto = {};
 proto.me = {};
 proto.me.williamhester = {};
@@ -251,118 +249,6 @@ proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prot
  * @const
  * @type {!grpc.web.MethodDescriptor<
  *   !proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
- *   !proto.me.williamhester.kdash.enduranceweb.LapEntry>}
- */
-const methodDescriptor_LiveTelemetryService_MonitorDriverLaps = new grpc.web.MethodDescriptor(
-  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorDriverLaps',
-  grpc.web.MethodType.SERVER_STREAMING,
-  proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
-  proto.me.williamhester.kdash.enduranceweb.LapEntry,
-  /**
-   * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.me.williamhester.kdash.enduranceweb.LapEntry.deserializeBinary
-);
-
-
-/**
- * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.LapEntry>}
- *     The XHR Node Readable Stream
- */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.monitorDriverLaps =
-    function(request, metadata) {
-  return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorDriverLaps',
-      request,
-      metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorDriverLaps);
-};
-
-
-/**
- * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.LapEntry>}
- *     The XHR Node Readable Stream
- */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.monitorDriverLaps =
-    function(request, metadata) {
-  return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorDriverLaps',
-      request,
-      metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorDriverLaps);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
- *   !proto.me.williamhester.kdash.enduranceweb.OtherCarLapEntry>}
- */
-const methodDescriptor_LiveTelemetryService_MonitorOtherCarsLaps = new grpc.web.MethodDescriptor(
-  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorOtherCarsLaps',
-  grpc.web.MethodType.SERVER_STREAMING,
-  proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
-  proto.me.williamhester.kdash.enduranceweb.OtherCarLapEntry,
-  /**
-   * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.me.williamhester.kdash.enduranceweb.OtherCarLapEntry.deserializeBinary
-);
-
-
-/**
- * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.OtherCarLapEntry>}
- *     The XHR Node Readable Stream
- */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.monitorOtherCarsLaps =
-    function(request, metadata) {
-  return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorOtherCarsLaps',
-      request,
-      metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorOtherCarsLaps);
-};
-
-
-/**
- * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.OtherCarLapEntry>}
- *     The XHR Node Readable Stream
- */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.monitorOtherCarsLaps =
-    function(request, metadata) {
-  return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorOtherCarsLaps',
-      request,
-      metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorOtherCarsLaps);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
  *   !proto.me.williamhester.kdash.enduranceweb.Gaps>}
  */
 const methodDescriptor_LiveTelemetryService_MonitorCurrentGaps = new grpc.web.MethodDescriptor(
@@ -530,56 +416,61 @@ proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prot
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
- *   !proto.me.williamhester.kdash.enduranceweb.DriverFuelLevel>}
+ *   !proto.me.williamhester.kdash.enduranceweb.ListSessionsRequest,
+ *   !proto.me.williamhester.kdash.enduranceweb.ListSessionsResponse>}
  */
-const methodDescriptor_LiveTelemetryService_MonitorFuelLevel = new grpc.web.MethodDescriptor(
-  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorFuelLevel',
-  grpc.web.MethodType.SERVER_STREAMING,
-  proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
-  proto.me.williamhester.kdash.enduranceweb.DriverFuelLevel,
+const methodDescriptor_LiveTelemetryService_ListSessions = new grpc.web.MethodDescriptor(
+  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/ListSessions',
+  grpc.web.MethodType.UNARY,
+  proto.me.williamhester.kdash.enduranceweb.ListSessionsRequest,
+  proto.me.williamhester.kdash.enduranceweb.ListSessionsResponse,
   /**
-   * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request
+   * @param {!proto.me.williamhester.kdash.enduranceweb.ListSessionsRequest} request
    * @return {!Uint8Array}
    */
   function(request) {
     return request.serializeBinary();
   },
-  proto.me.williamhester.kdash.enduranceweb.DriverFuelLevel.deserializeBinary
+  proto.me.williamhester.kdash.enduranceweb.ListSessionsResponse.deserializeBinary
 );
 
 
 /**
- * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
- * @param {?Object<string, string>=} metadata User defined
+ * @param {!proto.me.williamhester.kdash.enduranceweb.ListSessionsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.DriverFuelLevel>}
+ * @param {function(?grpc.web.RpcError, ?proto.me.williamhester.kdash.enduranceweb.ListSessionsResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.ListSessionsResponse>|undefined}
  *     The XHR Node Readable Stream
  */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.monitorFuelLevel =
-    function(request, metadata) {
-  return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorFuelLevel',
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.listSessions =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/ListSessions',
       request,
       metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorFuelLevel);
+      methodDescriptor_LiveTelemetryService_ListSessions,
+      callback);
 };
 
 
 /**
- * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
+ * @param {!proto.me.williamhester.kdash.enduranceweb.ListSessionsRequest} request The
+ *     request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.DriverFuelLevel>}
- *     The XHR Node Readable Stream
+ * @return {!Promise<!proto.me.williamhester.kdash.enduranceweb.ListSessionsResponse>}
+ *     Promise that resolves to the response
  */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.monitorFuelLevel =
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.listSessions =
     function(request, metadata) {
-  return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorFuelLevel',
+  return this.client_.unaryCall(this.hostname_ +
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/ListSessions',
       request,
       metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorFuelLevel);
+      methodDescriptor_LiveTelemetryService_ListSessions);
 };
 
 
