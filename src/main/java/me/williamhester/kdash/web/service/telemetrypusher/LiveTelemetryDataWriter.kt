@@ -15,10 +15,9 @@ internal class LiveTelemetryDataWriter(
   private val sessionKey: SessionKey,
 ) {
   private val sessionStore = SessionStore(sessionKey)
-  private lateinit var monitors: Monitors
+  private val monitors = Monitors(sessionStore)
 
   fun onSessionMetadata(sessionMetadata: SessionMetadata) {
-    monitors = Monitors(sessionMetadata, sessionStore)
     monitors.metadataHolder.metadata = sessionMetadata
     Store.insertSessionMetadata(sessionKey, sessionMetadata)
   }
@@ -27,11 +26,8 @@ internal class LiveTelemetryDataWriter(
     monitors.process(dataSnapshot)
   }
 
-  private class Monitors(
-    initialMetadata: SessionMetadata,
-    sessionStore: SessionStore,
-  ) {
-    val metadataHolder = MetadataHolder(initialMetadata)
+  private class Monitors(sessionStore: SessionStore) {
+    val metadataHolder = MetadataHolder()
 
     private val relativeMonitor = RelativeMonitor()
     private val lapMonitor = DriverCarLapLogger(metadataHolder, relativeMonitor, sessionStore)

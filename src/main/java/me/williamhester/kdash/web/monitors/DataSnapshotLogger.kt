@@ -13,9 +13,12 @@ class DataSnapshotLogger(
   private val metadataHolder: MetadataHolder,
   private val sessionStore: SessionStore,
 ) {
-  private val driverCarIdx = metadataHolder.metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
-  private val trackLengthMeters =
+  private val driverCarIdx: Int by lazy {
+    metadataHolder.metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
+  }
+  private val trackLengthMeters: Double by lazy {
     metadataHolder.metadata["WeekendInfo"]["TrackLength"].value.substringBefore(" km").toDouble() * 1000
+  }
 
   private var lastLapDistMeters = 0.0
   private var lastSessionTime = 0.0

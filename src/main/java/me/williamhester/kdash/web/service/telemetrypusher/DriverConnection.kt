@@ -38,9 +38,6 @@ internal class DriverConnection(
       }
       SESSION_METADATA -> {
         val metadata = sessionMetadataOrDataSnapshot.sessionMetadata
-        // TODO: Fix this:
-        //  This could be causing a bug. Every time there's a new session metadata message, we reset the monitors when we
-        //  create a new TelemetryDataWriter, which makes laps record times as short as a few tenths of a second.
         liveTelemetryDataWriter = sessionConnectionRegistry.register(this, metadata.toSessionKey())
         liveTelemetryDataWriter.onSessionMetadata(metadata)
       }
