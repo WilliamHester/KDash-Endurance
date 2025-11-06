@@ -20,6 +20,7 @@ internal object LocalClient {
         )
         .build()
     )
+//    .usePlaintext()
     .build()
 
   @JvmStatic

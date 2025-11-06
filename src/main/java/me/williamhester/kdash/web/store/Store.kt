@@ -32,13 +32,16 @@ import me.williamhester.kdash.enduranceweb.proto.TelemetryDataPoint as Telemetry
 object Store {
   private val logger = FluentLogger.forEnclosingClass()
   private val broadcastingListener = BroadcastingListener()
+  private val postgresUser by lazy {
+    System.getenv("DB_USER") ?: System.getenv("USER") ?: "postgres"
+  }
   private val connection: PGConnection by lazy {
-    // TODO: Replace this with an env variable of some kind to target the right database for each environment.
-    DriverManager.getConnection("jdbc:pgsql://localhost:5432/postgres").unwrap(PGConnection::class.java).apply {
+    DriverManager.getConnection("jdbc:pgsql://localhost:5432/$postgresUser").unwrap(PGConnection::class.java).apply {
       addNotificationListener(broadcastingListener)
     }
   }
   private val executor = Executors.newCachedThreadPool()
+  private const val LIMIT = 100_000
 
   fun insertTelemetryData(
     sessionKey: SessionKey,
@@ -141,29 +144,78 @@ object Store {
   }
 
   fun getSessionTelemetryRange(sessionKey: SessionKey): TelemetryRange? {
-    val (minSessionTime, maxSessionTime) = executeQuery("""
-      SELECT
-        MIN(SessionTime),
-        MAX(SessionTime)
-      FROM TelemetryData
-      WHERE
-          SessionID=? 
-          AND SubSessionID=? 
-          AND SimSessionNumber=? 
-          AND CarNumber=?
-    """.trimIndent(),
+    val (minSessionTime, maxSessionTime) = getMinAndMaxSessionTimes(sessionKey)
+    if (minSessionTime == null || maxSessionTime == null) return null
+    val (minDistance, maxDistance) = getMinAndMaxDriverDistances(sessionKey)
+    if (minDistance == null || maxDistance == null) return null
+    return TelemetryRange(minSessionTime, maxSessionTime, minDistance, maxDistance)
+  }
+
+  private fun getMinAndMaxSessionTimes(sessionKey: SessionKey) = executeQuery(
+    """
+        SELECT
+          MIN(SessionTime),
+          MAX(SessionTime)
+        FROM TelemetryData
+        WHERE
+          SessionID = ?
+          AND SubSessionID = ?
+          AND SimSessionNumber = ?
+          AND CarNumber = ?
+      """.trimIndent(),
+    sessionKey.sessionId,
+    sessionKey.subSessionId,
+    sessionKey.sessionNum,
+    sessionKey.carNumber,
+  ) {
+    if (!it.next()) return@executeQuery null to null
+    it.getDouble(1) to it.getDouble(2)
+  }
+
+  private fun getMinAndMaxDriverDistances(sessionKey: SessionKey): Pair<Float?, Float?> {
+    val min = executeQuery(
+      """
+          SELECT DriverDistance
+          FROM TelemetryData
+          WHERE
+            SessionID = ?
+            AND SubSessionID = ?
+            AND SimSessionNumber = ?
+            AND CarNumber = ?
+            AND DriverDistance > 0
+          ORDER BY DriverDistance
+          LIMIT 1
+        """.trimIndent(),
       sessionKey.sessionId,
       sessionKey.subSessionId,
       sessionKey.sessionNum,
-      sessionKey.carNumber) {
-      if (!it.next()) return@executeQuery null to null
-      it.getDouble(1) to it.getDouble(2)
+      sessionKey.carNumber,
+    ) {
+      if (!it.next()) return@executeQuery null
+      it.getFloat(1)
     }
-    if (minSessionTime == null || maxSessionTime == null) return null
-    val minDistance = getDriverDistanceAtSessionTime(sessionKey, minSessionTime)
-    val maxDistance = getDriverDistanceAtSessionTime(sessionKey, maxSessionTime)
-    if (minDistance == null || maxDistance == null) return null
-    return TelemetryRange(minSessionTime, maxSessionTime, minDistance, maxDistance)
+    val max = executeQuery(
+      """
+          SELECT DriverDistance
+          FROM TelemetryData
+          WHERE
+            SessionID = ?
+            AND SubSessionID = ?
+            AND SimSessionNumber = ?
+            AND CarNumber = ?
+            AND DriverDistance > 0
+          ORDER BY DriverDistance DESC
+          LIMIT 1
+        """.trimIndent(),
+      sessionKey.sessionId,
+      sessionKey.subSessionId,
+      sessionKey.sessionNum,
+      sessionKey.carNumber,
+    ) {
+      if (!it.next()) return@executeQuery null
+      it.getFloat(1)
+    }
+    return min to max
   }
 
   private fun getDriverDistanceAtSessionTime(sessionKey: SessionKey, sessionTime: Double): Float? {
@@ -194,6 +246,8 @@ object Store {
     queryRateHz: Double? = null,
     responseListener: StreamedResponseListener<TelemetryDataPoint>,
   ) {
+    // TODO: Fix a bug. If the "sessionNum" is -1, then this will fail to register the channel. Seems like "-" is an
+    //  illegal character or needs to be escaped.
     val channelName = with(sessionKey) { "td_${sessionId}_${subSessionId}_${sessionNum}_${carNumber}" }
     val blockingQueue = LinkedBlockingQueue<String?>()
 
@@ -202,6 +256,7 @@ object Store {
       var lastSessionTime = startTime
       while (!Thread.currentThread().isInterrupted) {
         rateLimiter.acquire()
+        var rowsRead = 0
         executeQuery(
           """
           SELECT
@@ -217,6 +272,7 @@ object Store {
             AND SessionTime > ?
             AND SessionTime - 0.01 <= ?
           ORDER BY SessionTime
+          LIMIT ?
         """.trimIndent(),
           sessionKey.sessionId,
           sessionKey.subSessionId,
@@ -224,8 +280,10 @@ object Store {
           sessionKey.carNumber,
           lastSessionTime,
           endTime,
+          LIMIT,
         ) {
           while (it.next() && !Thread.currentThread().isInterrupted) {
+            rowsRead++
             lastSessionTime = it.getDouble(1)
             val telemetryDataPointProto = TelemetryDataPointProto.parseFrom(it.getBytes(3))
             responseListener.onNext(
@@ -239,6 +297,8 @@ object Store {
           }
         }
         if (lastSessionTime >= endTime - 0.001) break
+
+        if (rowsRead == LIMIT) continue
 
         do {
           blockingQueue.take()

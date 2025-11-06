@@ -2,7 +2,6 @@ package me.williamhester.kdash.web.query
 
 import me.williamhester.kdash.web.models.DataPoint
 import me.williamhester.kdash.web.models.TelemetryDataPoint
-import java.util.concurrent.CopyOnWriteArrayList
 
 sealed interface Processor {
   fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint
@@ -12,7 +11,7 @@ sealed interface Processor {
 }
 
 internal class LapDeltaProcessor(private val childProcessor: Processor) : Processor {
-  private val queue = CopyOnWriteArrayList<DataPoint>()
+  private val queue = ArrayDeque<DataPoint>(36_000)
 
   override val requiredOffset: Float = 1.0F + childProcessor.requiredOffset
 
@@ -48,7 +47,7 @@ internal class LapDeltaProcessor(private val childProcessor: Processor) : Proces
 }
 
 internal class LapAverageProcessor(private val childProcessor: Processor, val laps: Int) : Processor {
-  private val queue = CopyOnWriteArrayList<DataPoint>()
+  private val queue = ArrayDeque<DataPoint>(36_000)
 
   private var runningTotal = 0.0
 
