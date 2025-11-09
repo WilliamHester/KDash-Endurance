@@ -24,5 +24,5 @@ pkg_deb(
 launch4j_exe(
     name = "client",
     config_template = ":client_launch4j_config.xml.template",
-    jar = "//main/java/me/williamhester/kdash/web/client:client_main_deploy.jar",
+    jar = "//main/java/me/williamhester/kdash/web/client:prod_client_deploy.jar",
 )

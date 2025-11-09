@@ -37,4 +37,5 @@ java_binary(
     name = "prod_client",
     main_class = "me.williamhester.kdash.web.client.ProdClient",
     runtime_deps = [":client"],
+    visibility = ["//visibility:public"],
 )
