@@ -525,11 +525,11 @@ object Store {
   }
 
   private fun listen(channelName: String) {
-    connection.createStatement().use { it.executeUpdate("LISTEN $channelName") }
+    connection.createStatement().use { it.executeUpdate("LISTEN \"$channelName\"") }
   }
 
   private fun unlisten(channelName: String) {
-    connection.createStatement().use { it.executeUpdate("UNLISTEN $channelName") }
+    connection.createStatement().use { it.executeUpdate("UNLISTEN \"$channelName\"") }
   }
 
   private enum class Table(val tableName: String) {

@@ -3,7 +3,7 @@ import "./StintLogPage.css";
 import { formatNumberAsDuration, formatDriverName } from "../utils.js";
 
 export default function StintLogPage({entries}) {
-  const fastestLap = Math.min(...entries.map((entry) => entry.getFastestLapTime()));
+  const fastestLap = Math.min(...entries.filter(entry => entry.getFastestLapTime() > 0).map((entry) => entry.getFastestLapTime()));
   const lapRows = entries.map(
       (stintEntry) => {
         var lapTimeClassName = '';
@@ -19,7 +19,7 @@ export default function StintLogPage({entries}) {
           <td className="number">{ formatNumberAsDuration(stintEntry.getTotalTime()) }</td>
           <td className="number">{ formatNumberAsDuration(stintEntry.getAverageLapTime()) }</td>
           <td className={`number ${lapTimeClassName}`}>{ formatNumberAsDuration(stintEntry.getFastestLapTime()) }</td>
-          <td className="number">{ stintEntry.getTrackTemp() }</td>
+          <td className="number">{ stintEntry.getTrackTemp().toFixed(1) }</td>
           <td className="number">{ stintEntry.getIncidents() }</td>
         </tr>
       });

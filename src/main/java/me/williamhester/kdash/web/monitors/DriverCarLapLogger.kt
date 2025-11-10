@@ -33,12 +33,15 @@ class DriverCarLapLogger(
   private var pitOutLap = 0
   private var pitInLap = 0
   private var stintStartTime = 0.0
+  private var stintStartIncidents = 0
 
-  private var wasOnPitRoad = false
-  private var wasInPitBox = false
+  private var wasOnPitRoad: Boolean? = null
+  private var wasInPitBox: Boolean? = null
   private var didAddFuel = false
   private var fuelUsedBeforeRefuel = 0.0F
   private var minFuelRemaining = 1000.0F
+
+  private val stintLaps = mutableListOf<LogEntry>()
 
   fun process(dataSnapshot: DataSnapshot) {
     if (driverCarIdx == -1) {
@@ -89,7 +92,10 @@ class DriverCarLapLogger(
           maxSpeed = maxSpeed,
         )
       // Ignore laps before the start of the race
-      if (lapNum > 0) sessionStore.insertLapEntry(newEntry.toLapEntry())
+      if (lapNum > 0) {
+        sessionStore.insertLapEntry(newEntry.toLapEntry())
+        stintLaps += newEntry
+      }
 
       // Values that are only accurate at the start of the new lap
       lapNum = currentLap
@@ -117,11 +123,11 @@ class DriverCarLapLogger(
 
     val isOnPitRoad = dataSnapshot.onPitRoad
 
-    if (!wasOnPitRoad && isOnPitRoad) {
+    if (wasOnPitRoad == false && isOnPitRoad) {
       pitIn = true
       pitInLap = currentLap
     }
-    if (wasOnPitRoad && !isOnPitRoad) {
+    if (wasOnPitRoad == true && !isOnPitRoad) {
       pitOut = true
       pitOutLap = currentLap
     }
@@ -129,37 +135,51 @@ class DriverCarLapLogger(
     val trackLocFlags = dataSnapshot.carIdxTrackSurfaceList[driverCarIdx]
     val isInPitBox = trackLocFlags == 1
 
-    if (!wasInPitBox && isInPitBox) {
+    if (wasInPitBox == false && isInPitBox) {
       pitStartTime = dataSnapshot.sessionTime
-    } else if (wasInPitBox && !isInPitBox) {
+
+      onStintFinished(dataSnapshot)
+    } else if (wasInPitBox == true && !isInPitBox) {
       pitTime = dataSnapshot.sessionTime - pitStartTime
 
-      val stintTime = dataSnapshot.sessionTime - stintStartTime
-      val newStintEntry =
-        StintEntry(
-          outLap = pitOutLap,
-          inLap = pitInLap,
-          driverName = metadataHolder.metadata["DriverInfo"]["Drivers"][driverCarIdx]["UserName"].value,
-          totalTime = stintTime,
-          lapTimes = listOf(),
-          averageLapTime = stintTime / ((pitInLap - pitOutLap) + 1),
-          fastestLapTime = 0.0,
-          trackTemp = 0.0F,
-          incidents = 0,
-        )
-      sessionStore.insertStintEntry(newStintEntry.toStintEntry())
-
-      stintStartTime = dataSnapshot.sessionTime
+      onStintStarted(dataSnapshot)
     }
+
     if (dataSnapshot.pitstopActive) {
       optionalRepairsRemaining = dataSnapshot.pitOptRepairLeft
       repairsRemaining = dataSnapshot.pitRepairLeft
     }
 
     wasInPitBox = isInPitBox
-    wasOnPitRoad = isOnPitRoad
+    this.wasOnPitRoad = isOnPitRoad
 
     maxSpeed = max(maxSpeed, dataSnapshot.speed)
+  }
+
+  private fun onStintFinished(dataSnapshot: DataSnapshot) {
+    val nonPitLaps = stintLaps.filterNot { it.pitOut || it.pitIn }
+    val nonPitLapsTime = if (nonPitLaps.isEmpty()) 0.0 else nonPitLaps.sumOf { it.lapTime } / nonPitLaps.size
+    val fastestLapTime = if (nonPitLaps.isEmpty()) -1.0 else nonPitLaps.minOf { it.lapTime }
+
+    val stintTime = dataSnapshot.sessionTime - stintStartTime
+    val newStintEntry =
+      StintEntry(
+        outLap = pitOutLap,
+        inLap = pitInLap,
+        driverName = driverName,
+        totalTime = stintTime,
+        lapTimes = nonPitLaps.map { it.lapTime },
+        averageLapTime = nonPitLapsTime,
+        fastestLapTime = fastestLapTime,
+        trackTemp = (stintLaps.sumOf { it.trackTemp.toDouble() } / max(stintLaps.size, 1)).toFloat(),
+        incidents = dataSnapshot.driverIncidentCount - stintStartIncidents,
+      )
+    sessionStore.insertStintEntry(newStintEntry.toStintEntry())
+    stintLaps.clear()
+  }
+
+  private fun onStintStarted(dataSnapshot: DataSnapshot) {
+    stintStartTime = dataSnapshot.sessionTime
   }
 
   data class LogEntry(

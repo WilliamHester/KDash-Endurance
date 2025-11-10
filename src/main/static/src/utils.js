@@ -1,7 +1,7 @@
 
 function formatNumberAsDuration(number, minutesOptional, alwaysShowSign) {
   var sign = '';
-  if (number == 0) {
+  if (number == 0 || number == -1) {
     return '--';
   }
   if (number < 0) {
