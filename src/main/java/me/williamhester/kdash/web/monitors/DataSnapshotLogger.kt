@@ -32,6 +32,10 @@ class DataSnapshotLogger(
     if (dataSnapshot.onPitRoad) {
       mutableSyntheticFields.lastPitLap = dataSnapshot.lap
     }
+    if (dataSnapshot.pitstopActive) {
+      mutableSyntheticFields.optionalRepairsRemaining = dataSnapshot.pitOptRepairLeft
+      mutableSyntheticFields.requiredRepairsRemaining = dataSnapshot.pitRepairLeft
+    }
     estimateSpeed(dataSnapshot, sessionTime)
     mutableSyntheticFields.trackPrecip =
       metadataHolder.metadata["WeekendInfo"]["TrackPrecipitation"].value.substringBefore(" %", "0").toDouble()
@@ -72,11 +76,15 @@ class DataSnapshotLogger(
     var lastPitLap: Int = 0,
     var estSpeed: Float = 0.0F,
     var trackPrecip: Double = 0.0,
+    var requiredRepairsRemaining: Float = 0.0F,
+    var optionalRepairsRemaining: Float = 0.0F,
   ) {
     fun toSyntheticFields() = syntheticFields {
       lastPitLap = this@MutableSyntheticFields.lastPitLap
       estSpeed = this@MutableSyntheticFields.estSpeed
       trackPrecip = this@MutableSyntheticFields.trackPrecip
+      requiredRepairsRemaining = this@MutableSyntheticFields.requiredRepairsRemaining
+      optionalRepairsRemaining = this@MutableSyntheticFields.optionalRepairsRemaining
     }
   }
 }

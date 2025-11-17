@@ -26,6 +26,8 @@ object VariableMapping {
       "LastPitLap" -> { tdp: TelemetryDataPoint -> tdp.syntheticFields.lastPitLap.toDouble() }
       "EstSpeed" -> { tdp: TelemetryDataPoint -> tdp.syntheticFields.estSpeed.toDouble() }
       "TrackPrecip" -> { tdp: TelemetryDataPoint -> tdp.syntheticFields.trackPrecip }
+      "PitOptRepairRemaining" -> { tdp: TelemetryDataPoint -> tdp.syntheticFields.optionalRepairsRemaining.toDouble() }
+      "PitReqRepairRemaining" -> { tdp: TelemetryDataPoint -> tdp.syntheticFields.requiredRepairsRemaining.toDouble() }
       else -> throw VariableNotFoundException(fieldName)
     }
   }

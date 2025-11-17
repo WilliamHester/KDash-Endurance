@@ -16,6 +16,12 @@ const hourMinuteSecondFormatter = (value) => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
+const minuteSecondFormatter = (value) => {
+  const minutes = String(Math.floor(value / 60));
+  const seconds = String(Math.floor(value % 60).toFixed(1)).padStart(4, '0');
+  return `${minutes}:${seconds}`;
+};
+
 const timeOfDayFormatter = (value) => {
   let hoursOfDay = Math.floor(value / 3600);
   let amPm = 'AM';
@@ -81,7 +87,7 @@ export default function RaceOverviewPage({session, drivers, lapLog, stintLog, ot
       <TextBox title="Lap over lap fuel">{ getQueryValue('LAP_DELTA(FuelLevel)').toFixed(3) }</TextBox>
       <TextBox title="Track Precip">{ getQueryValue('TrackPrecip') }&#37;</TextBox>
       <TextBox title="Avg 5 Lap Fuel">{ getQueryValue('LAP_AVERAGE(LAP_DELTA(FuelLevel), 5)').toFixed(3) }</TextBox>
-      <TextBox title="Repairs (Optional)">6:35 (8:12)</TextBox>
+      <TextBox title="Repairs (Optional)">{ minuteSecondFormatter(getQueryValue('PitReqRepairRemaining')) } ({ minuteSecondFormatter(getQueryValue('PitOptRepairRemaining')) })</TextBox>
       <TextBox title="Incidents (Current Driver)">{ `${getQueryValue('PlayerCarTeamIncidentCount')} (${getQueryValue('PlayerCarDriverIncidentCount')})` }</TextBox>
       <TextBox title="Session">Race</TextBox>
     </Row>
