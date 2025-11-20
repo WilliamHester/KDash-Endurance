@@ -24,8 +24,7 @@ TelemetryPage.propTypes = {
 };
 
 const telemetryQueries = [
-  'Speed - EstSpeed',
-  'Speed',
+  'DECREASING_SUM(FuelLevel, 1)',
   'FuelLevel',
   'LAP_DELTA(FuelLevel)',
   'TrackTempCrew',

@@ -84,9 +84,9 @@ export default function RaceOverviewPage({session, drivers, lapLog, stintLog, ot
       <TextBox title="Time Remaining">{ hourMinuteSecondFormatter(getQueryValue('SessionTimeRemain')) }</TextBox>
       <TextBox title="Lap">{ getQueryValue('Lap') }</TextBox>
       <TextBox title="Track Temp">{ getQueryValue('TrackTempCrew').toFixed(1) }°C</TextBox>
-      <TextBox title="Lap over lap fuel">{ getQueryValue('LAP_DELTA(FuelLevel)').toFixed(3) }</TextBox>
+      <TextBox title="Lap over lap fuel">{ getQueryValue('DECREASING_SUM(FuelLevel, 1)').toFixed(3) }</TextBox>
       <TextBox title="Track Precip">{ getQueryValue('TrackPrecip') }&#37;</TextBox>
-      <TextBox title="Avg 5 Lap Fuel">{ getQueryValue('LAP_AVERAGE(LAP_DELTA(FuelLevel), 5)').toFixed(3) }</TextBox>
+      <TextBox title="Avg 5 Lap Fuel">{ getQueryValue('DECREASING_SUM(FuelLevel, 5) / 5').toFixed(3) }</TextBox>
       <TextBox title="Repairs (Optional)">{ minuteSecondFormatter(getQueryValue('PitReqRepairRemaining')) } ({ minuteSecondFormatter(getQueryValue('PitOptRepairRemaining')) })</TextBox>
       <TextBox title="Incidents (Current Driver)">{ `${getQueryValue('PlayerCarTeamIncidentCount')} (${getQueryValue('PlayerCarDriverIncidentCount')})` }</TextBox>
       <TextBox title="Session">Race</TextBox>

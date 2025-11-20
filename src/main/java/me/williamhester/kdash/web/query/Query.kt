@@ -71,6 +71,15 @@ object Query {
         if (arg2 !is NumberToken) throw QueryParseException("LAP_AVERAGE expects an integer for the second parameter.")
         LapAverageProcessor(toProcessor(arg1), arg2.value)
       }
+      "DECREASING_SUM" -> {
+        validateArguments("DECREASING_SUM", 2, token.tokens.size)
+        val arg1 = token.tokens[0]
+        val arg2 = token.tokens[1].tokens[0]
+        if (arg2 !is NumberToken) {
+          throw QueryParseException("DECREASING_SUM expects an integer for the second parameter.")
+        }
+        DecreasingSumProcessor(toProcessor(arg1), arg2.value)
+      }
       else -> throw QueryParseException("Unknown function: ${token.value}")
     }
     is OperatorToken -> throw QueryParseException("Unexpected operator: $token")
@@ -205,7 +214,7 @@ object Query {
   }
 
   private fun validateArguments(functionName: String, expectedArgs: Int, actualArgs: Int) {
-    if (actualArgs != expectedArgs) throw QueryParseException("$functionName expected $expectedArgs argument. Received $actualArgs")
+    if (actualArgs != expectedArgs) throw QueryParseException("$functionName expected $expectedArgs arguments. Received $actualArgs")
   }
 }
 
