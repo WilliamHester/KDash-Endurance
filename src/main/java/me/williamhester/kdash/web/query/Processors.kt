@@ -49,7 +49,10 @@ internal class LapDeltaProcessor(private val childProcessor: Processor) : Proces
   }
 }
 
-internal class LapAverageProcessor(private val childProcessor: Processor, val laps: Int) : Processor {
+internal class LapAverageProcessor(
+  private val childProcessor: Processor,
+  private val laps: Int,
+) : Processor {
   private val queue = ArrayDeque<DataPoint>(36_000)
 
   private var runningTotal = 0.0
