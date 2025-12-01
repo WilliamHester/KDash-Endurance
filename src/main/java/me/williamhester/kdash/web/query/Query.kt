@@ -5,7 +5,7 @@ import me.williamhester.kdash.web.models.TelemetryDataPoint
 
 object Query {
   private val FUNCTION_OR_VARIABLE_NAMES = (('a'..'z') + ('A'..'Z') + '_')
-  private val NUMBERS = (('0'..'9'))
+  private val NUMBERS = (('0'..'9') + '.')
   private val OPERATOR_CHARACTERS = setOf('+', '-', '*', '/')
   private val CONTROL_CHARACTERS = setOf(' ', '(', ')', ',') + OPERATOR_CHARACTERS
 
@@ -79,6 +79,11 @@ object Query {
           throw QueryParseException("DECREASING_SUM expects an integer for the second parameter.")
         }
         DecreasingSumProcessor(toProcessor(arg1), arg2.value)
+      }
+      "CEILING" -> {
+        validateArguments("CEILING", 1, token.tokens.size)
+        val arg1 = token.tokens[0]
+        CeilingProcessor(toProcessor(arg1))
       }
       else -> throw QueryParseException("Unknown function: ${token.value}")
     }

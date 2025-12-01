@@ -4,6 +4,7 @@ import me.williamhester.kdash.web.models.DataPoint
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.query.DecreasingSumProcessor.MonotonicRange.RangeType.DECREASING
 import me.williamhester.kdash.web.query.DecreasingSumProcessor.MonotonicRange.RangeType.INCREASING
+import kotlin.math.ceil
 
 sealed interface Processor {
   fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint
@@ -230,4 +231,13 @@ internal class NumberProcessor(private val const: Int): Processor {
 
   override fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint =
     DataPoint(telemetryDataPoint.sessionTime, telemetryDataPoint.driverDistance, const.toDouble())
+}
+
+internal class CeilingProcessor(private val childProcessor: Processor) :  Processor {
+  override val requiredOffset: Float = 0.0F
+
+  override fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint {
+    val result = childProcessor.process(telemetryDataPoint)
+    return DataPoint(result.sessionTime, result.driverDistance, ceil(result.value))
+  }
 }
