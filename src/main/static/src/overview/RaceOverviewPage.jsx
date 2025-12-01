@@ -84,7 +84,7 @@ export default function RaceOverviewPage({session, drivers, lapLog, stintLog, ot
       <TextBox title="Time Remaining">{ hourMinuteSecondFormatter(getQueryValue('SessionTimeRemain')) }</TextBox>
       <TextBox title="Lap">{ getQueryValue('Lap') }</TextBox>
       <TextBox title="Track Temp">{ getQueryValue('TrackTempCrew').toFixed(1) }°C</TextBox>
-      <TextBox title="Lap Fauel">{ getQueryValue('DECREASING_SUM(FuelLevel, 1)').toFixed(3) }</TextBox>
+      <TextBox title="Lap Fuel">{ getQueryValue('DECREASING_SUM(FuelLevel, 1)').toFixed(3) }</TextBox>
       <TextBox title="Avg 5 Lap Fuel">{ getQueryValue('DECREASING_SUM(FuelLevel, 5) / 5').toFixed(3) }</TextBox>
       <TextBox title="Track Precip">{ getQueryValue('TrackPrecip') }&#37;</TextBox>
       <TextBox title="Fuel Target for + 1 Lap">{ getQueryValue('(FuelLevel - 1) / CEILING(((FuelLevel - 1) / DECREASING_SUM(FuelLevel, 1)))').toFixed(3) }</TextBox>
