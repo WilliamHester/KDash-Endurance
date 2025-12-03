@@ -123,6 +123,7 @@ object Store {
   }
 
   fun getMetadataForSession(sessionKey: SessionKey): SessionMetadata? {
+    logger.atInfo().log("Session key: %s", sessionKey)
     return executeQuery(
       """
         SELECT Metadata

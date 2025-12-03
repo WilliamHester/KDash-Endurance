@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 
 import { ListSessionsRequest } from '../live_telemetry_service_pb.js';
 import { LiveTelemetryServiceClient } from '../live_telemetry_service_grpc_web_pb.js';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * A React component that fetches and displays a list of iRacing sessions in a table.
@@ -11,7 +12,8 @@ import { LiveTelemetryServiceClient } from '../live_telemetry_service_grpc_web_p
  * @param {function} props.setCurrentSession - Callback function to set the currently
  * selected session in the parent component.
  */
-function SessionCarListPage({ setCurrentSession }) {
+function SessionCarListPage() {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,7 +43,7 @@ function SessionCarListPage({ setCurrentSession }) {
 
   const handleRowClick = (session) => {
     console.log('Selected Session:', session.toObject());
-    setCurrentSession(session);
+    navigate(`/${session.getSessionId()}/${session.getSubSessionId()}/${session.getSimSessionNumber()}/${session.getCarNumber()}`);
   };
 
   if (loading) {

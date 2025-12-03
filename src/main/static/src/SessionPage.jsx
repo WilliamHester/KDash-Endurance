@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, use } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
-  BrowserRouter,
   Routes,
   Route,
+  useParams,
 } from "react-router-dom";
-import { ConnectRequest } from "./live_telemetry_service_pb.js";
+import { ConnectRequest, Session } from "./live_telemetry_service_pb.js";
 import { LiveTelemetryServiceClient } from "./live_telemetry_service_grpc_web_pb.js";
 import LapLogPage from "./laplog/LapLogPage.jsx";
 import OtherCarsLapLogPage from "./laplog/OtherCarsLapLogPage.jsx";
@@ -15,7 +15,18 @@ import TrackMapPage from "./trackmap/TrackMapPage.jsx";
 import App from "./App.jsx";
 import RaceOverviewPage from "./overview/RaceOverviewPage.jsx";
 
-export default function SessionPage({ session }) {
+export default function SessionPage() {
+  const params = useParams();
+
+  const session = useMemo(() => {
+    const s = new Session();
+    s.setSessionId(parseInt(params.sessionId));
+    s.setSubSessionId(parseInt(params.subSessionId));
+    s.setSimSessionNumber(parseInt(params.simSessionNumber));
+    s.setCarNumber(params.carNumber);
+    return s;
+  }, [params.sessionId, params.subSessionId, params.simSessionNumber, params.carNumber]);
+
   const [gapEntries, setGapEntries] = useState([]);
   const [lapEntries, setLapEntries] = useState([]);
   const [stintEntries, setStintEntries] = useState([]);
@@ -122,20 +133,18 @@ export default function SessionPage({ session }) {
   }, []);
 
   return (
-    <BrowserRouter>
+    <App>
       <Routes>
-        <Route path="/" element={<App />}>
-          <Route path="" element={
-            <RaceOverviewPage session={session} drivers={currentDrivers} lapLog={lapEntries} otherCarLapEntries={otherCarLapEntries} stintLog={stintEntries} />
-          } />
-          <Route path="laps" element={<LapLogPage entries={lapEntries} />} />
-          <Route path="otherlaps" element={<OtherCarsLapLogPage entries={otherCarLapEntries} drivers={currentDrivers} />} />
-          <Route path="gaps" element={<GapsPage entries={gapEntries} drivers={currentDrivers} />} />
-          {/* <Route path="gapchart" element={<GapChartPage distances={driverDistances} drivers={currentDrivers} />} /> */}
-          <Route path="telemetry" element={<TelemetryPage session={session} />} />
-          <Route path="trackmap" element={<TrackMapPage />} />
-        </Route>
+        <Route index element={
+          <RaceOverviewPage session={session} drivers={currentDrivers} lapLog={lapEntries} otherCarLapEntries={otherCarLapEntries} stintLog={stintEntries} />
+        } />
+        <Route path="laps" element={<LapLogPage entries={lapEntries} />} />
+        <Route path="otherlaps" element={<OtherCarsLapLogPage entries={otherCarLapEntries} drivers={currentDrivers} />} />
+        <Route path="gaps" element={<GapsPage entries={gapEntries} drivers={currentDrivers} />} />
+        {/* <Route path="gapchart" element={<GapChartPage distances={driverDistances} drivers={currentDrivers} />} /> */}
+        <Route path="telemetry" element={<TelemetryPage session={session} />} />
+        <Route path="trackmap" element={<TrackMapPage />} />
       </Routes>
-    </BrowserRouter>
+    </App>
   );
 };
