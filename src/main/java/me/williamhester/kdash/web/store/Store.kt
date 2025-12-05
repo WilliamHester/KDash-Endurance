@@ -8,6 +8,7 @@ import com.impossibl.postgres.api.jdbc.PGConnection
 import com.impossibl.postgres.api.jdbc.PGNotificationListener
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
+import me.williamhester.kdash.enduranceweb.proto.OtherCarStintEntry
 import me.williamhester.kdash.enduranceweb.proto.Session
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import me.williamhester.kdash.enduranceweb.proto.StintEntry
@@ -83,6 +84,16 @@ object Store {
       "OtherCarIdx" to otherCarLapEntry.carId,
       "LapNum" to otherCarLapEntry.lapNum,
       "LapEntry" to otherCarLapEntry,
+    )
+  }
+
+  fun insertOtherCarStintEntry(sessionKey: SessionKey, otherCarStintEntry: OtherCarStintEntry) {
+    insertOrSkip(
+      Table.OTHER_CAR_STINTS,
+      *sessionKey.toQueryParams(),
+      "OtherCarIdx" to otherCarStintEntry.carIdx,
+      "InLapNum" to otherCarStintEntry.inLap,
+      "StintEntry" to otherCarStintEntry,
     )
   }
 
@@ -466,6 +477,50 @@ object Store {
     }
   }
 
+  fun getOtherCarStints(sessionKey: SessionKey, responseListener: StreamedResponseListener<OtherCarStintEntry>) {
+    val channelName = with(sessionKey) { "ocs_${sessionId}_${subSessionId}_${sessionNum}_${carNumber}" }
+    val blockingQueue = LinkedBlockingQueue<String?>()
+
+    broadcastingListener.register(channelName, blockingQueue).use {
+      var lastOtherCarStintId = -1
+
+      while (!Thread.currentThread().isInterrupted) {
+        executeQuery(
+          """
+            SELECT
+              InLapNum,
+              StintEntry,
+              StintID
+            FROM
+              OtherCarStints
+            WHERE
+              SessionID=?
+              AND SubSessionID=?
+              AND SimSessionNumber=?
+              AND CarNumber=?
+              AND StintID>?
+            ORDER BY StintID DESC
+          """.trimIndent(),
+          sessionKey.sessionId,
+          sessionKey.subSessionId,
+          sessionKey.sessionNum,
+          sessionKey.carNumber,
+          lastOtherCarStintId,
+        ) {
+          while (it.next() && !Thread.currentThread().isInterrupted) {
+            val newStintId = it.getInt(3)
+            responseListener.onNext(OtherCarStintEntry.parseFrom(it.getBytes(2)))
+            lastOtherCarStintId = max(newStintId, lastOtherCarStintId)
+          }
+        }
+
+        do {
+          val lapId = blockingQueue.take()!!.toInt()
+        } while (lapId < lastOtherCarStintId)
+      }
+    }
+  }
+
   private fun insertOrSkip(table: Table, vararg args: Pair<String, Any>) {
     val columns = Joiner.on(", ").join(args.map { it.first })
     val questionMarks = Joiner.on(", ").join(args.map { "?" })
@@ -539,6 +594,7 @@ object Store {
     DRIVER_LAPS("DriverLaps"),
     DRIVER_STINTS("DriverStints"),
     OTHER_CAR_LAPS("OtherCarLaps"),
+    OTHER_CAR_STINTS("OtherCarStints"),
   }
 
   private class BroadcastingListener : PGNotificationListener {

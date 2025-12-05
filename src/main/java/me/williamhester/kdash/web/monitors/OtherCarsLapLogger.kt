@@ -5,6 +5,7 @@ import me.williamhester.kdash.web.extensions.get
 import me.williamhester.kdash.web.state.MetadataHolder
 import me.williamhester.kdash.web.store.SessionStore
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.max
 
 class OtherCarsLapLogger(
   private val metadataHolder: MetadataHolder,
@@ -13,7 +14,7 @@ class OtherCarsLapLogger(
 ) {
   private val carIdxStates = ConcurrentHashMap<Int, CarState>()
 
-  private class CarState {
+  private inner class CarState(private val carIdx: Int) {
     var lapNum = -1
     var driverName = "unknown"
     var position = -1
@@ -22,19 +23,50 @@ class OtherCarsLapLogger(
     var trackTemp = 0.0F
     var pitIn = false
     var pitOut = false
+    var pitInLap = 0
+    var pitOutLap = 0
     var pitTime = 0.0
     var pitStartTime = 0.0
+    var stintStartTime = 0.0
 
-    var wasOnPitRoad = false
-    var wasInPitBox = false
+    var wasOnPitRoad: Boolean? = null
+    var wasInPitBox: Boolean? = null
+
+    private val stintLaps = mutableListOf<LogEntry>()
+
+    fun onStintFinished(dataSnapshot: DataSnapshot) {
+      val nonPitLaps = stintLaps.filterNot { it.pitOut || it.pitIn }
+      val nonPitLapsTime = if (nonPitLaps.isEmpty()) 0.0 else nonPitLaps.sumOf { it.lapTime } / nonPitLaps.size
+      val fastestLapTime = if (nonPitLaps.isEmpty()) -1.0 else nonPitLaps.minOf { it.lapTime }
+
+      val stintTime = dataSnapshot.sessionTime - stintStartTime
+      val newStintEntry =
+        OtherCarStintEntry(
+          carIdx = carIdx,
+          outLap = pitOutLap,
+          inLap = pitInLap,
+          driverName = driverName,
+          totalTime = stintTime,
+          lapTimes = nonPitLaps.map { it.lapTime },
+          averageLapTime = nonPitLapsTime,
+          fastestLapTime = fastestLapTime,
+          trackTemp = (stintLaps.sumOf { it.trackTemp.toDouble() } / max(stintLaps.size, 1)).toFloat(),
+        )
+      sessionStore.insertOtherCarStintEntry(newStintEntry.toOtherCarStintEntry())
+      stintLaps.clear()
+    }
+
+    fun onStintStarted(dataSnapshot: DataSnapshot) {
+      stintStartTime = dataSnapshot.sessionTime
+    }
   }
 
   fun process(dataSnapshot: DataSnapshot) {
     val numDrivers = dataSnapshot.carIdxLapCompletedCount
 
     for (carIdx in 0 until numDrivers) {
-      val carState = carIdxStates.computeIfAbsent(carIdx) { CarState() }
-      carState.apply {
+      val carState = carIdxStates.computeIfAbsent(carIdx) { CarState(it) }
+      with(carState) {
         val currentLap = dataSnapshot.getCarIdxLap(carIdx)
         // Check that currentLap > lapNum in case we tow. Tows actually go back to lap 0 temporarily.
         if (currentLap > lapNum) {
@@ -74,22 +106,32 @@ class OtherCarsLapLogger(
           pitOut = false
         }
 
-        val onPitRoad = dataSnapshot.getCarIdxOnPitRoad(carIdx)
+        val isOnPitRoad = dataSnapshot.getCarIdxOnPitRoad(carIdx)
 
-        pitIn = pitIn || (!wasOnPitRoad && onPitRoad)
-        pitOut = pitOut || (wasOnPitRoad && !onPitRoad)
+        if (wasOnPitRoad == false && isOnPitRoad) {
+          pitIn = true
+          pitInLap = currentLap
+        }
+        if (wasOnPitRoad == true && !isOnPitRoad) {
+          pitOut = true
+          pitOutLap = currentLap
+        }
 
         val trackLocFlags = dataSnapshot.getCarIdxTrackSurface(carIdx)
         val isInPitBox = trackLocFlags == 1
 
-        if (!wasInPitBox && isInPitBox) {
+        if (wasInPitBox == false && isInPitBox) {
           pitStartTime = dataSnapshot.sessionTime
-        } else if (wasInPitBox && !isInPitBox) {
+
+          onStintFinished(dataSnapshot)
+        } else if (wasInPitBox == true && !isInPitBox) {
           pitTime = dataSnapshot.sessionTime - pitStartTime
+
+          onStintStarted(dataSnapshot)
         }
 
         wasInPitBox = isInPitBox
-        wasOnPitRoad = onPitRoad
+        wasOnPitRoad = isOnPitRoad
       }
     }
   }
@@ -105,5 +147,25 @@ class OtherCarsLapLogger(
     val pitIn: Boolean,
     val pitOut: Boolean,
     val pitTime: Double,
+  )
+
+  data class OtherCarStintEntry(
+    val carIdx: Int,
+    /** The out lap number. */
+    val outLap: Int,
+    /** The in lap number. */
+    val inLap: Int,
+    /** The driver name that finished the stint. */
+    val driverName: String,
+    /** The total time of the stint, from the time it exits the pit box to the next time it exits the pit box. */
+    val totalTime: Double,
+    /** A list of all lap times, from the start lap to the end lap. */
+    val lapTimes: List<Double>,
+    /** Average lap time excludes in and out laps. */
+    val averageLapTime: Double,
+    /** The fastest lap of the stint. */
+    val fastestLapTime: Double,
+    /** Average track temperature, in Celsius. */
+    val trackTemp: Float,
   )
 }

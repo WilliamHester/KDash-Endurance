@@ -7,6 +7,7 @@ import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
 import me.williamhester.kdash.enduranceweb.proto.LapData
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
+import me.williamhester.kdash.enduranceweb.proto.OtherCarStintEntry
 import me.williamhester.kdash.enduranceweb.proto.StintEntry
 import me.williamhester.kdash.enduranceweb.proto.lapData
 import me.williamhester.kdash.web.common.SynchronizedStreamObserver
@@ -29,8 +30,9 @@ internal class MonitorLapsHandler(
     val future1 = threadPool.submit { Store.getDriverLaps(sessionKey, this) }
     val future2 = threadPool.submit { Store.getDriverStints(sessionKey, this) }
     val future3 = threadPool.submit { Store.getOtherCarLaps(sessionKey, this) }
+    val future4 = threadPool.submit { Store.getOtherCarStints(sessionKey, this) }
 
-    val allFutures = Futures.allAsList(future1, future2, future3)
+    val allFutures = Futures.allAsList(future1, future2, future3, future4)
     try {
       allFutures.get()
     } catch (e: InterruptedException) {
@@ -44,6 +46,7 @@ internal class MonitorLapsHandler(
         is LapEntry -> driverLap = value
         is StintEntry -> driverStint = value
         is OtherCarLapEntry -> otherCarLap = value
+        is OtherCarStintEntry -> otherCarStint = value
         else -> throw UnknownDataTypeException(value::class)
       }
     }

@@ -158,3 +158,40 @@ CREATE TRIGGER other_car_lap_insert_trigger
 AFTER INSERT ON OtherCarLaps
 FOR EACH ROW
 EXECUTE FUNCTION notify_on_other_car_lap();
+
+CREATE TABLE OtherCarStints (
+  -- The SessionID variable from WeekendInfo in the session string
+  SessionID int NOT NULL,
+  -- The SubSessionID variable from WeekendInfo in the session string
+  SubSessionID int NOT NULL,
+  -- CurrentSessionNum from SessionInfo in the session string
+  SimSessionNumber int NOT NULL,
+  -- The number of the team
+  CarNumber character varying (4) NOT NULL,
+  -- The globally unique ID of the stint, incrementing every time a new stint is added to the database
+  StintID SERIAL,
+  -- The index of the other car
+  OtherCarIdx int NOT NULL,
+  -- The in-lap number of the stint
+  InLapNum int NOT NULL,
+  -- The stint data
+  StintEntry bytea NOT NULL,
+
+  PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber, OtherCarIdx, InLapNum)
+);
+
+CREATE OR REPLACE FUNCTION notify_on_other_car_stint()
+RETURNS TRIGGER AS $$
+DECLARE
+  channel_name TEXT;
+BEGIN
+  channel_name := format('ocs_%s_%s_%s_%s', NEW.SessionID, NEW.SubSessionID, NEW.SimSessionNumber, NEW.CarNumber);
+  PERFORM pg_notify(channel_name, NEW.StintID::TEXT);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER other_car_stint_insert_trigger
+AFTER INSERT ON OtherCarStints
+FOR EACH ROW
+EXECUTE FUNCTION notify_on_other_car_stint();

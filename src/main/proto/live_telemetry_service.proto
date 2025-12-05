@@ -120,6 +120,7 @@ message LapData {
       LapEntry driver_lap = 1;
       OtherCarLapEntry other_car_lap = 2;
       StintEntry driver_stint = 3;
+      OtherCarStintEntry other_car_stint = 4;
    }
 }
 
@@ -165,6 +166,18 @@ message StintEntry {
    double fastest_lap_time = 7;
    float track_temp = 8;
    int32 incidents = 9;
+}
+
+message OtherCarStintEntry {
+   int32 car_idx = 9;
+   int32 out_lap = 1;
+   int32 in_lap = 2;
+   string driver_name = 3;
+   double total_time = 4;
+   repeated double lap_times = 5;
+   double average_lap_time = 6;
+   double fastest_lap_time = 7;
+   float track_temp = 8;
 }
 
 message Gaps {

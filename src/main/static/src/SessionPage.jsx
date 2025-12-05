@@ -9,7 +9,6 @@ import { LiveTelemetryServiceClient } from "./live_telemetry_service_grpc_web_pb
 import LapLogPage from "./laplog/LapLogPage.jsx";
 import OtherCarsLapLogPage from "./laplog/OtherCarsLapLogPage.jsx";
 import GapsPage from "./gaps/GapsPage.jsx";
-// import GapChartPage from "./gapchart/GapChartPage";
 import TelemetryPage from "./telemetry/TelemetryPage.jsx";
 import TrackMapPage from "./trackmap/TrackMapPage.jsx";
 import App from "./App.jsx";
@@ -31,6 +30,7 @@ export default function SessionPage() {
   const [lapEntries, setLapEntries] = useState([]);
   const [stintEntries, setStintEntries] = useState([]);
   const [otherCarLapEntries, setOtherCarLapEntries] = useState([]);
+  const [otherCarStintEntries, setOtherCarStintEntries] = useState([]);
   const [currentDrivers, setCurrentDrivers] = useState(new Map());
 
   const client = useRef(new LiveTelemetryServiceClient(`${location.origin}/api`)).current;
@@ -39,6 +39,7 @@ export default function SessionPage() {
   const lapBuffer = useRef([]);
   const stintEntryBuffer = useRef([]);
   const otherCarLapBuffer = useRef([]);
+  const otherCarStintBuffer = useRef([]);
 
   useEffect(() => {
     const liveTelemetryServiceClient = client;
@@ -60,6 +61,10 @@ export default function SessionPage() {
       }
       if (response.hasOtherCarLap()) {
         otherCarLapBuffer.current.push(response.getOtherCarLap());
+      }
+      if (response.hasOtherCarStint()) {
+        console.log('Stint:', response.getOtherCarStint());
+        otherCarStintBuffer.current.push(response.getOtherCarStint());
       }
     });
 
@@ -92,20 +97,18 @@ export default function SessionPage() {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      // Process Gaps
       if (gapBuffer.current.length > 0) {
         const lastMessage = gapBuffer.current[gapBuffer.current.length - 1];
         if (lastMessage && lastMessage.getGapsList) {
           setGapEntries(lastMessage.getGapsList());
         }
-        gapBuffer.current = []; // Clear buffer
+        gapBuffer.current = [];
       }
 
-      // Process Driver Laps
       if (lapBuffer.current.length > 0) {
         setLapEntries(prevEntries => {
           const updated = [...lapBuffer.current, ...prevEntries];
-          lapBuffer.current = []; // Clear buffer
+          lapBuffer.current = [];
           return updated;
         });
       }
@@ -113,21 +116,28 @@ export default function SessionPage() {
       if (stintEntryBuffer.current.length > 0) {
         setStintEntries(prevEntries => {
           const updated = [...stintEntryBuffer.current, ...prevEntries];
-          stintEntryBuffer.current = []; // Clear buffer
+          stintEntryBuffer.current = [];
           console.log(updated);
           return updated;
         });
       }
 
-      // Process Other Car Laps
       if (otherCarLapBuffer.current.length > 0) {
         setOtherCarLapEntries(prevEntries => {
           const updated = [...otherCarLapBuffer.current, ...prevEntries];
-          otherCarLapBuffer.current = []; // Clear buffer
+          otherCarLapBuffer.current = [];
           return updated;
         });
       }
-    }, 250); // Update the UI 4 times per second. Adjust as needed.
+
+      if (otherCarStintBuffer.current.length > 0) {
+        setOtherCarStintEntries(prevEntries => {
+          const updated = [...otherCarStintBuffer.current, ...prevEntries];
+          otherCarStintBuffer.current = [];
+          return updated;
+        });
+      }
+    }, 250);
 
     return () => clearInterval(intervalId); // Cleanup interval on unmount
   }, []);

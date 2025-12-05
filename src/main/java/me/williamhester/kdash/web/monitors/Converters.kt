@@ -3,7 +3,9 @@ package me.williamhester.kdash.web.monitors
 import me.williamhester.kdash.enduranceweb.proto.Gap
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
+import me.williamhester.kdash.enduranceweb.proto.OtherCarStintEntry
 import me.williamhester.kdash.enduranceweb.proto.StintEntry
+import me.williamhester.kdash.enduranceweb.proto.otherCarStintEntry
 import me.williamhester.kdash.enduranceweb.proto.stintEntry
 import me.williamhester.kdash.web.monitors.RelativeMonitor.GapToCarId
 
@@ -36,7 +38,7 @@ fun DriverCarLapLogger.StintEntry.toStintEntry(): StintEntry {
     inLap = stint.inLap
     driverName = stint.driverName
     totalTime = stint.totalTime
-//    lapTimes = stint.lapTimes
+    lapTimes.addAll(stint.lapTimes)
     averageLapTime = stint.averageLapTime
     fastestLapTime = stint.fastestLapTime
     trackTemp = stint.trackTemp
@@ -58,6 +60,21 @@ fun OtherCarsLapLogger.LogEntry.toOtherCarLapEntry(): OtherCarLapEntry {
     pitOut = log.pitOut
     pitTime = log.pitTime
   }.build()
+}
+
+fun OtherCarsLapLogger.OtherCarStintEntry.toOtherCarStintEntry(): OtherCarStintEntry {
+  val stint = this
+  return otherCarStintEntry {
+    carIdx = stint.carIdx
+    outLap = stint.outLap
+    inLap = stint.inLap
+    driverName = stint.driverName
+    totalTime = stint.totalTime
+    lapTimes.addAll(stint.lapTimes)
+    averageLapTime = stint.averageLapTime
+    fastestLapTime = stint.fastestLapTime
+    trackTemp = stint.trackTemp
+  }
 }
 
 fun GapToCarId.toGap(): Gap {
