@@ -63,7 +63,6 @@ export default function SessionPage() {
         otherCarLapBuffer.current.push(response.getOtherCarLap());
       }
       if (response.hasOtherCarStint()) {
-        console.log('Stint:', response.getOtherCarStint());
         otherCarStintBuffer.current.push(response.getOtherCarStint());
       }
     });
@@ -146,7 +145,14 @@ export default function SessionPage() {
     <App>
       <Routes>
         <Route index element={
-          <RaceOverviewPage session={session} drivers={currentDrivers} lapLog={lapEntries} otherCarLapEntries={otherCarLapEntries} stintLog={stintEntries} />
+          <RaceOverviewPage
+            session={session} 
+            drivers={currentDrivers} 
+            lapLog={lapEntries} 
+            otherCarLapEntries={otherCarLapEntries} 
+            stintLog={stintEntries}
+            otherCarStintEntries={otherCarStintEntries}
+            />
         } />
         <Route path="laps" element={<LapLogPage entries={lapEntries} />} />
         <Route path="otherlaps" element={<OtherCarsLapLogPage entries={otherCarLapEntries} drivers={currentDrivers} />} />

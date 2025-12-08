@@ -7,6 +7,7 @@ import { QueryRealtimeTelemetryRequest } from "../live_telemetry_service_pb.js";
 import { LiveTelemetryServiceClient } from "../live_telemetry_service_grpc_web_pb";
 import OtherCarsLapLog from "./OtherCarsLapLog";
 import StintLogPage from "../stintlog/StintLogPage";
+import OtherCarStintLogPage from "../othercarstintlog/OtherCarStintLogPage.jsx";
 
 
 const hourMinuteSecondFormatter = (value) => {
@@ -39,7 +40,7 @@ const timeOfDayFormatter = (value) => {
 };
 
 
-export default function RaceOverviewPage({session, drivers, lapLog, stintLog, otherCarLapEntries}) {
+export default function RaceOverviewPage({session, drivers, lapLog, stintLog, otherCarLapEntries, otherCarStintEntries}) {
   const client = useRef(new LiveTelemetryServiceClient(`${location.origin}/api`)).current;
   const [queryMap, setQueryMap] = useState(new Map());
 
@@ -102,6 +103,9 @@ export default function RaceOverviewPage({session, drivers, lapLog, stintLog, ot
       </VariableBox>
       <VariableBox title="Other Team Laps">
         <OtherCarsLapLog entries={otherCarLapEntries} drivers={drivers}></OtherCarsLapLog>
+      </VariableBox>
+      <VariableBox title="Other Team Stints">
+        <OtherCarStintLogPage entries={otherCarStintEntries} drivers={drivers}></OtherCarStintLogPage>
       </VariableBox>
     </Row>
   </div>;
