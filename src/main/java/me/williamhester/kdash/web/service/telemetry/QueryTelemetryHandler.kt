@@ -8,7 +8,7 @@ import me.williamhester.kdash.enduranceweb.proto.dataRange
 import me.williamhester.kdash.enduranceweb.proto.dataRanges
 import me.williamhester.kdash.enduranceweb.proto.queryTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.telemetryData
-import me.williamhester.kdash.web.models.DataPoint
+import me.williamhester.kdash.web.models.ScalarValue
 import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.models.TelemetryRange
@@ -64,7 +64,8 @@ internal class QueryTelemetryHandler(
             data = telemetryData {
               sessionTime = firstResult.sessionTime
               driverDistance = firstResult.driverDistance
-              queryValues.addAll(results.map(DataPoint::value))
+              // TODO: Support list results
+              queryValues.addAll(results.map { (it.value as ScalarValue).value } )
             }
           }
         )

@@ -96,7 +96,18 @@ message QueryRealtimeTelemetryResponse {
    // Values for each query requested in the QueryTelemetryRequest. Unlike query_values, values are only returned if
    // they have changed from the previous value. Keys are the indices of the requests.
    // Optional.
-   map<int32, double> sparse_query_values = 1;
+   map<int32, QueryResult> sparse_query_values = 1;
+}
+
+message QueryResult {
+   oneof value {
+      double scalar = 1;
+      ListValue list = 2;
+   }
+}
+
+message ListValue {
+   repeated double values = 1;
 }
 
 // The range of the queried data, even if it's outside the query range.

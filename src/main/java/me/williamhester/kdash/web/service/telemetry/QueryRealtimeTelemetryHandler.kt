@@ -5,11 +5,12 @@ import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.queryRealtimeTelemetryResponse
-import me.williamhester.kdash.web.models.DataPoint
+import me.williamhester.kdash.enduranceweb.proto.queryResult
 import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.models.TelemetryRange
 import me.williamhester.kdash.web.query.Query
+import me.williamhester.kdash.web.service.telemetry.Converters.toQueryResult
 import me.williamhester.kdash.web.store.Store
 import me.williamhester.kdash.web.store.StreamedResponseListener
 
@@ -23,7 +24,7 @@ internal class QueryRealtimeTelemetryHandler(
   private val processors = request.queriesList.map(Query::parse)
   // Initialize a list of previous values to Double.NEGATIVE_INFINITY. This should ensure that the first values read
   // are different from the values that already existed in the list.
-  private val previousValues = (1..request.queriesCount).map { Double.NEGATIVE_INFINITY }.toMutableList()
+  private val previousValues = (1..request.queriesCount).map { queryResult {} }.toMutableList()
   private val sessionKey = with(request.sessionIdentifier) {
     SessionKey(sessionId, subSessionId, simSessionNumber, carNumber)
   }
@@ -52,15 +53,14 @@ internal class QueryRealtimeTelemetryHandler(
   override fun onNext(value: TelemetryDataPoint) {
     val results = processors.map { it.process(value) }
     if (value.sessionTime > lastTime + delta) {
-      val resultValues = results.map(DataPoint::value)
+      val resultValues = results.map { it.value.toQueryResult() }
       val response = queryRealtimeTelemetryResponse {
-        var i = 0
-        for ((prev, cur) in previousValues.zip(resultValues)) {
+        for ((i, pair) in previousValues.zip(resultValues).withIndex()) {
+          val (prev, cur) = pair
           if (prev != cur) {
             previousValues[i] = cur
             sparseQueryValues[i] = cur
           }
-          i++
         }
       }
       if (response.sparseQueryValuesCount > 0) {

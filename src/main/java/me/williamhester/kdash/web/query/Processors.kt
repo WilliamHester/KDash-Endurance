@@ -1,6 +1,10 @@
 package me.williamhester.kdash.web.query
 
 import me.williamhester.kdash.web.models.DataPoint
+import me.williamhester.kdash.web.models.DataPointValue
+import me.williamhester.kdash.web.models.DataPointValues.times
+import me.williamhester.kdash.web.models.ListValue
+import me.williamhester.kdash.web.models.ScalarValue
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.query.DecreasingSumProcessor.MonotonicRange.RangeType.DECREASING
 import me.williamhester.kdash.web.query.DecreasingSumProcessor.MonotonicRange.RangeType.INCREASING
@@ -55,14 +59,14 @@ internal class LapAverageProcessor(
 ) : Processor {
   private val queue = ArrayDeque<DataPoint>(36_000)
 
-  private var runningTotal = 0.0
+  private var runningTotal: DataPointValue? = null
 
   override val requiredOffset: Float = laps + childProcessor.requiredOffset
 
   override fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint {
     val current = childProcessor.process(telemetryDataPoint)
     queue.add(current)
-    runningTotal += current.value
+    runningTotal = if (runningTotal == null) current.value else runningTotal!! + current.value
 
     val currentDistance = telemetryDataPoint.driverDistance
     var endOfAverage: DataPoint? = null
@@ -79,7 +83,7 @@ internal class LapAverageProcessor(
     // At this point, i is 1 more than the endOfAverage data position
     for (unused in 0 until i - 1) {
       val first = queue.removeFirst()
-      runningTotal -= first.value
+      runningTotal = runningTotal!! - first.value
     }
 
     // Return 0 if we don't have a data point
@@ -90,7 +94,7 @@ internal class LapAverageProcessor(
 
     val interpolatedValue = interpolateDistance(currentDistance - laps, oldPoint1, oldPoint2)
 
-    val result = (runningTotal + interpolatedValue) / (queue.size + 1)
+    val result = (runningTotal!! + interpolatedValue) / (queue.size + 1)
 
     return DataPoint(current.sessionTime, current.driverDistance, result)
   }
@@ -104,12 +108,16 @@ internal class DecreasingSumProcessor(private val childProcessor: Processor, pri
 
   override fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint {
     val current = childProcessor.process(telemetryDataPoint)
+    if (current.value !is ScalarValue) {
+      throw ListValueUnsupportedException("DECREASING_SUM")
+    }
     val lastRange = monotonicRanges.lastOrNull()
     if (lastRange == null) {
       monotonicRanges.add(MonotonicRange(current))
     } else {
       val currentValue = current.value
       val lastRangeValue = lastRange.values.last().value
+      lastRangeValue as ScalarValue
       when (lastRange.rangeType) {
         null -> {
           if (currentValue > lastRangeValue) {
@@ -171,16 +179,16 @@ internal class DecreasingSumProcessor(private val childProcessor: Processor, pri
     val firstRangeValue = if (firstRange.rangeType == DECREASING) {
       interpolatedValue - firstRange.values.last().value
     } else {
-      0.0
+      ScalarValue(0.0)
     }
 
-    var result = 0.0
+    var result = ScalarValue(0.0)
     for (range in monotonicRanges.iterator().apply { next() }) {
       if (range.rangeType == DECREASING) {
-        result += range.delta
+        result = ScalarValue(range.delta.value + result.value)
       }
     }
-    result += firstRangeValue
+    result = (result + firstRangeValue) as ScalarValue
 
     return DataPoint(current.sessionTime, current.driverDistance, result)
   }
@@ -191,8 +199,8 @@ internal class DecreasingSumProcessor(private val childProcessor: Processor, pri
     /** Whether it's determined that the range is increasing or decreasing */
     var rangeType: RangeType? = null
 
-    val delta: Double
-      get() = values.first().value - values.last().value
+    val delta: ScalarValue
+      get() = (values.first().value - values.last().value) as ScalarValue
 
     fun removeFirst() {
       values.removeFirst()
@@ -205,7 +213,7 @@ internal class DecreasingSumProcessor(private val childProcessor: Processor, pri
   }
 }
 
-private fun interpolateDistance(targetDistance: Float, dataPoint1: DataPoint, dataPoint2: DataPoint): Double {
+private fun interpolateDistance(targetDistance: Float, dataPoint1: DataPoint, dataPoint2: DataPoint): DataPointValue {
   val distance1 = dataPoint1.driverDistance
   val distance2 = dataPoint2.driverDistance
 
@@ -215,7 +223,7 @@ private fun interpolateDistance(targetDistance: Float, dataPoint1: DataPoint, da
   val dist1Pct = targetDelta / delta
   val dist2Pct = 1.0 - dist1Pct
 
-  return dist1Pct * dataPoint1.value + dist2Pct * dataPoint2.value
+  return dist1Pct.toDouble() * dataPoint1.value + dist2Pct * dataPoint2.value
 }
 
 internal class VariableProcessor(variableName: String): Processor {
@@ -241,6 +249,11 @@ internal class CeilingProcessor(private val childProcessor: Processor) :  Proces
 
   override fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint {
     val result = childProcessor.process(telemetryDataPoint)
-    return DataPoint(result.sessionTime, result.driverDistance, ceil(result.value))
+    val resultValue = result.value
+    if (resultValue is ListValue) throw ListValueUnsupportedException("CEIL")
+    resultValue as ScalarValue
+    return DataPoint(result.sessionTime, result.driverDistance, ceil(resultValue.value))
   }
 }
+
+internal class ListValueUnsupportedException(function: String) : Exception("$function does not support list values")

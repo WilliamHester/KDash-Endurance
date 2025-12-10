@@ -1,6 +1,8 @@
 package me.williamhester.kdash.web.query
 
 import me.williamhester.kdash.web.models.DataPoint
+import me.williamhester.kdash.web.models.DataPointValue
+import me.williamhester.kdash.web.models.ScalarValue
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 
 object Query {
@@ -40,7 +42,7 @@ object Query {
     override val requiredOffset: Float = operatorsAndProcessors.maxOf { it.processor.requiredOffset }
 
     override fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint {
-      var result = 0.0
+      var result: DataPointValue = ScalarValue(0.0)
       for ((operator, processor) in operatorsAndProcessors) {
         val processorResult = processor.process(telemetryDataPoint)
 

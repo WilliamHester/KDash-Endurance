@@ -3,7 +3,7 @@ import VariableBox, { TextBox } from "./VariableBox";
 import Row from "../base/Row";
 import "./RaceOverviewPage.css";
 import CarLapLog from "./CarLapLog";
-import { QueryRealtimeTelemetryRequest } from "../live_telemetry_service_pb.js";
+import { QueryRealtimeTelemetryRequest, QueryResult } from "../live_telemetry_service_pb.js";
 import { LiveTelemetryServiceClient } from "../live_telemetry_service_grpc_web_pb";
 import OtherCarsLapLog from "./OtherCarsLapLog";
 import StintLogPage from "../stintlog/StintLogPage";
@@ -56,6 +56,18 @@ export default function RaceOverviewPage({session, drivers, lapLog, stintLog, ot
     return queryMap.get(query);
   }
 
+  const getQueryListValue = (query) => {
+    if (queryMap.get(query) === undefined) {
+      setQueryMap(map => {
+        const newMap = new Map(map);
+        newMap.set(query, []);
+        return newMap;
+      });
+      return [];
+    }
+    return queryMap.get(query);
+  }
+
   useEffect(() => {
     const request = new QueryRealtimeTelemetryRequest();
     request.setSessionIdentifier(session);
@@ -67,8 +79,17 @@ export default function RaceOverviewPage({session, drivers, lapLog, stintLog, ot
     telemetryStream.on('data', response => {
       setQueryMap(map => {
         const newMap = new Map(map);
-        for (const [key, value] of response.getSparseQueryValuesMap().getEntryList()) {
-          newMap.set(queryList[key], value);
+        for (const [key, value] of response.getSparseQueryValuesMap().entries()) {
+          switch (value.getValueCase()) {
+            case QueryResult.ValueCase.SCALAR:
+              newMap.set(queryList[key], value.getScalar());
+              break;
+            case QueryResult.ValueCase.LIST:
+              newMap.set(queryList[key], value.getList().getValuesList());
+              break;
+            default:
+              continue;
+          }
         };
         return newMap;
       });
@@ -106,6 +127,9 @@ export default function RaceOverviewPage({session, drivers, lapLog, stintLog, ot
       </VariableBox>
       <VariableBox title="Other Team Stints">
         <OtherCarStintLogPage entries={otherCarStintEntries} drivers={drivers}></OtherCarStintLogPage>
+      </VariableBox>
+      <VariableBox>
+        { getQueryListValue('CarIdxLapDistPct + CarIdxLap').map((value, i) => <div key={i}>{value.toFixed(2)}<br/></div>) }
       </VariableBox>
     </Row>
   </div>;

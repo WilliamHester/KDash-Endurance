@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import me.williamhester.kdash.enduranceweb.proto.dataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.syntheticFields
 import me.williamhester.kdash.web.models.DataPoint
+import me.williamhester.kdash.web.models.ScalarValue
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -80,7 +81,8 @@ class ProcessorsTest {
     processor.process(telemetryDataPoint2)
     val result = processor.process(telemetryDataPoint3)
 
-    assertThat(result.value).isWithin(0.001).of(4.0)
+    val value = result.value as ScalarValue
+    assertThat(value.value).isWithin(0.001).of(4.0)
   }
 
   @Test
@@ -116,7 +118,8 @@ class ProcessorsTest {
     processor.process(telemetryDataPoint2)
     val result = processor.process(telemetryDataPoint3)
 
-    assertThat(result.value).isWithin(0.001).of(4.0)
+    val value = result.value as ScalarValue
+    assertThat(value.value).isWithin(0.001).of(4.0)
   }
 
   companion object {

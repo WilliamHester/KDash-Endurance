@@ -2,32 +2,40 @@ package me.williamhester.kdash.web.query
 
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryPusherServiceOuterClass
+import me.williamhester.kdash.web.models.DataPointValue
+import me.williamhester.kdash.web.models.ListValue
+import me.williamhester.kdash.web.models.ScalarValue
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 
 object VariableMapping {
-  private val rawTelemetryFields: Map<String, (TelemetryDataPoint) -> Double>
+  private val rawTelemetryFields: Map<String, (TelemetryDataPoint) -> DataPointValue>
 
   init {
-    val fieldMap = mutableMapOf<String, (TelemetryDataPoint) -> Double>()
+    val fieldMap = mutableMapOf<String, (TelemetryDataPoint) -> DataPointValue>()
     val fields = DataSnapshot.getDescriptor().fields
     for (field in fields) {
       val iRacingField = field.options.getExtension(LiveTelemetryPusherServiceOuterClass.iracingField)
-      fieldMap[iRacingField] = {
-        telemetryDataPoint: TelemetryDataPoint ->
-        (telemetryDataPoint.dataSnapshot.getField(field) as Number).toDouble()
+      fieldMap[iRacingField] = { telemetryDataPoint: TelemetryDataPoint ->
+        if (field.isRepeated) {
+          val count = telemetryDataPoint.dataSnapshot.getRepeatedFieldCount(field)
+          val list = List(count) { (telemetryDataPoint.dataSnapshot.getRepeatedField(field, it) as Number).toDouble() }
+          ListValue(list)
+        } else {
+          ScalarValue((telemetryDataPoint.dataSnapshot.getField(field) as Number).toDouble())
+        }
       }
     }
     rawTelemetryFields = fieldMap
   }
 
-  fun getGetter(fieldName: String): (TelemetryDataPoint) -> Double {
+  fun getGetter(fieldName: String): (TelemetryDataPoint) -> DataPointValue {
     return when (fieldName) {
       in rawTelemetryFields.keys -> rawTelemetryFields[fieldName]!!
-      "LastPitLap" -> { tdp: TelemetryDataPoint -> tdp.syntheticFields.lastPitLap.toDouble() }
-      "EstSpeed" -> { tdp: TelemetryDataPoint -> tdp.syntheticFields.estSpeed.toDouble() }
-      "TrackPrecip" -> { tdp: TelemetryDataPoint -> tdp.syntheticFields.trackPrecip }
-      "PitOptRepairRemaining" -> { tdp: TelemetryDataPoint -> tdp.syntheticFields.optionalRepairsRemaining.toDouble() }
-      "PitReqRepairRemaining" -> { tdp: TelemetryDataPoint -> tdp.syntheticFields.requiredRepairsRemaining.toDouble() }
+      "LastPitLap" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.lastPitLap.toDouble()) }
+      "EstSpeed" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.estSpeed.toDouble()) }
+      "TrackPrecip" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.trackPrecip) }
+      "PitOptRepairRemaining" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.optionalRepairsRemaining.toDouble()) }
+      "PitReqRepairRemaining" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.requiredRepairsRemaining.toDouble()) }
       else -> throw VariableNotFoundException(fieldName)
     }
   }
