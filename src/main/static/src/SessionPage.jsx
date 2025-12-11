@@ -32,6 +32,7 @@ export default function SessionPage() {
   const [otherCarLapEntries, setOtherCarLapEntries] = useState([]);
   const [otherCarStintEntries, setOtherCarStintEntries] = useState([]);
   const [currentDrivers, setCurrentDrivers] = useState(new Map());
+  const [sessionInfo, setSessionInfo] = useState(null);
 
   const client = useRef(new LiveTelemetryServiceClient(`${location.origin}/api`)).current;
 
@@ -69,9 +70,11 @@ export default function SessionPage() {
 
     // This stream updates state directly because it's a single map, not a growing list.
     // The workload is minimal.
-    const driversStream = liveTelemetryServiceClient.monitorCurrentDrivers(request, {});
+    const driversStream = liveTelemetryServiceClient.monitorSessionInfo(request, {});
     driversStream.on('data', response => {
-      if (response && response.getDriversList()) {
+      if (response) {
+        setSessionInfo(response);
+        console.log('response:', response);
         const driverMap = new Map(
           response.getDriversList().map((driver) => [
             driver.getCarId(),
@@ -152,6 +155,7 @@ export default function SessionPage() {
             otherCarLapEntries={otherCarLapEntries} 
             stintLog={stintEntries}
             otherCarStintEntries={otherCarStintEntries}
+            sessionInfo={sessionInfo}
             />
         } />
         <Route path="laps" element={<LapLogPage entries={lapEntries} />} />

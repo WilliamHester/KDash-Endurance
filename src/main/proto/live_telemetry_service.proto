@@ -189,6 +189,7 @@ message OtherCarStintEntry {
 
 message SessionInfo {
    int32 driver_car_idx = 2;
+   float driver_car_est_lap_time = 3;
    repeated Driver drivers = 1;
 }
 

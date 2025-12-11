@@ -8,6 +8,7 @@ import { LiveTelemetryServiceClient } from "../live_telemetry_service_grpc_web_p
 import OtherCarsLapLog from "./OtherCarsLapLog";
 import StintLogPage from "../stintlog/StintLogPage";
 import OtherCarStintLogPage from "../othercarstintlog/OtherCarStintLogPage.jsx";
+import GapsPage from "./GapsPage.jsx";
 
 
 const hourMinuteSecondFormatter = (value) => {
@@ -40,7 +41,7 @@ const timeOfDayFormatter = (value) => {
 };
 
 
-export default function RaceOverviewPage({session, drivers, lapLog, stintLog, otherCarLapEntries, otherCarStintEntries}) {
+export default function RaceOverviewPage({session, drivers, lapLog, stintLog, otherCarLapEntries, otherCarStintEntries, sessionInfo}) {
   const client = useRef(new LiveTelemetryServiceClient(`${location.origin}/api`)).current;
   const [queryMap, setQueryMap] = useState(new Map());
 
@@ -128,8 +129,13 @@ export default function RaceOverviewPage({session, drivers, lapLog, stintLog, ot
       <VariableBox title="Other Team Stints">
         <OtherCarStintLogPage entries={otherCarStintEntries} drivers={drivers}></OtherCarStintLogPage>
       </VariableBox>
-      <VariableBox>
-        { getQueryListValue('CarIdxEstTime').map((value, i) => <div key={i}>{value.toFixed(2)}<br/></div>) }
+      <VariableBox title="Relative">
+        <GapsPage
+          drivers={drivers}
+          gaps={getQueryListValue('CarIdxEstTime')}
+          distances={getQueryListValue('CarIdxLapDistPct')}
+          sessionInfo={sessionInfo}
+          />
       </VariableBox>
     </Row>
   </div>;

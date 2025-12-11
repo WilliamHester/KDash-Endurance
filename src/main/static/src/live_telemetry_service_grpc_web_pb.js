@@ -249,13 +249,13 @@ proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prot
  * @const
  * @type {!grpc.web.MethodDescriptor<
  *   !proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
- *   !proto.me.williamhester.kdash.enduranceweb.Gaps>}
+ *   !proto.me.williamhester.kdash.enduranceweb.SessionInfo>}
  */
-const methodDescriptor_LiveTelemetryService_MonitorCurrentGaps = new grpc.web.MethodDescriptor(
-  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorCurrentGaps',
+const methodDescriptor_LiveTelemetryService_MonitorSessionInfo = new grpc.web.MethodDescriptor(
+  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorSessionInfo',
   grpc.web.MethodType.SERVER_STREAMING,
   proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
-  proto.me.williamhester.kdash.enduranceweb.Gaps,
+  proto.me.williamhester.kdash.enduranceweb.SessionInfo,
   /**
    * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request
    * @return {!Uint8Array}
@@ -263,7 +263,7 @@ const methodDescriptor_LiveTelemetryService_MonitorCurrentGaps = new grpc.web.Me
   function(request) {
     return request.serializeBinary();
   },
-  proto.me.williamhester.kdash.enduranceweb.Gaps.deserializeBinary
+  proto.me.williamhester.kdash.enduranceweb.SessionInfo.deserializeBinary
 );
 
 
@@ -271,16 +271,16 @@ const methodDescriptor_LiveTelemetryService_MonitorCurrentGaps = new grpc.web.Me
  * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.Gaps>}
+ * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.SessionInfo>}
  *     The XHR Node Readable Stream
  */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.monitorCurrentGaps =
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.monitorSessionInfo =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorCurrentGaps',
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorSessionInfo',
       request,
       metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorCurrentGaps);
+      methodDescriptor_LiveTelemetryService_MonitorSessionInfo);
 };
 
 
@@ -288,128 +288,16 @@ proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.m
  * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.Gaps>}
+ * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.SessionInfo>}
  *     The XHR Node Readable Stream
  */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.monitorCurrentGaps =
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.monitorSessionInfo =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorCurrentGaps',
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorSessionInfo',
       request,
       metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorCurrentGaps);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
- *   !proto.me.williamhester.kdash.enduranceweb.CurrentDrivers>}
- */
-const methodDescriptor_LiveTelemetryService_MonitorCurrentDrivers = new grpc.web.MethodDescriptor(
-  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorCurrentDrivers',
-  grpc.web.MethodType.SERVER_STREAMING,
-  proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
-  proto.me.williamhester.kdash.enduranceweb.CurrentDrivers,
-  /**
-   * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.me.williamhester.kdash.enduranceweb.CurrentDrivers.deserializeBinary
-);
-
-
-/**
- * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.CurrentDrivers>}
- *     The XHR Node Readable Stream
- */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.monitorCurrentDrivers =
-    function(request, metadata) {
-  return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorCurrentDrivers',
-      request,
-      metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorCurrentDrivers);
-};
-
-
-/**
- * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.CurrentDrivers>}
- *     The XHR Node Readable Stream
- */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.monitorCurrentDrivers =
-    function(request, metadata) {
-  return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorCurrentDrivers',
-      request,
-      metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorCurrentDrivers);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
- *   !proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
- *   !proto.me.williamhester.kdash.enduranceweb.DriverDistances>}
- */
-const methodDescriptor_LiveTelemetryService_MonitorDriverDistances = new grpc.web.MethodDescriptor(
-  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorDriverDistances',
-  grpc.web.MethodType.SERVER_STREAMING,
-  proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
-  proto.me.williamhester.kdash.enduranceweb.DriverDistances,
-  /**
-   * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  proto.me.williamhester.kdash.enduranceweb.DriverDistances.deserializeBinary
-);
-
-
-/**
- * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.DriverDistances>}
- *     The XHR Node Readable Stream
- */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.monitorDriverDistances =
-    function(request, metadata) {
-  return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorDriverDistances',
-      request,
-      metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorDriverDistances);
-};
-
-
-/**
- * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.DriverDistances>}
- *     The XHR Node Readable Stream
- */
-proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.monitorDriverDistances =
-    function(request, metadata) {
-  return this.client_.serverStreaming(this.hostname_ +
-      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/MonitorDriverDistances',
-      request,
-      metadata || {},
-      methodDescriptor_LiveTelemetryService_MonitorDriverDistances);
+      methodDescriptor_LiveTelemetryService_MonitorSessionInfo);
 };
 
 
