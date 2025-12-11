@@ -73,5 +73,6 @@ message DataSnapshot {
   repeated int32 car_idx_position = 16 [(iracing_field) = "CarIdxPosition"];
   repeated bool car_idx_on_pit_road = 17 [(iracing_field) = "CarIdxOnPitRoad"];
   repeated float car_idx_lap_dist_pct = 18 [(iracing_field) = "CarIdxLapDistPct"];
+  repeated float car_idx_est_time = 22 [(iracing_field) = "CarIdxEstTime"];
   bool is_on_track = 19 [(iracing_field) = "IsOnTrack"];
 }

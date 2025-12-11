@@ -129,7 +129,7 @@ export default function RaceOverviewPage({session, drivers, lapLog, stintLog, ot
         <OtherCarStintLogPage entries={otherCarStintEntries} drivers={drivers}></OtherCarStintLogPage>
       </VariableBox>
       <VariableBox>
-        { getQueryListValue('CarIdxLapDistPct + CarIdxLap').map((value, i) => <div key={i}>{value.toFixed(2)}<br/></div>) }
+        { getQueryListValue('CarIdxEstTime').map((value, i) => <div key={i}>{value.toFixed(2)}<br/></div>) }
       </VariableBox>
     </Row>
   </div>;
