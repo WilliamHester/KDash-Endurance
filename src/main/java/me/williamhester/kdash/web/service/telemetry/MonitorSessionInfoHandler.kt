@@ -2,16 +2,16 @@ package me.williamhester.kdash.web.service.telemetry
 
 import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
-import me.williamhester.kdash.enduranceweb.proto.CurrentDrivers
-import me.williamhester.kdash.enduranceweb.proto.currentDrivers
+import me.williamhester.kdash.enduranceweb.proto.SessionInfo
 import me.williamhester.kdash.enduranceweb.proto.driver
+import me.williamhester.kdash.enduranceweb.proto.sessionInfo
 import me.williamhester.kdash.web.extensions.get
 import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.store.Store
 
-class MonitorCurrentDriversHandler(
+class MonitorSessionInfoHandler(
   request: ConnectRequest,
-  private val streamObserver: StreamObserver<CurrentDrivers>,
+  private val streamObserver: StreamObserver<SessionInfo>,
 ) : Runnable {
   private val sessionKey = with(request.sessionIdentifier) {
     SessionKey(sessionId, subSessionId, simSessionNumber, carNumber)
@@ -34,7 +34,8 @@ class MonitorCurrentDriversHandler(
     }.filter { it.carId != paceCarIdx }
 
     streamObserver.onNext(
-      currentDrivers {
+      sessionInfo {
+        driverCarIdx = metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
         drivers.addAll(driverList)
       }
     )

@@ -12,7 +12,7 @@ service LiveTelemetryService {
 
    rpc MonitorLaps(ConnectRequest) returns (stream LapData);
 
-   rpc MonitorCurrentDrivers(ConnectRequest) returns (stream CurrentDrivers);
+   rpc MonitorSessionInfo(ConnectRequest) returns (stream SessionInfo);
 
    rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
 }
@@ -187,7 +187,8 @@ message OtherCarStintEntry {
    float track_temp = 8;
 }
 
-message CurrentDrivers {
+message SessionInfo {
+   int32 driver_car_idx = 2;
    repeated Driver drivers = 1;
 }
 

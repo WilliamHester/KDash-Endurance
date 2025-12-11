@@ -6,7 +6,6 @@ import com.google.common.util.concurrent.ListeningExecutorService
 import io.grpc.stub.ServerCallStreamObserver
 import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
-import me.williamhester.kdash.enduranceweb.proto.CurrentDrivers
 import me.williamhester.kdash.enduranceweb.proto.LapData
 import me.williamhester.kdash.enduranceweb.proto.ListSessionsRequest
 import me.williamhester.kdash.enduranceweb.proto.ListSessionsResponse
@@ -15,6 +14,7 @@ import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryResponse
+import me.williamhester.kdash.enduranceweb.proto.SessionInfo
 import java.time.Duration
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
@@ -40,8 +40,8 @@ class LiveTelemetryService(
     executeHandler("MonitorLaps", responseObserver, MonitorLapsHandler(request, responseObserver, executor))
   }
 
-  override fun monitorCurrentDrivers(request: ConnectRequest, responseObserver: StreamObserver<CurrentDrivers>) {
-    executeHandler("MonitorCurrentDrivers", responseObserver, MonitorCurrentDriversHandler(request, responseObserver))
+  override fun monitorSessionInfo(request: ConnectRequest, responseObserver: StreamObserver<SessionInfo>) {
+    executeHandler("MonitorSessionInfo", responseObserver, MonitorSessionInfoHandler(request, responseObserver))
   }
 
   override fun listSessions(request: ListSessionsRequest, responseObserver: StreamObserver<ListSessionsResponse>) {

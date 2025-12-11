@@ -1,13 +1,11 @@
 package me.williamhester.kdash.web.monitors
 
-import me.williamhester.kdash.enduranceweb.proto.Gap
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarStintEntry
 import me.williamhester.kdash.enduranceweb.proto.StintEntry
 import me.williamhester.kdash.enduranceweb.proto.otherCarStintEntry
 import me.williamhester.kdash.enduranceweb.proto.stintEntry
-import me.williamhester.kdash.web.monitors.RelativeMonitor.GapToCarId
 
 fun DriverCarLapLogger.LogEntry.toLapEntry(): LapEntry {
   val log = this
@@ -75,12 +73,4 @@ fun OtherCarsLapLogger.OtherCarStintEntry.toOtherCarStintEntry(): OtherCarStintE
     fastestLapTime = stint.fastestLapTime
     trackTemp = stint.trackTemp
   }
-}
-
-fun GapToCarId.toGap(): Gap {
-  val gapToCarId = this
-  return Gap.newBuilder().apply {
-    carId = gapToCarId.carId
-    gap = gapToCarId.gap
-  }.build()
 }
