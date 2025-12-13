@@ -1,20 +1,20 @@
 import React from "react";
 import { formatNumberAsDuration, formatDriverName } from "../utils.js";
 
-export default function GapsPage({drivers, gaps, distances, sessionInfo}) {
-  if (sessionInfo == null || gaps.length === 0) {
+export default function GapsPage({drivers, gaps, distances, staticSessionInfo}) {
+  if (staticSessionInfo == null || gaps.length === 0) {
     return <div></div>;
   }
-  const driverIdx = sessionInfo.getDriverCarIdx();
+  const driverIdx = staticSessionInfo.getDriverCarIdx();
   const indexedGapsAndDistances = gaps.map((gap, index) => [index, gap, distances[index]]);
   const driverRow = indexedGapsAndDistances[driverIdx];
-  const halfLapTime = sessionInfo.getDriverCarEstLapTime() / 2;
+  const halfLapTime = staticSessionInfo.getDriverCarEstLapTime() / 2;
   const gapsAndDistancesLapBehind =
     indexedGapsAndDistances.filter(
       (row) =>
         // Other car is ahead of the current driver, and it's greater than half a lap ahead
         (row[1] > driverRow[1] && row[1] - driverRow[1] >= halfLapTime))
-      .map((row) => [row[0], row[1] - sessionInfo.getDriverCarEstLapTime() - driverRow[1], row[2]])
+      .map((row) => [row[0], row[1] - staticSessionInfo.getDriverCarEstLapTime() - driverRow[1], row[2]])
       .sort((a, b) => b[1] - a[1]);
   const gapsAndDistancesAhead =
     indexedGapsAndDistances.filter(
@@ -33,7 +33,7 @@ export default function GapsPage({drivers, gaps, distances, sessionInfo}) {
   const gapsAndDistancesLapAhead =
     // Other car behind the driver car but more than half a lap behind
     indexedGapsAndDistances.filter((row) => row[1] < driverRow[1] && driverRow[1] - row[1] >= halfLapTime)
-      .map((row) => [row[0], row[1] + sessionInfo.getDriverCarEstLapTime() - driverRow[1], row[2]])
+      .map((row) => [row[0], row[1] + staticSessionInfo.getDriverCarEstLapTime() - driverRow[1], row[2]])
       .sort((a, b) => a[1] - b[1]);
   const gaps2 = gapsAndDistancesLapBehind
     .concat(gapsAndDistancesAhead)

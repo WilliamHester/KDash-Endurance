@@ -14,6 +14,8 @@ service LiveTelemetryService {
 
    rpc MonitorSessionInfo(ConnectRequest) returns (stream SessionInfo);
 
+   rpc GetStaticSessionInfo(ConnectRequest) returns (StaticSessionInfo);
+
    rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
 }
 
@@ -188,9 +190,12 @@ message OtherCarStintEntry {
 }
 
 message SessionInfo {
-   int32 driver_car_idx = 2;
-   float driver_car_est_lap_time = 3;
    repeated Driver drivers = 1;
+}
+
+message StaticSessionInfo {
+   int32 driver_car_idx = 1;
+   float driver_car_est_lap_time = 2;
 }
 
 message Driver {

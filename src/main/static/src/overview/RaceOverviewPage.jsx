@@ -41,7 +41,7 @@ const timeOfDayFormatter = (value) => {
 };
 
 
-export default function RaceOverviewPage({session, drivers, lapLog, stintLog, otherCarLapEntries, otherCarStintEntries, sessionInfo}) {
+export default function RaceOverviewPage({session, drivers, lapLog, stintLog, otherCarLapEntries, otherCarStintEntries, staticSessionInfo}) {
   const client = useRef(new LiveTelemetryServiceClient(`${location.origin}/api`)).current;
   const [queryMap, setQueryMap] = useState(new Map());
 
@@ -134,7 +134,7 @@ export default function RaceOverviewPage({session, drivers, lapLog, stintLog, ot
           drivers={drivers}
           gaps={getQueryListValue('CarIdxEstTime')}
           distances={getQueryListValue('CarIdxLapDistPct')}
-          sessionInfo={sessionInfo}
+          staticSessionInfo={staticSessionInfo}
           />
       </VariableBox>
     </Row>

@@ -15,6 +15,7 @@ import me.williamhester.kdash.enduranceweb.proto.QueryRealtimeTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryRequest
 import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.SessionInfo
+import me.williamhester.kdash.enduranceweb.proto.StaticSessionInfo
 import java.time.Duration
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
@@ -42,6 +43,10 @@ class LiveTelemetryService(
 
   override fun monitorSessionInfo(request: ConnectRequest, responseObserver: StreamObserver<SessionInfo>) {
     executeHandler("MonitorSessionInfo", responseObserver, MonitorSessionInfoHandler(request, responseObserver))
+  }
+
+  override fun getStaticSessionInfo(request: ConnectRequest, responseObserver: StreamObserver<StaticSessionInfo>) {
+    executeHandler("GetStaticSessionInfo", responseObserver, GetStaticSessionInfoHandler(request, responseObserver))
   }
 
   override fun listSessions(request: ListSessionsRequest, responseObserver: StreamObserver<ListSessionsResponse>) {

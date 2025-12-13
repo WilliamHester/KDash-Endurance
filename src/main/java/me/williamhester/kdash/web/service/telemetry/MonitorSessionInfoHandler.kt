@@ -35,8 +35,6 @@ class MonitorSessionInfoHandler(
 
     streamObserver.onNext(
       sessionInfo {
-        driverCarIdx = metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
-        driverCarEstLapTime = metadata["DriverInfo"]["DriverCarEstLapTime"].value.toFloat()
         drivers.addAll(driverList)
       }
     )

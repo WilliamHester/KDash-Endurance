@@ -304,6 +304,67 @@ proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prot
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
+ *   !proto.me.williamhester.kdash.enduranceweb.StaticSessionInfo>}
+ */
+const methodDescriptor_LiveTelemetryService_GetStaticSessionInfo = new grpc.web.MethodDescriptor(
+  '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/GetStaticSessionInfo',
+  grpc.web.MethodType.UNARY,
+  proto.me.williamhester.kdash.enduranceweb.ConnectRequest,
+  proto.me.williamhester.kdash.enduranceweb.StaticSessionInfo,
+  /**
+   * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.me.williamhester.kdash.enduranceweb.StaticSessionInfo.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.me.williamhester.kdash.enduranceweb.StaticSessionInfo)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.me.williamhester.kdash.enduranceweb.StaticSessionInfo>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServiceClient.prototype.getStaticSessionInfo =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/GetStaticSessionInfo',
+      request,
+      metadata || {},
+      methodDescriptor_LiveTelemetryService_GetStaticSessionInfo,
+      callback);
+};
+
+
+/**
+ * @param {!proto.me.williamhester.kdash.enduranceweb.ConnectRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.me.williamhester.kdash.enduranceweb.StaticSessionInfo>}
+ *     Promise that resolves to the response
+ */
+proto.me.williamhester.kdash.enduranceweb.LiveTelemetryServicePromiseClient.prototype.getStaticSessionInfo =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/me.williamhester.kdash.enduranceweb.LiveTelemetryService/GetStaticSessionInfo',
+      request,
+      metadata || {},
+      methodDescriptor_LiveTelemetryService_GetStaticSessionInfo);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.me.williamhester.kdash.enduranceweb.ListSessionsRequest,
  *   !proto.me.williamhester.kdash.enduranceweb.ListSessionsResponse>}
  */
