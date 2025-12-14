@@ -196,6 +196,8 @@ message SessionInfo {
 message StaticSessionInfo {
    int32 driver_car_idx = 1;
    float driver_car_est_lap_time = 2;
+   bool is_multiclass = 3;
+   repeated CarClass car_classes = 4;
 }
 
 message Driver {
@@ -205,6 +207,12 @@ message Driver {
    string car_class_name = 4;
    string driver_name = 5;
    string team_name = 6;
+}
+
+message CarClass {
+   int32 car_class_id = 1;
+   string car_class_short_name = 2;
+   string car_class_color = 3;
 }
 
 message ListSessionsRequest {}
