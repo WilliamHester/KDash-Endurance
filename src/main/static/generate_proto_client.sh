@@ -1,7 +1,7 @@
 #!/bin/sh
 
 DIR=../proto/
-OUT_DIR=./src
+OUT_DIR=./src/lib/grpc/
 
 protoc \
   -I=$DIR \
