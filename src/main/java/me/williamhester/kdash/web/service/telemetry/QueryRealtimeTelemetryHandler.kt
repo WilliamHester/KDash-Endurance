@@ -42,7 +42,7 @@ internal class QueryRealtimeTelemetryHandler(
         ?: range.minSessionTime
 
     // Send all data we're aware of except the last value to the processors only
-    Store.getTelemetryForRange(sessionKey, minTime, range.maxSessionTime - 0.001, 1000.0) {
+    Store.getTelemetryForRange(sessionKey, minTime - 1, range.maxSessionTime - 0.001, 1000.0) {
       processors.map { p -> p.process(it) }
     }
     // Send data starting with the latest value.
