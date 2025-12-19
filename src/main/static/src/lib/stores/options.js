@@ -4,6 +4,9 @@ import { browser } from '$app/environment';
 const defaultOptions = {
   targetStintLength: 20,
   fuelMargin: 1.0,
+  // Liters per second
+  fuelFillRate: 2.381,
+  stopAndGoSeconds: 22,
 };
 
 const storedOptions = browser ? window.localStorage.getItem('kdash-endurance-options') : null;

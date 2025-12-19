@@ -9,7 +9,7 @@
   } from '$lib/stores/session';
   import VariableBox from '$lib/components/VariableBox.svelte';
   import CarLapLog from '$lib/components/CarLapLog.svelte';
-  import { timeOfDayFormatter, hourMinuteSecondFormatter, minuteSecondFormatter } from '$lib/utils';
+  import { timeOfDayFormatter, hourMinuteSecondFormatter, minuteSecondFormatter } from '$lib/formatters';
   import StintLogTable from "$lib/components/StintLogTable.svelte";
 
   // The list of values we need for this dashboard

@@ -44,12 +44,19 @@
         href="{basePath}/otherlaps">
         Other Cars' Laps
       </a>
-      
-      <a 
-        class="menu-item" 
-        class:active={currentPath.includes('/telemetry')} 
+
+      <a
+        class="menu-item"
+        class:active={currentPath.includes('/telemetry')}
         href="{basePath}/telemetry">
         Telemetry Charts
+      </a>
+
+      <a
+        class="menu-item"
+        class:active={currentPath.includes('/options')}
+        href="{basePath}/options">
+        Options
       </a>
     </nav>
 

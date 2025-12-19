@@ -1,5 +1,5 @@
 <script>
-  import { formatNumberAsDuration } from '$lib/utils';
+  import { formatNumberAsDuration } from '$lib/formatters';
 
   export let entry; // The LapEntry object
 

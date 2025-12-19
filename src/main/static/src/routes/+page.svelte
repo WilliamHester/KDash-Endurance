@@ -15,9 +15,8 @@
       const channel = createChannel(window.location.origin + '/api');
       const client = createClient(LiveTelemetryServiceDefinition, channel);
 
-      client.listSessions().then(s => {
-        sessions = s.sessions;
-      });
+      const response = await client.listSessions();
+      sessions = response.sessions;
 
       loading = false;
     } catch (e) {

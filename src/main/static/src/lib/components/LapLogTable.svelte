@@ -1,5 +1,5 @@
 <script>
-  import { formatNumberAsDuration, formatDriverName } from '$lib/utils';
+  import { formatNumberAsDuration, formatDriverName } from '$lib/formatters';
   import PitChip from '$lib/components/PitChip.svelte';
 
   export let entries = [];

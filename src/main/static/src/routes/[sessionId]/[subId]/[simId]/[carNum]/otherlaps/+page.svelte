@@ -1,6 +1,6 @@
 <script>
   import { drivers, otherCarLaps } from '$lib/stores/session';
-  import { formatNumberAsDuration, formatDriverName } from '$lib/utils';
+  import { formatNumberAsDuration, formatDriverName } from '$lib/formatters';
   import PitChip from '$lib/components/PitChip.svelte';
 
   // State for the dropdown

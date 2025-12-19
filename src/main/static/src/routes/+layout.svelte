@@ -1,5 +1,7 @@
 <script>
 	import favicon from '$lib/assets/favicon.svg';
+  import "../app.css";
+  import {ModeWatcher} from "mode-watcher";
 
 	let { children } = $props();
 </script>
@@ -13,4 +15,5 @@
   <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300&family=Roboto:wght@400&display=swap" rel="stylesheet">
 </svelte:head>
 
+<ModeWatcher defaultMode="dark"/>
 {@render children()}

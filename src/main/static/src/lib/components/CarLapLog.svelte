@@ -1,5 +1,5 @@
 <script>
-  import { formatNumberAsDuration, formatDriverName } from '$lib/utils';
+  import { formatNumberAsDuration, formatDriverName } from '$lib/formatters';
   
   export let entries = [];
 
