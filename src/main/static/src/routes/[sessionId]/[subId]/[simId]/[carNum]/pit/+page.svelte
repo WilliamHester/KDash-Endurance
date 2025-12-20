@@ -2,16 +2,16 @@
   import {
     connected,
     sessionStore,
-    staticSessionInfo,
     telemetry,
   } from '$lib/stores/session';
   import options from '$lib/stores/options';
   import VariableBox from "$lib/components/VariableBox.svelte";
 
-  const last2FuelUsageQuery = 'DECREASING_SUM(FuelLevel, 2) / 2'
-  const last5FuelUsageQuery = 'DECREASING_SUM(FuelLevel, 5) / 5'
+  const last2FuelUsageQuery = 'DECREASING_SUM(FuelLevel, 2) / 2';
+  const last5FuelUsageQuery = 'DECREASING_SUM(FuelLevel, 5) / 5';
   const fuelLevelQuery = 'FuelLevel';
   const lapFuelUsedQuery = 'LapFuelUsed';
+  const stintLengthQuery = 'Lap + (LapFuelUsed / (DECREASING_SUM(FuelLevel, 2) / 2)) - LastPitLap';
 
   const queries = $derived([
     fuelLevelQuery,
@@ -19,6 +19,7 @@
     last2FuelUsageQuery,
     last5FuelUsageQuery,
     lapFuelUsedQuery,
+    stintLengthQuery,
   ]);
 
   $effect(() => {
@@ -28,14 +29,30 @@
   });
 
   const lapsAtLine = $derived.by(() => {
-    if ($staticSessionInfo) {
-      const averageFuelUsage = $telemetry[last2FuelUsageQuery];
-      const expectedFuelUsage = averageFuelUsage - $telemetry[lapFuelUsedQuery];
-      const tankRemaining = $telemetry[fuelLevelQuery] - $options.fuelMargin;
-      const remainingAtEndOfLap = tankRemaining - expectedFuelUsage;
-      return remainingAtEndOfLap / averageFuelUsage;
+    const averageFuelUsage = $telemetry[last2FuelUsageQuery];
+    const expectedFuelUsage = averageFuelUsage - $telemetry[lapFuelUsedQuery];
+    const tankRemaining = $telemetry[fuelLevelQuery] - $options.fuelMargin;
+    const remainingAtEndOfLap = tankRemaining - expectedFuelUsage;
+    return remainingAtEndOfLap / averageFuelUsage;
+  });
+
+  const fuelTarget = $derived.by(() => {
+    const currentStintLength = $telemetry[stintLengthQuery];
+    const targetRemainingLaps = $options.targetStintLength - currentStintLength;
+    if (targetRemainingLaps > 0) {
+      return ($telemetry[fuelLevelQuery] - $options.fuelMargin) / targetRemainingLaps;
     } else {
-      return null;
+      return 0;
+    }
+  });
+
+  const fuelTargetPlus1 = $derived.by(() => {
+    const currentStintLength = $telemetry[stintLengthQuery];
+    const targetRemainingLaps = $options.targetStintLength + 1 - currentStintLength;
+    if (targetRemainingLaps > 0) {
+      return ($telemetry[fuelLevelQuery] - $options.fuelMargin) / targetRemainingLaps;
+    } else {
+      return 0;
     }
   });
 </script>
@@ -54,8 +71,16 @@
       { ($telemetry[last5FuelUsageQuery] || -1).toFixed(3) }
     </VariableBox>
 
-    <VariableBox title="Laps at line">
+    <VariableBox title="Laps to go at line">
       { (lapsAtLine || -1).toFixed(2) }
+    </VariableBox>
+
+    <VariableBox title="Fuel Target">
+      { fuelTarget.toFixed(3) }
+    </VariableBox>
+
+    <VariableBox title="Fuel Target +1">
+      { fuelTargetPlus1.toFixed(3) }
     </VariableBox>
   </div>
 </div>

@@ -1,5 +1,6 @@
 package me.williamhester.kdash.web.monitors
 
+import com.google.common.flogger.FluentLogger
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.web.extensions.get
 import me.williamhester.kdash.web.state.MetadataHolder
@@ -39,6 +40,7 @@ class DriverCarLapLogger(
   private var wasOnPitRoad: Boolean? = null
   private var wasInPitBox: Boolean? = null
   private var didAddFuel = false
+  private var didAddFuelDuringPitRoad = false
   private var fuelUsedBeforeRefuel = 0.0F
   private var minFuelRemaining = 1000.0F
 
@@ -120,6 +122,7 @@ class DriverCarLapLogger(
       if (!didAddFuel) {
         fuelUsedBeforeRefuel = this.fuelRemaining - minFuelRemaining
         didAddFuel = true
+        didAddFuelDuringPitRoad = true
       }
       this.fuelRemaining = fuelRemaining
     }
@@ -133,10 +136,17 @@ class DriverCarLapLogger(
     if (wasOnPitRoad == true && !isOnPitRoad) {
       pitOut = true
       pitOutLap = currentLap
+      // didAddFuelDuringPitRoad accounts for the case where we simply drove through the pits without getting fuel.
+      // We could've used something like didAddFuelLastLap, but that wouldn't account for an edge case where the pit box
+      // is after the line and the driver did a drivethrough (it would increment the lap).
+      if (didAddFuelDuringPitRoad) {
+        mutableSyntheticFields.lastPitLap = dataSnapshot.lap
+      }
+      didAddFuelDuringPitRoad = false
     }
 
     val trackLocFlags = dataSnapshot.carIdxTrackSurfaceList[driverCarIdx]
-    val isInPitBox = trackLocFlags == 1
+    val isInPitBox = trackLocFlags and 1 == 1
 
     if (wasInPitBox == false && isInPitBox) {
       pitStartTime = dataSnapshot.sessionTime
@@ -232,4 +242,8 @@ class DriverCarLapLogger(
     /** Incidents accrued throughout the stint. */
     val incidents: Int,
   )
+
+  companion object {
+    private val logger = FluentLogger.forEnclosingClass()
+  }
 }

@@ -27,9 +27,6 @@ class DataSnapshotLogger(
     val sessionTime = dataSnapshot.sessionTime
     val driverDistance = dataSnapshot.lap + dataSnapshot.getCarIdxLapDistPct(driverCarIdx)
 
-    if (dataSnapshot.onPitRoad) {
-      mutableSyntheticFields.lastPitLap = dataSnapshot.lap
-    }
     if (dataSnapshot.pitstopActive) {
       mutableSyntheticFields.optionalRepairsRemaining = dataSnapshot.pitOptRepairLeft
       mutableSyntheticFields.requiredRepairsRemaining = dataSnapshot.pitRepairLeft

@@ -16,6 +16,16 @@ const initialState = {
     activeQueries: []
 };
 
+function upsert(list, item, matchFn) {
+    const idx = list.findIndex(matchFn);
+    if (idx !== -1) {
+        const copy = [...list];
+        copy[idx] = item;
+        return copy;
+    }
+    return [item, ...list];
+}
+
 function createSessionStore() {
     const { subscribe, set, update } = writable(initialState);
 
@@ -56,10 +66,18 @@ function createSessionStore() {
                     for await (const response of client.monitorLaps(request, { signal })) {
                         update(state => {
                             const newState = { ...state };
-                            if (response.driverLap) newState.laps = [response.driverLap, ...state.laps];
-                            if (response.driverStint) newState.stints = [response.driverStint, ...state.stints];
-                            if (response.otherCarLap) newState.otherCarLaps = [response.otherCarLap, ...state.otherCarLaps];
-                            if (response.otherCarStint) newState.otherCarStints = [response.otherCarStint, ...state.otherCarStints];
+                            if (response.driverLap) {
+                                newState.laps = upsert(state.laps, response.driverLap, l => l.lapNum === response.driverLap.lapNum);
+                            }
+                            if (response.driverStint) {
+                                newState.stints = upsert(state.stints, response.driverStint, s => s.outLap === response.driverStint.outLap);
+                            }
+                            if (response.otherCarLap) {
+                                newState.otherCarLaps = upsert(state.otherCarLaps, response.otherCarLap, l => l.carId === response.otherCarLap.carId && l.lapNum === response.otherCarLap.lapNum);
+                            }
+                            if (response.otherCarStint) {
+                                newState.otherCarStints = upsert(state.otherCarStints, response.otherCarStint, s => s.carIdx === response.otherCarStint.carIdx && s.outLap === response.otherCarStint.outLap);
+                            }
                             return newState;
                         });
                     }

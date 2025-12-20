@@ -24,13 +24,20 @@
 
   <div class="app-row">
     <nav class="hamburgerMenu">
-      <a 
-        class="menu-item" 
-        class:active={currentPath === basePath} 
+      <a
+        class="menu-item"
+        class:active={currentPath === basePath}
         href="{basePath}">
         Race Overview
       </a>
-      
+
+      <a
+        class="menu-item"
+        class:active={currentPath.includes('/pit')}
+        href="{basePath}/pit">
+        Pit Strategy
+      </a>
+
       <a 
         class="menu-item" 
         class:active={currentPath.includes('/laps')} 

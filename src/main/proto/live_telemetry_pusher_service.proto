@@ -52,8 +52,10 @@ extend google.protobuf.FieldOptions {
 // TODO: Name this something better.
 // This is the current data snapshot from a client. The server will describe this proto to the client, and the client
 // will hand pack it into an Any proto. The server is then free to deserialize it as a proper proto.
+// Next ID: 24;
 message DataSnapshot {
   int32 lap = 1 [(iracing_field) = "Lap"];
+  float lap_dist_pct = 23 [(iracing_field) = "LapDistPct"];
   float fuel_level = 2 [(iracing_field) = "FuelLevel"];
   double session_time = 3 [(iracing_field) = "SessionTime"];
   float session_time_of_day = 21 [(iracing_field) = "SessionTimeOfDay"];
