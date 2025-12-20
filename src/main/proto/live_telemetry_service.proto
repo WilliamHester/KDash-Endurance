@@ -198,6 +198,7 @@ message StaticSessionInfo {
    float driver_car_est_lap_time = 2;
    bool is_multiclass = 3;
    repeated CarClass car_classes = 4;
+   float driver_car_tank_size = 5;
 }
 
 message Driver {

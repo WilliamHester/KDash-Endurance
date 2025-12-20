@@ -1,7 +1,6 @@
 package me.williamhester.kdash.web.monitors
 
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
-import me.williamhester.kdash.enduranceweb.proto.syntheticFields
 import me.williamhester.kdash.enduranceweb.proto.telemetryDataPoint
 import me.williamhester.kdash.web.extensions.get
 import me.williamhester.kdash.web.state.MetadataHolder
@@ -12,6 +11,7 @@ import kotlin.math.min
 class DataSnapshotLogger(
   private val metadataHolder: MetadataHolder,
   private val sessionStore: SessionStore,
+  private val mutableSyntheticFields: MutableSyntheticFields,
 ) {
   private val driverCarIdx: Int by lazy {
     metadataHolder.metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
@@ -22,8 +22,6 @@ class DataSnapshotLogger(
 
   private var lastLapDistMeters = 0.0
   private var lastSessionTime = 0.0
-
-  private val mutableSyntheticFields = MutableSyntheticFields()
 
   fun process(dataSnapshot: DataSnapshot) {
     val sessionTime = dataSnapshot.sessionTime
@@ -70,21 +68,5 @@ class DataSnapshotLogger(
 
     lastLapDistMeters = lapDistanceMeters
     lastSessionTime = sessionTime
-  }
-
-  class MutableSyntheticFields(
-    var lastPitLap: Int = 0,
-    var estSpeed: Float = 0.0F,
-    var trackPrecip: Double = 0.0,
-    var requiredRepairsRemaining: Float = 0.0F,
-    var optionalRepairsRemaining: Float = 0.0F,
-  ) {
-    fun toSyntheticFields() = syntheticFields {
-      lastPitLap = this@MutableSyntheticFields.lastPitLap
-      estSpeed = this@MutableSyntheticFields.estSpeed
-      trackPrecip = this@MutableSyntheticFields.trackPrecip
-      requiredRepairsRemaining = this@MutableSyntheticFields.requiredRepairsRemaining
-      optionalRepairsRemaining = this@MutableSyntheticFields.optionalRepairsRemaining
-    }
   }
 }

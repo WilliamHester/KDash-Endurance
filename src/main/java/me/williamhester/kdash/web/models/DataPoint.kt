@@ -55,7 +55,9 @@ sealed interface DataPointValue {
   class IncompatibleOperandsException : Exception()
 }
 
-class ScalarValue(val value: Double) : DataPointValue
+class ScalarValue(val value: Double) : DataPointValue {
+  constructor(number: Number) : this(number.toDouble())
+}
 
 class ListValue(val value: List<Double>) : DataPointValue
 

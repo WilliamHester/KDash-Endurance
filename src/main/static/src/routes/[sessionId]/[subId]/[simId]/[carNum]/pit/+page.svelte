@@ -2,19 +2,40 @@
   import {
     connected,
     sessionStore,
+    staticSessionInfo,
     telemetry,
   } from '$lib/stores/session';
+  import options from '$lib/stores/options';
   import VariableBox from "$lib/components/VariableBox.svelte";
 
-  const REQUIRED_QUERIES = [
-    'FuelLevel',
+  const last2FuelUsageQuery = 'DECREASING_SUM(FuelLevel, 2) / 2'
+  const last5FuelUsageQuery = 'DECREASING_SUM(FuelLevel, 5) / 5'
+  const fuelLevelQuery = 'FuelLevel';
+  const lapFuelUsedQuery = 'LapFuelUsed';
+
+  const queries = $derived([
+    fuelLevelQuery,
     'DECREASING_SUM(FuelLevel, 1)',
-    'DECREASING_SUM(FuelLevel, 5) / 5',
-  ];
+    last2FuelUsageQuery,
+    last5FuelUsageQuery,
+    lapFuelUsedQuery,
+  ]);
 
   $effect(() => {
     if ($connected) {
-      sessionStore.startTelemetry(REQUIRED_QUERIES);
+      sessionStore.startTelemetry(queries);
+    }
+  });
+
+  const lapsAtLine = $derived.by(() => {
+    if ($staticSessionInfo) {
+      const averageFuelUsage = $telemetry[last2FuelUsageQuery];
+      const expectedFuelUsage = averageFuelUsage - $telemetry[lapFuelUsedQuery];
+      const tankRemaining = $telemetry[fuelLevelQuery] - $options.fuelMargin;
+      const remainingAtEndOfLap = tankRemaining - expectedFuelUsage;
+      return remainingAtEndOfLap / averageFuelUsage;
+    } else {
+      return null;
     }
   });
 </script>
@@ -22,7 +43,7 @@
 <div class="column">
   <div class="row">
     <VariableBox title="Fuel Level">
-      { ($telemetry['FuelLevel'] || 0).toFixed(3) }
+      { ($telemetry[fuelLevelQuery] || 0).toFixed(3) }
     </VariableBox>
 
     <VariableBox title="Lap over lap fuel">
@@ -30,7 +51,11 @@
     </VariableBox>
 
     <VariableBox title="Avg 5 lap over lap fuel">
-      { ($telemetry['DECREASING_SUM(FuelLevel, 5) / 5'] || -1).toFixed(3) }
+      { ($telemetry[last5FuelUsageQuery] || -1).toFixed(3) }
+    </VariableBox>
+
+    <VariableBox title="Laps at line">
+      { (lapsAtLine || -1).toFixed(2) }
     </VariableBox>
   </div>
 </div>

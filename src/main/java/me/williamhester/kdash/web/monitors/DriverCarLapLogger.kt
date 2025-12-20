@@ -11,6 +11,7 @@ class DriverCarLapLogger(
   private val metadataHolder: MetadataHolder,
   private val relativeMonitor: RelativeMonitor,
   private val sessionStore: SessionStore,
+  private val mutableSyntheticFields: MutableSyntheticFields,
 ) {
   private var driverCarIdx = -1
 
@@ -51,6 +52,9 @@ class DriverCarLapLogger(
 
     val currentLap = dataSnapshot.lap
     val fuelRemaining = dataSnapshot.fuelLevel
+    val fuelUsed = (this.fuelRemaining - fuelRemaining) + fuelUsedBeforeRefuel
+    mutableSyntheticFields.lapFuelUsed = fuelUsed
+
     // Check that currentLap > lapNum in case we tow. Tows actually go back to lap 0 temporarily.
     if (currentLap > lapNum) {
       val sessionTime = dataSnapshot.sessionTime
@@ -62,7 +66,6 @@ class DriverCarLapLogger(
       driverName = metadataHolder.metadata["DriverInfo"]["Drivers"][driverCarIdx]["UserName"].value
       driverIncidents = dataSnapshot.driverIncidentCount
       teamIncidents = dataSnapshot.teamIncidentCount
-      val fuelUsed = (this.fuelRemaining - fuelRemaining) + fuelUsedBeforeRefuel
       this.fuelRemaining = fuelRemaining
 
       val gapToLeader = if (driverCarIdx < relativeMonitor.getGaps().size) {

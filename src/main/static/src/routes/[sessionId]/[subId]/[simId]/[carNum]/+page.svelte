@@ -25,7 +25,7 @@
     'PlayerCarTeamIncidentCount',
     'PlayerCarDriverIncidentCount',
     'DECREASING_SUM(FuelLevel, 1)',
-    'DECREASING_SUM(FuelLevel, 5)',
+    'DECREASING_SUM(FuelLevel, 5) / 5',
   ];
 
   $effect(() => {
@@ -36,7 +36,7 @@
 
   let fuelLevel = $derived($telemetry['FuelLevel'] || 0);
   let lapFuel = $derived($telemetry['DECREASING_SUM(FuelLevel, 1)'] || 0);
-  let avg5LapFuel = $derived(($telemetry['DECREASING_SUM(FuelLevel, 5)'] || 0) / 5);
+  let avg5LapFuel = $derived($telemetry['DECREASING_SUM(FuelLevel, 5)'] || 0);
 
   // Logic: (Fuel - 1) / Ceil( (Fuel - 1) / LapFuel )
   let fuelTargetPlus1 = $derived.by(() => {

@@ -38,6 +38,9 @@ class GetStaticSessionInfoHandler(
         driverCarEstLapTime = metadata["DriverInfo"]["DriverCarEstLapTime"].value.toFloat()
         isMulticlass = carClasses.size > 1
         this.carClasses += carClasses
+        driverCarTankSize =
+          metadata["DriverInfo"]["DriverCarFuelMaxLtr"].value.toFloat() *
+              metadata["DriverInfo"]["DriverCarMaxFuelPct"].value.toFloat()
       }
     )
   }

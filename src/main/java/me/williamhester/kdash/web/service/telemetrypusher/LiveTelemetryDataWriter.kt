@@ -5,6 +5,7 @@ import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.monitors.DataSnapshotLogger
 import me.williamhester.kdash.web.monitors.DriverCarLapLogger
+import me.williamhester.kdash.web.monitors.MutableSyntheticFields
 import me.williamhester.kdash.web.monitors.OtherCarsLapLogger
 import me.williamhester.kdash.web.monitors.RelativeMonitor
 import me.williamhester.kdash.web.state.MetadataHolder
@@ -28,11 +29,12 @@ internal class LiveTelemetryDataWriter(
 
   private class Monitors(sessionStore: SessionStore) {
     val metadataHolder = MetadataHolder()
+    private val mutableSyntheticFields = MutableSyntheticFields()
 
     private val relativeMonitor = RelativeMonitor()
-    private val lapMonitor = DriverCarLapLogger(metadataHolder, relativeMonitor, sessionStore)
+    private val lapMonitor = DriverCarLapLogger(metadataHolder, relativeMonitor, sessionStore, mutableSyntheticFields)
     private val otherCarsLapLogger = OtherCarsLapLogger(metadataHolder, relativeMonitor, sessionStore)
-    private val dataSnapshotLogger = DataSnapshotLogger(metadataHolder, sessionStore)
+    private val dataSnapshotLogger = DataSnapshotLogger(metadataHolder, sessionStore, mutableSyntheticFields)
 
     fun process(dataSnapshot: DataSnapshot) {
       relativeMonitor.process(dataSnapshot)

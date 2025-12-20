@@ -7,6 +7,7 @@ const initialState = {
     connected: false,
     sessionKey: null,
     drivers: new Map(),
+    staticSessionInfo: null,
     laps: [],
     stints: [],
     otherCarLaps: [],
@@ -82,6 +83,16 @@ function createSessionStore() {
                     }
                 } catch (err) {
                     if (err.name !== 'AbortError') console.error("Driver stream error:", err);
+                }
+            })();
+
+            // --- CALL: Static Session Info ---
+            (async () => {
+                try {
+                    const response = await client.getStaticSessionInfo(request, { signal });
+                    update(state => ({ ...state, staticSessionInfo: response }));
+                } catch (err) {
+                    if (err.name !== 'AbortError') console.error("Static Session Info error:", err);
                 }
             })();
 
@@ -165,6 +176,7 @@ function createSessionStore() {
 export const sessionStore = createSessionStore();
 export const connected = derived(sessionStore, $s => $s.connected);
 export const drivers = derived(sessionStore, $s => $s.drivers);
+export const staticSessionInfo = derived(sessionStore, $s => $s.staticSessionInfo);
 export const telemetry = derived(sessionStore, $s => $s.telemetry);
 export const laps = derived(sessionStore, $s => $s.laps);
 export const stints = derived(sessionStore, $s => $s.stints);

@@ -18,4 +18,5 @@ message SyntheticFields {
   double track_precip = 3;
   float required_repairs_remaining = 4;
   float optional_repairs_remaining = 5;
+  float lap_fuel_used = 6;
 }

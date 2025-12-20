@@ -31,7 +31,7 @@ internal class Client(
   private val channel: ManagedChannel,
 ) {
   private val latch = CountDownLatch(1)
-  private val rateLimiter = RateLimiter.create(60.0 * 4)
+  private val rateLimiter = RateLimiter.create(60.0 * 10)
   private lateinit var outputStreamObserver: StreamObserver<SessionMetadataOrDataSnapshot>
   private val sessionMetadataMonitorExecutor = Executors.newSingleThreadScheduledExecutor()
   private var lastSessionMetadataVersion: Int = -1

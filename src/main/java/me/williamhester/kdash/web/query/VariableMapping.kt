@@ -31,11 +31,12 @@ object VariableMapping {
   fun getGetter(fieldName: String): (TelemetryDataPoint) -> DataPointValue {
     return when (fieldName) {
       in rawTelemetryFields.keys -> rawTelemetryFields[fieldName]!!
-      "LastPitLap" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.lastPitLap.toDouble()) }
-      "EstSpeed" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.estSpeed.toDouble()) }
+      "LastPitLap" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.lastPitLap) }
+      "EstSpeed" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.estSpeed) }
       "TrackPrecip" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.trackPrecip) }
-      "PitOptRepairRemaining" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.optionalRepairsRemaining.toDouble()) }
-      "PitReqRepairRemaining" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.requiredRepairsRemaining.toDouble()) }
+      "PitOptRepairRemaining" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.optionalRepairsRemaining) }
+      "PitReqRepairRemaining" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.requiredRepairsRemaining) }
+      "LapFuelUsed" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.lapFuelUsed) }
       else -> throw VariableNotFoundException(fieldName)
     }
   }

@@ -206,6 +206,7 @@ export interface StaticSessionInfo {
   driverCarEstLapTime: number;
   isMulticlass: boolean;
   carClasses: CarClass[];
+  driverCarTankSize: number;
 }
 
 export interface Driver {
@@ -2465,7 +2466,7 @@ export const SessionInfo: MessageFns<SessionInfo> = {
 };
 
 function createBaseStaticSessionInfo(): StaticSessionInfo {
-  return { driverCarIdx: 0, driverCarEstLapTime: 0, isMulticlass: false, carClasses: [] };
+  return { driverCarIdx: 0, driverCarEstLapTime: 0, isMulticlass: false, carClasses: [], driverCarTankSize: 0 };
 }
 
 export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
@@ -2481,6 +2482,9 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
     }
     for (const v of message.carClasses) {
       CarClass.encode(v!, writer.uint32(34).fork()).join();
+    }
+    if (message.driverCarTankSize !== 0) {
+      writer.uint32(45).float(message.driverCarTankSize);
     }
     return writer;
   },
@@ -2524,6 +2528,14 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
           message.carClasses.push(CarClass.decode(reader, reader.uint32()));
           continue;
         }
+        case 5: {
+          if (tag !== 45) {
+            break;
+          }
+
+          message.driverCarTankSize = reader.float();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2541,6 +2553,7 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
       carClasses: globalThis.Array.isArray(object?.carClasses)
         ? object.carClasses.map((e: any) => CarClass.fromJSON(e))
         : [],
+      driverCarTankSize: isSet(object.driverCarTankSize) ? globalThis.Number(object.driverCarTankSize) : 0,
     };
   },
 
@@ -2558,6 +2571,9 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
     if (message.carClasses?.length) {
       obj.carClasses = message.carClasses.map((e) => CarClass.toJSON(e));
     }
+    if (message.driverCarTankSize !== 0) {
+      obj.driverCarTankSize = message.driverCarTankSize;
+    }
     return obj;
   },
 
@@ -2570,6 +2586,7 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
     message.driverCarEstLapTime = object.driverCarEstLapTime ?? 0;
     message.isMulticlass = object.isMulticlass ?? false;
     message.carClasses = object.carClasses?.map((e) => CarClass.fromPartial(e)) || [];
+    message.driverCarTankSize = object.driverCarTankSize ?? 0;
     return message;
   },
 };
