@@ -41,6 +41,9 @@ class GetStaticSessionInfoHandler(
         driverCarTankSize =
           metadata["DriverInfo"]["DriverCarFuelMaxLtr"].value.toFloat() *
               metadata["DriverInfo"]["DriverCarMaxFuelPct"].value.toFloat()
+        val session = metadata["SessionInfo"]["Sessions"][sessionKey.sessionNum]
+        val lapLimitValue = session["SessionLaps"].value
+        lapLimit = if (lapLimitValue == "unlimited") -1 else lapLimitValue.toInt()
       }
     )
   }

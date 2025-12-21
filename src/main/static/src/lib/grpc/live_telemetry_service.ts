@@ -207,6 +207,8 @@ export interface StaticSessionInfo {
   isMulticlass: boolean;
   carClasses: CarClass[];
   driverCarTankSize: number;
+  lapLimit: number;
+  sessionLength: number;
 }
 
 export interface Driver {
@@ -2466,7 +2468,15 @@ export const SessionInfo: MessageFns<SessionInfo> = {
 };
 
 function createBaseStaticSessionInfo(): StaticSessionInfo {
-  return { driverCarIdx: 0, driverCarEstLapTime: 0, isMulticlass: false, carClasses: [], driverCarTankSize: 0 };
+  return {
+    driverCarIdx: 0,
+    driverCarEstLapTime: 0,
+    isMulticlass: false,
+    carClasses: [],
+    driverCarTankSize: 0,
+    lapLimit: 0,
+    sessionLength: 0,
+  };
 }
 
 export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
@@ -2485,6 +2495,12 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
     }
     if (message.driverCarTankSize !== 0) {
       writer.uint32(45).float(message.driverCarTankSize);
+    }
+    if (message.lapLimit !== 0) {
+      writer.uint32(48).int32(message.lapLimit);
+    }
+    if (message.sessionLength !== 0) {
+      writer.uint32(61).float(message.sessionLength);
     }
     return writer;
   },
@@ -2536,6 +2552,22 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
           message.driverCarTankSize = reader.float();
           continue;
         }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.lapLimit = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 61) {
+            break;
+          }
+
+          message.sessionLength = reader.float();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2554,6 +2586,8 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
         ? object.carClasses.map((e: any) => CarClass.fromJSON(e))
         : [],
       driverCarTankSize: isSet(object.driverCarTankSize) ? globalThis.Number(object.driverCarTankSize) : 0,
+      lapLimit: isSet(object.lapLimit) ? globalThis.Number(object.lapLimit) : 0,
+      sessionLength: isSet(object.sessionLength) ? globalThis.Number(object.sessionLength) : 0,
     };
   },
 
@@ -2574,6 +2608,12 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
     if (message.driverCarTankSize !== 0) {
       obj.driverCarTankSize = message.driverCarTankSize;
     }
+    if (message.lapLimit !== 0) {
+      obj.lapLimit = Math.round(message.lapLimit);
+    }
+    if (message.sessionLength !== 0) {
+      obj.sessionLength = message.sessionLength;
+    }
     return obj;
   },
 
@@ -2587,6 +2627,8 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
     message.isMulticlass = object.isMulticlass ?? false;
     message.carClasses = object.carClasses?.map((e) => CarClass.fromPartial(e)) || [];
     message.driverCarTankSize = object.driverCarTankSize ?? 0;
+    message.lapLimit = object.lapLimit ?? 0;
+    message.sessionLength = object.sessionLength ?? 0;
     return message;
   },
 };

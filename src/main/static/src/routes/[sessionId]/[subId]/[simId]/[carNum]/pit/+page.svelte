@@ -12,15 +12,17 @@
   const fuelLevelQuery = 'FuelLevel';
   const lapFuelUsedQuery = 'LapFuelUsed';
   const stintLengthQuery = 'Lap + (LapFuelUsed / (DECREASING_SUM(FuelLevel, 2) / 2)) - LastPitLap';
+  const lapsRemainingQuery = 'SessionTimeRemain / ((0 - 1) * LAP_DELTA(SessionTime))';
 
-  const queries = $derived([
+  const queries = [
     fuelLevelQuery,
     'DECREASING_SUM(FuelLevel, 1)',
     last2FuelUsageQuery,
     last5FuelUsageQuery,
     lapFuelUsedQuery,
     stintLengthQuery,
-  ]);
+    lapsRemainingQuery,
+  ];
 
   $effect(() => {
     if ($connected) {
@@ -81,6 +83,10 @@
 
     <VariableBox title="Fuel Target +1">
       { fuelTargetPlus1.toFixed(3) }
+    </VariableBox>
+
+    <VariableBox title="Laps Remaining">
+      { ($telemetry[lapsRemainingQuery] || -1).toFixed(0) }
     </VariableBox>
   </div>
 </div>

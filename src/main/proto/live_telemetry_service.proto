@@ -199,6 +199,8 @@ message StaticSessionInfo {
    bool is_multiclass = 3;
    repeated CarClass car_classes = 4;
    float driver_car_tank_size = 5;
+   int32 lap_limit = 6;
+   float session_length = 7;
 }
 
 message Driver {

@@ -8,7 +8,7 @@ import me.williamhester.kdash.web.models.SessionKey
 internal fun SessionMetadata.toSessionKey(): SessionKey {
   val sessionId = this["WeekendInfo"]["SessionID"].value.toInt()
   val subSessionId = this["WeekendInfo"]["SubSessionID"].value.toInt()
-  val simSessionNumber = this["SessionInfo"]["CurrentSessionNum"].value.ifBlank { "-1" }.toInt()
+  val simSessionNumber = this["SessionInfo"]["CurrentSessionNum"].value.ifBlank { "0" }.toInt()
   val driverCarIdx = this["DriverInfo"]["DriverCarIdx"].value.toInt()
   // DriverInfo:Drivers:idx:CarNumber and ...:CarNumberRaw both exist. However, CarNumberRaw is sometimes over 1000
   // and it's not clear why. Removing the quotes from CarNumber seems to more accurately get what's displayed.
