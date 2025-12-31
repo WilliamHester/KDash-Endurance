@@ -201,6 +201,7 @@ message StaticSessionInfo {
    float driver_car_tank_size = 5;
    int32 lap_limit = 6;
    float session_length = 7;
+   bool is_team_event = 8;
 }
 
 message Driver {

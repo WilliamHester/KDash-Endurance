@@ -3,14 +3,19 @@
     sessionStore,
     connected,
     drivers,
+    driversList,
     laps,
     stints,
     telemetry,
   } from '$lib/stores/session';
+  import {
+    selectedCars,
+  } from "$lib/stores/drivers.svelte.js";
   import VariableBox from '$lib/components/VariableBox.svelte';
   import CarLapLog from '$lib/components/CarLapLog.svelte';
   import { timeOfDayFormatter, hourMinuteSecondFormatter, minuteSecondFormatter } from '$lib/formatters';
   import StintLogTable from "$lib/components/StintLogTable.svelte";
+  import TeamSelectionDialog from "$lib/components/TeamSelectionDialog.svelte";
 
   // The list of values we need for this dashboard
   const REQUIRED_QUERIES = [
@@ -46,6 +51,7 @@
       return fuelMinus1 / Math.ceil(lapsRemainingCurrentFuel);
   });
 
+  const selectedDrivers = $derived($driversList.filter((driver) => selectedCars.has(driver.carId)));
 </script>
 
 <div class="dashboard-container">
@@ -110,6 +116,8 @@
         {$drivers.size} Drivers Loaded
       </div>
     </div>
+
+    <TeamSelectionDialog/>
   </div>
 </div>
 

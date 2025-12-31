@@ -209,6 +209,7 @@ export interface StaticSessionInfo {
   driverCarTankSize: number;
   lapLimit: number;
   sessionLength: number;
+  isTeamEvent: boolean;
 }
 
 export interface Driver {
@@ -2476,6 +2477,7 @@ function createBaseStaticSessionInfo(): StaticSessionInfo {
     driverCarTankSize: 0,
     lapLimit: 0,
     sessionLength: 0,
+    isTeamEvent: false,
   };
 }
 
@@ -2501,6 +2503,9 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
     }
     if (message.sessionLength !== 0) {
       writer.uint32(61).float(message.sessionLength);
+    }
+    if (message.isTeamEvent !== false) {
+      writer.uint32(64).bool(message.isTeamEvent);
     }
     return writer;
   },
@@ -2568,6 +2573,14 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
           message.sessionLength = reader.float();
           continue;
         }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.isTeamEvent = reader.bool();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2588,6 +2601,7 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
       driverCarTankSize: isSet(object.driverCarTankSize) ? globalThis.Number(object.driverCarTankSize) : 0,
       lapLimit: isSet(object.lapLimit) ? globalThis.Number(object.lapLimit) : 0,
       sessionLength: isSet(object.sessionLength) ? globalThis.Number(object.sessionLength) : 0,
+      isTeamEvent: isSet(object.isTeamEvent) ? globalThis.Boolean(object.isTeamEvent) : false,
     };
   },
 
@@ -2614,6 +2628,9 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
     if (message.sessionLength !== 0) {
       obj.sessionLength = message.sessionLength;
     }
+    if (message.isTeamEvent !== false) {
+      obj.isTeamEvent = message.isTeamEvent;
+    }
     return obj;
   },
 
@@ -2629,6 +2646,7 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
     message.driverCarTankSize = object.driverCarTankSize ?? 0;
     message.lapLimit = object.lapLimit ?? 0;
     message.sessionLength = object.sessionLength ?? 0;
+    message.isTeamEvent = object.isTeamEvent ?? false;
     return message;
   },
 };

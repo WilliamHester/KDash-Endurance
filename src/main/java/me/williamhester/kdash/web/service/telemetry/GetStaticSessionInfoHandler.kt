@@ -44,6 +44,7 @@ class GetStaticSessionInfoHandler(
         val session = metadata["SessionInfo"]["Sessions"][sessionKey.sessionNum]
         val lapLimitValue = session["SessionLaps"].value
         lapLimit = if (lapLimitValue == "unlimited") -1 else lapLimitValue.toInt()
+        isTeamEvent = metadata["WeekendInfo"]["TeamRacing"].value.toInt() == 1
       }
     )
   }
