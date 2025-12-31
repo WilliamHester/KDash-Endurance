@@ -26,3 +26,9 @@ launch4j_exe(
     config_template = ":client_launch4j_config.xml.template",
     jar = "//main/java/me/williamhester/kdash/web/client:prod_client_deploy.jar",
 )
+
+launch4j_exe(
+    name = "live_telemetry_logger",
+    config_template = ":client_launch4j_config.xml.template",
+    jar = "@kdash//main/java/me/williamhester/kdash/api:iracing_live_data_logger_deploy.jar",
+)
