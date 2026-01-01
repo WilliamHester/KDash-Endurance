@@ -29,14 +29,17 @@ import java.util.concurrent.TimeUnit
 internal class Client(
   private val iRacingDataReader: IRacingDataReader,
   private val channel: ManagedChannel,
+  clientName: String? = null,
 ) {
+  private val logTag = if (clientName != null) "Client $clientName: " else ""
   private val latch = CountDownLatch(1)
   private val rateLimiter = RateLimiter.create(60.0 * 10)
   private lateinit var outputStreamObserver: StreamObserver<SessionMetadataOrDataSnapshot>
   private val sessionMetadataMonitorExecutor = Executors.newSingleThreadScheduledExecutor()
-  private var lastSessionMetadataVersion: Int = -1
+  private val dataReaderExecutor = Executors.newSingleThreadExecutor()
   private var sessionMetadataMonitor: ScheduledFuture<*>? = null
   private var shouldSend = false
+  private var wasInCar = false
 
   fun connect() {
     val client = LiveTelemetryPusherServiceGrpc.newStub(channel)
@@ -66,8 +69,14 @@ internal class Client(
   fun handleControlMessage(controlMessage: ControlMessage) {
     val command = controlMessage.command
     when (command) {
-      ControlMessage.ControlCommand.STOP_SENDING -> shouldSend = false
-      ControlMessage.ControlCommand.START_SENDING -> shouldSend = true
+      ControlMessage.ControlCommand.STOP_SENDING -> {
+        logger.atInfo().log("%sStopping sending data.", logTag)
+        shouldSend = false
+      }
+      ControlMessage.ControlCommand.START_SENDING -> {
+        logger.atInfo().log("%sStarting sending data.", logTag)
+        shouldSend = true
+      }
       else -> logger.atWarning().log("Unknown command $command")
     }
   }
@@ -75,6 +84,10 @@ internal class Client(
   fun onConnected(varBufferFields: VarBufferFields) {
     latch.await()
 
+    dataReaderExecutor.execute { sendData(varBufferFields) }
+  }
+
+  private fun sendData(varBufferFields: VarBufferFields) {
     sendSessionMetadata()
     sessionMetadataMonitor =
       sessionMetadataMonitorExecutor.scheduleAtFixedRate(this::sendSessionMetadata, 1, 1, TimeUnit.SECONDS)
@@ -89,7 +102,12 @@ internal class Client(
       val data = iRacingDataReader.next()
       checkDriverInCar(data)
 
-      if (!shouldSend) continue
+      if (!shouldSend) {
+        logger.atInfo().atMostEvery(5, TimeUnit.SECONDS).log("%sSkipping sending data.", logTag)
+        continue
+      } else {
+        logger.atInfo().atMostEvery(5, TimeUnit.SECONDS).log("%sSending data.", logTag)
+      }
 
       for (field in varBufferFields.descriptorProto.fieldList) {
         data.writeToOutputStream(field, iRacingDataReader, codedOutputStream)
@@ -109,24 +127,37 @@ internal class Client(
 
   private fun checkDriverInCar(varBuffer: VarBuffer) {
     val isThisClientInCar = varBuffer.getBoolean("IsOnTrack")
-    val wasSending = shouldSend
-    shouldSend = isThisClientInCar || shouldSend
-    if (!wasSending && isThisClientInCar) {
-      logger.atInfo().log("Client in car. Sending data.")
+    if (wasInCar != isThisClientInCar) {
+      if (isThisClientInCar) {
+        logger.atInfo().log("%snow in the car", logTag)
+      } else {
+        logger.atWarning().log("%sno longer in the car", logTag)
+      }
+      wasInCar = isThisClientInCar
     }
+    val wasSending = shouldSend
+    when {
+      isThisClientInCar && wasSending -> {} // already sending data
+      isThisClientInCar && !wasSending -> {
+        logger.atInfo().log("%sWas not sending data, but client now in car", logTag)
+        shouldSend = true
+      }
+      !isThisClientInCar && wasSending -> {
+        logger.atInfo().atMostEvery(5, TimeUnit.SECONDS).log("%sNo longer in the car but still sending data", logTag)
+      }
+      !isThisClientInCar && !wasSending -> {
+        logger.atInfo().atMostEvery(5, TimeUnit.SECONDS).log("%sNot in car and not sending data", logTag)
+      }
+    }
+//
+//    shouldSend = isThisClientInCar || shouldSend
+//    if (!wasSending && isThisClientInCar) {
+//      logger.atInfo().log("%sClient in car. Sending data.", logTag)
+//    }
   }
 
   private fun sendSessionMetadata() {
-    val sessionInfoVersion = iRacingDataReader.fileHeader.sessionInfoUpdate
-    if (lastSessionMetadataVersion == sessionInfoVersion) return
-
-    logger.atInfo().log(
-      "New session metadata available. New version: %s; Old version: %s",
-      sessionInfoVersion,
-      lastSessionMetadataVersion,
-    )
-
-    lastSessionMetadataVersion = sessionInfoVersion
+    if (!iRacingDataReader.hasNewMetadata()) return
 
     outputStreamObserver.onNext(
       sessionMetadataOrDataSnapshot {

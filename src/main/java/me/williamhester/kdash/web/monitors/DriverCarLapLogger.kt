@@ -1,6 +1,7 @@
 package me.williamhester.kdash.web.monitors
 
 import com.google.common.flogger.FluentLogger
+import me.williamhester.kdash.api.TrackSurface
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.web.extensions.get
 import me.williamhester.kdash.web.state.MetadataHolder
@@ -36,6 +37,7 @@ class DriverCarLapLogger(
   private var pitInLap = 0
   private var stintStartTime = 0.0
   private var stintStartIncidents = 0
+  private var previousTrackSurface = -1
 
   private var wasOnPitRoad: Boolean? = null
   private var wasInPitBox: Boolean? = null
@@ -145,13 +147,14 @@ class DriverCarLapLogger(
       didAddFuelDuringPitRoad = false
     }
 
-    val trackLocFlags = dataSnapshot.carIdxTrackSurfaceList[driverCarIdx]
-    val isInPitBox = trackLocFlags and 1 == 1
+    val trackSurface = dataSnapshot.carIdxTrackSurfaceList[driverCarIdx]
+    val isInPitBox = trackSurface == TrackSurface.IN_PIT_STALL || trackSurface == TrackSurface.NOT_IN_WORLD
 
     if (wasInPitBox == false && isInPitBox) {
       pitStartTime = dataSnapshot.sessionTime
 
       onStintFinished(dataSnapshot)
+      if (System.currentTimeMillis() == 0L) println(previousTrackSurface)
     } else if (wasInPitBox == true && !isInPitBox) {
       pitTime = dataSnapshot.sessionTime - pitStartTime
 
@@ -167,6 +170,7 @@ class DriverCarLapLogger(
     this.wasOnPitRoad = isOnPitRoad
 
     maxSpeed = max(maxSpeed, dataSnapshot.speed)
+    previousTrackSurface = trackSurface
   }
 
   private fun onStintFinished(dataSnapshot: DataSnapshot) {

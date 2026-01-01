@@ -34,6 +34,13 @@ java_binary(
 )
 
 java_binary(
+    name = "local_multi_driver_client",
+    main_class = "me.williamhester.kdash.web.client.LocalMultiDriverClient",
+    runtime_deps = [":client"],
+    visibility = ["//visibility:public"],
+)
+
+java_binary(
     name = "prod_client",
     main_class = "me.williamhester.kdash.web.client.ProdClient",
     runtime_deps = [":client"],
