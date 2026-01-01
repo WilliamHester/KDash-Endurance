@@ -29,7 +29,7 @@ internal class SessionConnectionRegistry {
   }
 
   /** Notify the connections that this driver is currently on track. */
-  fun driverOnTrack(connection: DriverConnection) {
+  fun driverOnTrack(connection: DriverConnection, sessionTime: Double) {
     val currentSessionInfo = connectionIdsToCurrentSessionKey[connection.connectionId]
     if (currentSessionInfo == null) {
       logger.atWarning().log("Client is on track, but the session is not registered with the registry.")
@@ -40,7 +40,7 @@ internal class SessionConnectionRegistry {
       logger.atWarning().log("Client is on track, but the controller for the session wasn't found.")
       return
     }
-    controller.handleClientOnTrack(connection)
+    controller.handleClientOnTrack(connection, sessionTime)
   }
 
   /** Unregister the connection and maybe tell one of the remaining connections to start sending data. */
@@ -73,10 +73,11 @@ internal class SessionConnectionRegistry {
       ensureOneClientIsSendingData()
     }
 
-    fun handleClientOnTrack(connection: DriverConnection) = lock.withLock {
-      connections
-        .filterNot { it.connectionId == connection.connectionId }
-        .forEach(DriverConnection::requestClientStopsSendingData)
+    fun handleClientOnTrack(connection: DriverConnection, sessionTime: Double) = lock.withLock {
+      val connectionsToStop = connections.filterNot { it.connectionId == connection.connectionId }
+      for (connection in connectionsToStop) {
+        connection.requestClientStopsSendingData(sessionTime)
+      }
     }
 
     private fun ensureOneClientIsSendingData() = lock.withLock {

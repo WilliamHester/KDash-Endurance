@@ -67,16 +67,16 @@ function createSessionStore() {
                         update(state => {
                             const newState = { ...state };
                             if (response.driverLap) {
-                                newState.laps = upsert(state.laps, response.driverLap, l => l.lapNum === response.driverLap.lapNum);
+                                newState.laps = [response.driverLap, ...state.laps];
                             }
                             if (response.driverStint) {
-                                newState.stints = upsert(state.stints, response.driverStint, s => s.outLap === response.driverStint.outLap);
+                                newState.stints = [response.driverStint, ...state.stints];
                             }
                             if (response.otherCarLap) {
-                                newState.otherCarLaps = upsert(state.otherCarLaps, response.otherCarLap, l => l.carId === response.otherCarLap.carId && l.lapNum === response.otherCarLap.lapNum);
+                                newState.otherCarLaps = [response.otherCarLap, ...state.otherCarLaps];
                             }
                             if (response.otherCarStint) {
-                                newState.otherCarStints = upsert(state.otherCarStints, response.otherCarStint, s => s.carIdx === response.otherCarStint.carIdx && s.outLap === response.otherCarStint.outLap);
+                                newState.otherCarStints = [response.otherCarStint, ...state.otherCarStints];
                             }
                             return newState;
                         });

@@ -1,6 +1,7 @@
 package me.williamhester.kdash.web.service.telemetrypusher
 
 import com.google.common.flogger.FluentLogger
+import com.google.common.util.concurrent.AtomicDouble
 import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.enduranceweb.proto.ControlMessage.ControlCommand
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadataOrDataSnapshot
@@ -20,6 +21,7 @@ internal class DriverConnection(
   internal var isSendingData = false
     private set
   private lateinit var liveTelemetryDataWriter: LiveTelemetryDataWriter
+  private var otherClientOnTrackTime = AtomicDouble(0.0)
 
   /** A unique ID for this connection. */
   val connectionId = connectionCount.getAndIncrement()
@@ -27,13 +29,18 @@ internal class DriverConnection(
   override fun onNext(sessionMetadataOrDataSnapshot: SessionMetadataOrDataSnapshot) {
     when (sessionMetadataOrDataSnapshot.valueCase) {
       DATA_SNAPSHOT -> {
-        val isOnTrack = sessionMetadataOrDataSnapshot.dataSnapshot.isOnTrack
-        if (isOnTrack && !wasOnTrack) {
+        val snapshot = sessionMetadataOrDataSnapshot.dataSnapshot
+        if (snapshot.sessionTime <= otherClientOnTrackTime.get()) {
+          logger.atInfo().log("Ignoring data snapshot from before other client on track")
+          return
+        }
+        if (snapshot.isOnTrack && !wasOnTrack) {
+          logger.atInfo().log("Client %s now on track. Stopping other clients.", connectionId)
           // Tell any other clients to stop publishing data, since the driver at this client is actually in the car.
-          sessionConnectionRegistry.driverOnTrack(this)
+          sessionConnectionRegistry.driverOnTrack(this, snapshot.sessionTime)
           isSendingData = true
         }
-        wasOnTrack = isOnTrack
+        wasOnTrack = snapshot.isOnTrack
         liveTelemetryDataWriter.onDataSnapshot(sessionMetadataOrDataSnapshot.dataSnapshot)
       }
       SESSION_METADATA -> {
@@ -59,8 +66,8 @@ internal class DriverConnection(
     sessionConnectionRegistry.unregister(this)
   }
 
-  fun requestClientStopsSendingData() {
-    logger.atInfo().log("Requesting that this client stops sending data.")
+  fun requestClientStopsSendingData(otherClientOnTrackTime: Double) {
+    logger.atInfo().log("Requesting that client %s stops sending data.", connectionId)
     responseObserver.onNext(
       varBufferFieldsOrControlMessage {
         controlMessage = controlMessage {
@@ -68,11 +75,13 @@ internal class DriverConnection(
         }
       }
     )
+    this.otherClientOnTrackTime.set(otherClientOnTrackTime)
     isSendingData = false
+    wasOnTrack = false
   }
 
   fun requestClientStartsSendingData() {
-    logger.atInfo().log("Requesting that this client starts sending data.")
+    logger.atInfo().log("Requesting that client %s starts sending data.", connectionId)
     isSendingData = true
     responseObserver.onNext(
       varBufferFieldsOrControlMessage {

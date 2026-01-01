@@ -37,7 +37,6 @@ class DriverCarLapLogger(
   private var pitInLap = 0
   private var stintStartTime = 0.0
   private var stintStartIncidents = 0
-  private var previousTrackSurface = -1
 
   private var wasOnPitRoad: Boolean? = null
   private var wasInPitBox: Boolean? = null
@@ -66,7 +65,6 @@ class DriverCarLapLogger(
       position = dataSnapshot.playerCarPosition
       lapTime = sessionTime - lapStartTime
       trackTemp = dataSnapshot.trackTempCrew
-      // TODO: Find a way to reliably get the current driver name.
       driverName = metadataHolder.metadata["DriverInfo"]["Drivers"][driverCarIdx]["UserName"].value
       driverIncidents = dataSnapshot.driverIncidentCount
       teamIncidents = dataSnapshot.teamIncidentCount
@@ -154,7 +152,6 @@ class DriverCarLapLogger(
       pitStartTime = dataSnapshot.sessionTime
 
       onStintFinished(dataSnapshot)
-      if (System.currentTimeMillis() == 0L) println(previousTrackSurface)
     } else if (wasInPitBox == true && !isInPitBox) {
       pitTime = dataSnapshot.sessionTime - pitStartTime
 
@@ -170,7 +167,6 @@ class DriverCarLapLogger(
     this.wasOnPitRoad = isOnPitRoad
 
     maxSpeed = max(maxSpeed, dataSnapshot.speed)
-    previousTrackSurface = trackSurface
   }
 
   private fun onStintFinished(dataSnapshot: DataSnapshot) {
@@ -197,6 +193,7 @@ class DriverCarLapLogger(
 
   private fun onStintStarted(dataSnapshot: DataSnapshot) {
     stintStartTime = dataSnapshot.sessionTime
+    stintStartIncidents = dataSnapshot.driverIncidentCount
   }
 
   data class LogEntry(

@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.RateLimiter
 import com.google.protobuf.Message
 import com.impossibl.postgres.api.jdbc.PGConnection
 import com.impossibl.postgres.api.jdbc.PGNotificationListener
+import com.impossibl.postgres.jdbc.PGSQLSimpleException
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarStintEntry
@@ -368,7 +369,7 @@ object Store {
             AND SimSessionNumber=?
             AND CarNumber=?
             AND LapID>?
-          ORDER BY LapID DESC
+          ORDER BY LapNum ASC
         """.trimIndent(),
           sessionKey.sessionId,
           sessionKey.subSessionId,
@@ -411,7 +412,7 @@ object Store {
           AND SimSessionNumber=?
           AND CarNumber=?
           AND StintID>?
-        ORDER BY StintID DESC
+        ORDER BY InLapNum ASC
       """.trimIndent(),
           sessionKey.sessionId,
           sessionKey.subSessionId,
@@ -455,7 +456,7 @@ object Store {
           AND SimSessionNumber=?
           AND CarNumber=?
           AND LapID>?
-        ORDER BY LapID DESC
+        ORDER BY LapNum ASC
       """.trimIndent(),
           sessionKey.sessionId,
           sessionKey.subSessionId,
@@ -499,7 +500,7 @@ object Store {
               AND SimSessionNumber=?
               AND CarNumber=?
               AND StintID>?
-            ORDER BY StintID DESC
+            ORDER BY InLapNum ASC
           """.trimIndent(),
           sessionKey.sessionId,
           sessionKey.subSessionId,
@@ -561,7 +562,23 @@ object Store {
     }
   }
 
-  private fun <T> useStatement(query: String, vararg args: Any, block: (PreparedStatement) -> T): T {
+  private inline fun <T> retry(block: () -> T): T {
+    val rateLimiter = RateLimiter.create(5.0)
+    var previousThrowable: Throwable? = null
+    for (i in 1..5) {
+      try {
+        rateLimiter.acquire()
+        return block()
+      } catch (e: PGSQLSimpleException) {
+        logger.atWarning().log("Error while executing query. Trying again in 200ms")
+        if (previousThrowable != null) e.addSuppressed(previousThrowable)
+        previousThrowable = e
+      }
+    }
+    throw previousThrowable!!
+  }
+
+  private fun <T> useStatement(query: String, vararg args: Any, block: (PreparedStatement) -> T): T = retry {
     return connection.prepareStatement(query).use { statement ->
       args.withIndex().forEach {
         val value = it.value

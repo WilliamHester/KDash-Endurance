@@ -1,5 +1,6 @@
 package me.williamhester.kdash.web.monitors
 
+import me.williamhester.kdash.api.TrackSurface
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.web.extensions.get
 import me.williamhester.kdash.web.state.MetadataHolder
@@ -117,8 +118,8 @@ class OtherCarsLapLogger(
           pitOutLap = currentLap
         }
 
-        val trackLocFlags = dataSnapshot.getCarIdxTrackSurface(carIdx)
-        val isInPitBox = trackLocFlags == 1
+        val trackSurface = dataSnapshot.getCarIdxTrackSurface(carIdx)
+        val isInPitBox = trackSurface == TrackSurface.IN_PIT_STALL || trackSurface == TrackSurface.NOT_IN_WORLD
 
         if (wasInPitBox == false && isInPitBox) {
           pitStartTime = dataSnapshot.sessionTime

@@ -29,7 +29,7 @@
                 <td colspan="8" class="empty">No completed stints yet.</td>
             </tr>
         {:else}
-            {#each entries as stint (stint.outLap)}
+            {#each entries as stint (stint.inLap)}
                 <tr>
                     <td class="number">{stint.outLap}</td>
                     <td class="number">{stint.inLap}</td>

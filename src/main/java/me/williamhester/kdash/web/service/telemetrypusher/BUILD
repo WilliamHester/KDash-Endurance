@@ -18,6 +18,7 @@ kt_jvm_library(
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_protobuf_protobuf_java_util",
         "@maven//:org_mindrot_jbcrypt",
+        "//main/java/me/williamhester/kdash/web/common",
         "//main/java/me/williamhester/kdash/web/models",
         "//main/java/me/williamhester/kdash/web/monitors",
         "//main/java/me/williamhester/kdash/web/query",
