@@ -23,15 +23,14 @@ class IRacingLoggedDataAndMetadataReader(
   override fun hasNewMetadata(): Boolean = mostRecentSessionTime >= nextHeader.sessionTime
 
   override fun getMetadataBytes(): ByteArray {
-    if (mostRecentSessionTime < nextHeader.sessionTime) {
-      return previousSessionStringBytes
+    while (mostRecentSessionTime >= nextHeader.sessionTime) {
+      val bytes = ByteArray(nextHeader.length)
+      val byteBuffer = ByteBuffer.wrap(bytes)
+      fileReader.read(byteBuffer)
+      previousSessionStringBytes = bytes
+      nextHeader = readNextHeader()
     }
-    val bytes = ByteArray(nextHeader.length)
-    val byteBuffer = ByteBuffer.wrap(bytes)
-    fileReader.read(byteBuffer)
-    previousSessionStringBytes = bytes
-    nextHeader = readNextHeader()
-    return bytes
+    return previousSessionStringBytes
   }
 
   private fun readNextHeader(): Header {

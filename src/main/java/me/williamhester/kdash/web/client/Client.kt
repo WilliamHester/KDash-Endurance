@@ -90,7 +90,7 @@ internal class Client(
   private fun sendData(varBufferFields: VarBufferFields) {
     sendSessionMetadata()
     sessionMetadataMonitor =
-      sessionMetadataMonitorExecutor.scheduleAtFixedRate(this::sendSessionMetadata, 1, 1, TimeUnit.SECONDS)
+      sessionMetadataMonitorExecutor.scheduleAtFixedRate(this::pollSessionMetadata, 1, 1, TimeUnit.SECONDS)
 
     val byteArrayOutputStream = ByteArrayOutputStream()
     val codedOutputStream = CodedOutputStream.newInstance(byteArrayOutputStream)
@@ -149,16 +149,16 @@ internal class Client(
         logger.atInfo().atMostEvery(5, TimeUnit.SECONDS).log("%sNot in car and not sending data", logTag)
       }
     }
-//
-//    shouldSend = isThisClientInCar || shouldSend
-//    if (!wasSending && isThisClientInCar) {
-//      logger.atInfo().log("%sClient in car. Sending data.", logTag)
-//    }
+  }
+
+  private fun pollSessionMetadata() {
+    if (!shouldSend) return
+    if (!iRacingDataReader.hasNewMetadata()) return
+
+    sendSessionMetadata()
   }
 
   private fun sendSessionMetadata() {
-    if (!iRacingDataReader.hasNewMetadata()) return
-
     outputStreamObserver.onNext(
       sessionMetadataOrDataSnapshot {
         this.sessionMetadata = iRacingDataReader.metadata.toProto()
