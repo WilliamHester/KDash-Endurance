@@ -1,5 +1,7 @@
 package me.williamhester.kdash.web.service.telemetry
 
+import io.grpc.Status
+import io.grpc.StatusException
 import io.grpc.stub.StreamObserver
 import me.williamhester.kdash.enduranceweb.proto.ConnectRequest
 import me.williamhester.kdash.enduranceweb.proto.StaticSessionInfo
@@ -18,8 +20,11 @@ class GetStaticSessionInfoHandler(
   }
 
   override fun run() {
-    // TODO: Make this null safe
-    val metadata = Store.getMetadataForSession(sessionKey)!!
+    val metadata = Store.getMetadataForSession(sessionKey)
+    if (metadata == null) {
+      streamObserver.onError(StatusException(Status.NOT_FOUND))
+      return
+    }
 
     val carClasses =
       metadata["DriverInfo"]["Drivers"].listList

@@ -12,6 +12,7 @@ import me.williamhester.kdash.web.models.ScalarValue
 import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.models.TelemetryRange
+import me.williamhester.kdash.web.query.Processor
 import me.williamhester.kdash.web.query.Query
 import me.williamhester.kdash.web.store.Store
 import me.williamhester.kdash.web.store.StreamedResponseListener
@@ -24,9 +25,14 @@ internal class QueryTelemetryHandler(
   private val sessionKey = with(request.sessionIdentifier) {
     SessionKey(sessionId, subSessionId, simSessionNumber, carNumber)
   }
-  private val processors = request.queriesList.map(Query::parse)
+  private lateinit var processors: List<Processor>
 
   override fun run() {
+    val metadata = Store.getMetadataForSession(sessionKey)!!
+    val queryWithMetadata = Query(metadata)
+
+    processors = request.queriesList.map(queryWithMetadata::parse)
+
     val range = Store.getSessionTelemetryRange(sessionKey)
     sendSessionDataRanges(range)
     val (hz, startTime, endTime) = getQueryParameters(range)

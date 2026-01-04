@@ -5,6 +5,11 @@ data class DataPoint(
   val driverDistance: Float,
   val value: DataPointValue,
 ) {
+  val scalarValue: Double
+    get() = (value as ScalarValue).value
+  val listValue: ListValue
+    get() = value as ListValue
+
   constructor(
     sessionTime: Double,
     driverDistance: Float,
@@ -59,7 +64,9 @@ class ScalarValue(val value: Double) : DataPointValue {
   constructor(number: Number) : this(number.toDouble())
 }
 
-class ListValue(val value: List<Double>) : DataPointValue
+class ListValue(val value: List<Double>) : DataPointValue {
+  operator fun get(index: Int): Double = value[index]
+}
 
 object DataPointValues {
   operator fun Double.plus(dataPointValue: DataPointValue): DataPointValue {

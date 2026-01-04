@@ -191,6 +191,8 @@ message OtherCarStintEntry {
 
 message SessionInfo {
    repeated Driver drivers = 1;
+   float driver_car_est_lap_time = 2;
+   repeated CarClass car_classes = 3;
 }
 
 message StaticSessionInfo {

@@ -16,6 +16,7 @@
   import { timeOfDayFormatter, hourMinuteSecondFormatter, minuteSecondFormatter } from '$lib/formatters';
   import StintLogTable from "$lib/components/StintLogTable.svelte";
   import TeamSelectionDialog from "$lib/components/TeamSelectionDialog.svelte";
+  import GapsTableTable from "$lib/components/GapsTable.svelte";
 
   // The list of values we need for this dashboard
   const REQUIRED_QUERIES = [
@@ -31,6 +32,7 @@
     'PlayerCarDriverIncidentCount',
     'DECREASING_SUM(FuelLevel, 1)',
     'DECREASING_SUM(FuelLevel, 5) / 5',
+    'CarIdxDriverCarClassEstTime',
   ];
 
   $effect(() => {
@@ -118,6 +120,8 @@
     </div>
 
     <TeamSelectionDialog/>
+
+    <GapsTableTable />
   </div>
 </div>
 

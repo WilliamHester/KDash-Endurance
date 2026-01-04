@@ -19,4 +19,5 @@ message SyntheticFields {
   float required_repairs_remaining = 4;
   float optional_repairs_remaining = 5;
   float lap_fuel_used = 6;
+  repeated float car_idx_driver_car_class_est_time = 7;
 }

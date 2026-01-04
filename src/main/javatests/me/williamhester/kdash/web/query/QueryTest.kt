@@ -1,6 +1,7 @@
 package me.williamhester.kdash.web.query
 
 import com.google.common.truth.Truth.assertThat
+import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -9,14 +10,14 @@ import org.junit.runners.JUnit4
 class QueryTest {
   @Test
   fun parseToExpression_parsesVariable() {
-    val expression = Query.parseToExpression("TelemetryVariable").tokens
+    val expression = queryWithEmptyMetadata.parseToExpression("TelemetryVariable").tokens
 
     assertThat(expression).containsExactly(VariableToken("TelemetryVariable")).inOrder()
   }
 
   @Test
   fun parseToExpression_parsesFunction() {
-    val expression = Query.parseToExpression("LAP_DELTA(TelemetryVariable)").tokens
+    val expression = queryWithEmptyMetadata.parseToExpression("LAP_DELTA(TelemetryVariable)").tokens
 
     assertThat(expression)
       .containsExactly(
@@ -27,7 +28,7 @@ class QueryTest {
 
   @Test
   fun parseToExpression_parsesFunctionWithMultipleArguments() {
-    val expression = Query.parseToExpression("LAP_AVERAGE(TelemetryVariable, 5)").tokens
+    val expression = queryWithEmptyMetadata.parseToExpression("LAP_AVERAGE(TelemetryVariable, 5)").tokens
 
     assertThat(expression)
       .containsExactly(
@@ -38,7 +39,7 @@ class QueryTest {
 
   @Test
   fun parseToExpression_parsesSubtractionExpression() {
-    val expression = Query.parseToExpression("A - B").tokens
+    val expression = queryWithEmptyMetadata.parseToExpression("A - B").tokens
 
     assertThat(expression)
       .containsExactly(
@@ -49,7 +50,7 @@ class QueryTest {
 
   @Test
   fun parseToExpression_parsesComplexSubtractionExpression() {
-    val expression = Query.parseToExpression("A - LAP_AVERAGE(B, 1)").tokens
+    val expression = queryWithEmptyMetadata.parseToExpression("A - LAP_AVERAGE(B, 1)").tokens
 
 //    assertThat(expression).isEqualTo(
 //      SubtractionExpression(
@@ -63,7 +64,7 @@ class QueryTest {
 
   @Test
   fun parseToExpression_whatever() {
-    val expression = Query.parseToExpression("Function(1, Function2(Param2))").tokens
+    val expression = queryWithEmptyMetadata.parseToExpression("Function(1, Function2(Param2))").tokens
 
     assertThat(expression)
       .containsExactly(
@@ -79,7 +80,7 @@ class QueryTest {
 
   @Test
   fun parseToExpression_whatever2() {
-    val expression = Query.parseToExpression("1 - 2").tokens
+    val expression = queryWithEmptyMetadata.parseToExpression("1 - 2").tokens
 
     assertThat(expression)
       .containsExactly(
@@ -91,7 +92,7 @@ class QueryTest {
 
   @Test
   fun parseToExpression_whatever3() {
-    val expression = Query.parseToExpression("Function1(1 - 2, 3)").tokens
+    val expression = queryWithEmptyMetadata.parseToExpression("Function1(1 - 2, 3)").tokens
 
     assertThat(expression)
       .containsExactly(
@@ -113,7 +114,7 @@ class QueryTest {
 
   @Test
   fun parseToExpression_parsesOperators() {
-    val expression = Query.parseToExpression("1 + 2 - 3 * 4 / 5").tokens
+    val expression = queryWithEmptyMetadata.parseToExpression("1 + 2 - 3 * 4 / 5").tokens
 
     assertThat(expression)
       .containsExactly(
@@ -131,7 +132,7 @@ class QueryTest {
 
   @Test
   fun parseToExpression_parsesParentheses() {
-    val expression = Query.parseToExpression("1 + (2 - 3)").tokens
+    val expression = queryWithEmptyMetadata.parseToExpression("1 + (2 - 3)").tokens
 
     assertThat(expression)
       .containsExactly(
@@ -151,7 +152,7 @@ class QueryTest {
 
   @Test
   fun parseToExpression_parsesFunctions2() {
-    val expression = Query.parseToExpression("LAP_AVERAGE(LAP_DELTA(VarName), 1)").tokens
+    val expression = queryWithEmptyMetadata.parseToExpression("LAP_AVERAGE(LAP_DELTA(VarName), 1)").tokens
 
     assertThat(expression)
       .containsExactly(
@@ -167,7 +168,7 @@ class QueryTest {
 
   @Test
   fun parseToExpression_parsesFunctions_noSpaces() {
-    val expression = Query.parseToExpression("LAP_AVERAGE(LAP_DELTA(VarName),1)").tokens
+    val expression = queryWithEmptyMetadata.parseToExpression("LAP_AVERAGE(LAP_DELTA(VarName),1)").tokens
 
     assertThat(expression)
       .containsExactly(
@@ -183,7 +184,7 @@ class QueryTest {
 
   @Test
   fun parseToExpression_parsesFunctionsWith3Params() {
-    val expression = Query.parseToExpression("LAP_AVERAGE(LAP_DELTA(VarName), 1, 2)").tokens
+    val expression = queryWithEmptyMetadata.parseToExpression("LAP_AVERAGE(LAP_DELTA(VarName), 1, 2)").tokens
 
     assertThat(expression)
       .containsExactly(
@@ -196,5 +197,9 @@ class QueryTest {
           )
         )
       ).inOrder()
+  }
+  
+  companion object {
+    private val queryWithEmptyMetadata = Query(SessionMetadata.getDefaultInstance())
   }
 }

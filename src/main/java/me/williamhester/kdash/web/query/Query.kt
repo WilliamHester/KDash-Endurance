@@ -1,16 +1,14 @@
 package me.williamhester.kdash.web.query
 
+import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import me.williamhester.kdash.web.models.DataPoint
 import me.williamhester.kdash.web.models.DataPointValue
 import me.williamhester.kdash.web.models.ScalarValue
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 
-object Query {
-  private val FUNCTION_OR_VARIABLE_NAMES = (('a'..'z') + ('A'..'Z') + '_')
-  private val NUMBERS = (('0'..'9') + '.')
-  private val OPERATOR_CHARACTERS = setOf('+', '-', '*', '/')
-  private val CONTROL_CHARACTERS = setOf(' ', '(', ')', ',') + OPERATOR_CHARACTERS
-
+class Query(
+  private val metadata: SessionMetadata,
+) {
   fun parse(query: String): Processor {
     val expression = parseToExpression(query)
     return toProcessor(expression)
@@ -222,6 +220,13 @@ object Query {
 
   private fun validateArguments(functionName: String, expectedArgs: Int, actualArgs: Int) {
     if (actualArgs != expectedArgs) throw QueryParseException("$functionName expected $expectedArgs arguments. Received $actualArgs")
+  }
+
+  companion object {
+    private val FUNCTION_OR_VARIABLE_NAMES = (('a'..'z') + ('A'..'Z') + '_')
+    private val NUMBERS = (('0'..'9') + '.')
+    private val OPERATOR_CHARACTERS = setOf('+', '-', '*', '/')
+    private val CONTROL_CHARACTERS = setOf(' ', '(', ')', ',') + OPERATOR_CHARACTERS
   }
 }
 

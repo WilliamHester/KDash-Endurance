@@ -14,6 +14,22 @@ CREATE TABLE SessionCars (
   PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber)
 );
 
+CREATE OR REPLACE FUNCTION notify_on_session_metadata()
+RETURNS TRIGGER AS $$
+DECLARE
+channel_name TEXT;
+BEGIN
+  channel_name := format('sc_%s_%s_%s_%s', NEW.SessionID, NEW.SubSessionID, NEW.SimSessionNumber, NEW.CarNumber);
+  PERFORM pg_notify(channel_name);
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER session_metadata_insert_trigger
+    AFTER INSERT ON SessionCars
+    FOR EACH ROW
+    EXECUTE FUNCTION notify_on_session_metadata();
+
 CREATE TABLE TelemetryData (
   -- The SessionID variable from WeekendInfo in the session string
   SessionID int NOT NULL,

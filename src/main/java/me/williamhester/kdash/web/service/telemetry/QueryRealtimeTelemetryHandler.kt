@@ -9,19 +9,20 @@ import me.williamhester.kdash.enduranceweb.proto.queryResult
 import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.models.TelemetryRange
+import me.williamhester.kdash.web.query.Processor
 import me.williamhester.kdash.web.query.Query
 import me.williamhester.kdash.web.service.telemetry.Converters.toQueryResult
 import me.williamhester.kdash.web.store.Store
 import me.williamhester.kdash.web.store.StreamedResponseListener
 
 internal class QueryRealtimeTelemetryHandler(
-  request: QueryRealtimeTelemetryRequest,
+  private val request: QueryRealtimeTelemetryRequest,
   private val responseObserver: StreamObserver<QueryRealtimeTelemetryResponse>,
 ) : Runnable, StreamedResponseListener<TelemetryDataPoint> {
   private val sampleRateHz = request.sampleRateHz
   private val delta = 1.0 / sampleRateHz
   private var lastTime = 0.0
-  private val processors = request.queriesList.map(Query::parse)
+  private lateinit var processors: List<Processor>
   // Initialize a list of previous values to Double.NEGATIVE_INFINITY. This should ensure that the first values read
   // are different from the values that already existed in the list.
   private val previousValues = (1..request.queriesCount).map { queryResult {} }.toMutableList()
@@ -30,6 +31,11 @@ internal class QueryRealtimeTelemetryHandler(
   }
 
   override fun run() {
+    val metadata = Store.getMetadataForSession(sessionKey)!!
+    val queryWithMetadata = Query(metadata)
+
+    processors = request.queriesList.map(queryWithMetadata::parse)
+
     // The lap offset required to properly display the latest data.
     //
     // For example, if we are displaying a value that's the average of the last 5 laps, we need to process the previous

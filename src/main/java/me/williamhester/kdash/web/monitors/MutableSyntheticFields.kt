@@ -9,6 +9,7 @@ class MutableSyntheticFields(
   var requiredRepairsRemaining: Float = 0.0F,
   var optionalRepairsRemaining: Float = 0.0F,
   var lapFuelUsed: Float = 0.0F,
+  var carIdxDriverCarClassEstTime: List<Float> = listOf(),
 ) {
   fun toSyntheticFields() = syntheticFields {
     lastPitLap = this@MutableSyntheticFields.lastPitLap
@@ -17,5 +18,6 @@ class MutableSyntheticFields(
     requiredRepairsRemaining = this@MutableSyntheticFields.requiredRepairsRemaining
     optionalRepairsRemaining = this@MutableSyntheticFields.optionalRepairsRemaining
     lapFuelUsed = this@MutableSyntheticFields.lapFuelUsed
+    carIdxDriverCarClassEstTime += this@MutableSyntheticFields.carIdxDriverCarClassEstTime
   }
 }

@@ -135,7 +135,6 @@ object Store {
   }
 
   fun getMetadataForSession(sessionKey: SessionKey): SessionMetadata? {
-    logger.atInfo().log("Session key: %s", sessionKey)
     return executeQuery(
       """
         SELECT Metadata
@@ -153,6 +152,37 @@ object Store {
     ) {
       if (!it.next()) return@executeQuery null
       SessionMetadata.parseFrom(it.getBytes(1))
+    }
+  }
+
+  fun getMetadataForSession(sessionKey: SessionKey, responseListener: StreamedResponseListener<SessionMetadata?>) {
+    val channelName = with(sessionKey) { "sc_${sessionId}_${subSessionId}_${sessionNum}_${carNumber}" }
+    val blockingQueue = LinkedBlockingQueue<String>()
+
+    broadcastingListener.register(channelName, blockingQueue).use {
+      while (!Thread.interrupted()) {
+        executeQuery(
+          """
+            SELECT Metadata
+            FROM SessionCars
+            WHERE
+              SessionID=? 
+              AND SubSessionID=? 
+              AND SimSessionNumber=? 
+              AND CarNumber=?
+          """.trimIndent(),
+          sessionKey.sessionId,
+          sessionKey.subSessionId,
+          sessionKey.sessionNum,
+          sessionKey.carNumber,
+        ) {
+          val next = if (it.next()) SessionMetadata.parseFrom(it.getBytes(1)) else null
+          responseListener.onNext(next)
+        }
+
+        // Wait for the next update
+        blockingQueue.take()
+      }
     }
   }
 
@@ -262,7 +292,7 @@ object Store {
     // TODO: Fix a bug. If the "sessionNum" is -1, then this will fail to register the channel. Seems like "-" is an
     //  illegal character or needs to be escaped.
     val channelName = with(sessionKey) { "td_${sessionId}_${subSessionId}_${sessionNum}_${carNumber}" }
-    val blockingQueue = LinkedBlockingQueue<String?>()
+    val blockingQueue = LinkedBlockingQueue<String>()
 
     broadcastingListener.register(channelName, blockingQueue).use {
       val rateLimiter = RateLimiter.create(queryRateHz ?: 60.0)
@@ -350,7 +380,7 @@ object Store {
 
   fun getDriverLaps(sessionKey: SessionKey, responseListener: StreamedResponseListener<LapEntry>) {
     val channelName = with(sessionKey) { "dl_${sessionId}_${subSessionId}_${sessionNum}_${carNumber}" }
-    val blockingQueue = LinkedBlockingQueue<String?>()
+    val blockingQueue = LinkedBlockingQueue<String>()
 
     broadcastingListener.register(channelName, blockingQueue).use {
       var lastLapId = -1
@@ -393,7 +423,7 @@ object Store {
 
   fun getDriverStints(sessionKey: SessionKey, responseListener: StreamedResponseListener<StintEntry>) {
     val channelName = with(sessionKey) { "ds_${sessionId}_${subSessionId}_${sessionNum}_${carNumber}" }
-    val blockingQueue = LinkedBlockingQueue<String?>()
+    val blockingQueue = LinkedBlockingQueue<String>()
 
     broadcastingListener.register(channelName, blockingQueue).use {
       var lastStintId = -1
@@ -436,7 +466,7 @@ object Store {
 
   fun getOtherCarLaps(sessionKey: SessionKey, responseListener: StreamedResponseListener<OtherCarLapEntry>) {
     val channelName = with(sessionKey) { "ocl_${sessionId}_${subSessionId}_${sessionNum}_${carNumber}" }
-    val blockingQueue = LinkedBlockingQueue<String?>()
+    val blockingQueue = LinkedBlockingQueue<String>()
 
     broadcastingListener.register(channelName, blockingQueue).use {
       var lastOtherCarLapId = -1
@@ -480,7 +510,7 @@ object Store {
 
   fun getOtherCarStints(sessionKey: SessionKey, responseListener: StreamedResponseListener<OtherCarStintEntry>) {
     val channelName = with(sessionKey) { "ocs_${sessionId}_${subSessionId}_${sessionNum}_${carNumber}" }
-    val blockingQueue = LinkedBlockingQueue<String?>()
+    val blockingQueue = LinkedBlockingQueue<String>()
 
     broadcastingListener.register(channelName, blockingQueue).use {
       var lastOtherCarStintId = -1
@@ -615,14 +645,14 @@ object Store {
   }
 
   private class BroadcastingListener : PGNotificationListener {
-    private val registry = ConcurrentHashMap<String, CopyOnWriteArrayList<LinkedBlockingQueue<String?>>>()
+    private val registry = ConcurrentHashMap<String, CopyOnWriteArrayList<LinkedBlockingQueue<String>>>()
 
-    fun register(channelName: String, blockingQueue: LinkedBlockingQueue<String?>): AutoCloseable {
+    fun register(channelName: String, blockingQueue: LinkedBlockingQueue<String>): AutoCloseable {
       registry.compute(channelName) { key, oldValue ->
         val list =
           if (oldValue == null) {
             listen(channelName)
-            CopyOnWriteArrayList<LinkedBlockingQueue<String?>>()
+            CopyOnWriteArrayList<LinkedBlockingQueue<String>>()
           } else {
             oldValue
           }
@@ -646,7 +676,7 @@ object Store {
       if (channelName == null) return
 
       executor.submit {
-        registry[channelName]?.map { it.add(payload) }
+        registry[channelName]?.forEach { it.add(payload ?: "") }
       }
     }
   }

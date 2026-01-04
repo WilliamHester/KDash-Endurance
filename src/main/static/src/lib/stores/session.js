@@ -1,13 +1,14 @@
 import { writable, get, derived } from 'svelte/store';
 import { browser } from '$app/environment';
-import { LiveTelemetryServiceDefinition } from '$lib/grpc/live_telemetry_service';
+import {LiveTelemetryServiceDefinition, SessionInfo, StaticSessionInfo} from '$lib/grpc/live_telemetry_service';
 import { createChannel, createClient } from 'nice-grpc-web';
 
 const initialState = {
     connected: false,
     sessionKey: null,
     drivers: new Map(),
-    staticSessionInfo: null,
+    sessionInfo: SessionInfo.create(),
+    staticSessionInfo: StaticSessionInfo.create(),
     laps: [],
     stints: [],
     otherCarLaps: [],
@@ -15,16 +16,6 @@ const initialState = {
     telemetry: {},
     activeQueries: []
 };
-
-function upsert(list, item, matchFn) {
-    const idx = list.findIndex(matchFn);
-    if (idx !== -1) {
-        const copy = [...list];
-        copy[idx] = item;
-        return copy;
-    }
-    return [item, ...list];
-}
 
 function createSessionStore() {
     const { subscribe, set, update } = writable(initialState);
@@ -92,6 +83,7 @@ function createSessionStore() {
                 try {
                     for await (const response of client.monitorSessionInfo(request, { signal })) {
                         const driverMap = new Map();
+                        update(state => ({ ...state, sessionInfo: response }));
                         if (response.drivers) {
                             response.drivers.forEach(d => {
                                 driverMap.set(d.carId, d);
@@ -193,6 +185,7 @@ function createSessionStore() {
 
 export const sessionStore = createSessionStore();
 export const connected = derived(sessionStore, $s => $s.connected);
+export const sessionInfo = derived(sessionStore, $s => $s.sessionInfo);
 export const drivers = derived(sessionStore, $s => $s.drivers);
 export const driversList = derived(sessionStore, $s => Array.from($s.drivers.values()));
 export const staticSessionInfo = derived(sessionStore, $s => $s.staticSessionInfo);

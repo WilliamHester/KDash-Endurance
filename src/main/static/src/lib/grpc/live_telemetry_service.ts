@@ -199,6 +199,8 @@ export interface OtherCarStintEntry {
 
 export interface SessionInfo {
   drivers: Driver[];
+  driverCarEstLapTime: number;
+  carClasses: CarClass[];
 }
 
 export interface StaticSessionInfo {
@@ -2409,13 +2411,19 @@ export const OtherCarStintEntry: MessageFns<OtherCarStintEntry> = {
 };
 
 function createBaseSessionInfo(): SessionInfo {
-  return { drivers: [] };
+  return { drivers: [], driverCarEstLapTime: 0, carClasses: [] };
 }
 
 export const SessionInfo: MessageFns<SessionInfo> = {
   encode(message: SessionInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.drivers) {
       Driver.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.driverCarEstLapTime !== 0) {
+      writer.uint32(21).float(message.driverCarEstLapTime);
+    }
+    for (const v of message.carClasses) {
+      CarClass.encode(v!, writer.uint32(26).fork()).join();
     }
     return writer;
   },
@@ -2435,6 +2443,22 @@ export const SessionInfo: MessageFns<SessionInfo> = {
           message.drivers.push(Driver.decode(reader, reader.uint32()));
           continue;
         }
+        case 2: {
+          if (tag !== 21) {
+            break;
+          }
+
+          message.driverCarEstLapTime = reader.float();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.carClasses.push(CarClass.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2447,6 +2471,10 @@ export const SessionInfo: MessageFns<SessionInfo> = {
   fromJSON(object: any): SessionInfo {
     return {
       drivers: globalThis.Array.isArray(object?.drivers) ? object.drivers.map((e: any) => Driver.fromJSON(e)) : [],
+      driverCarEstLapTime: isSet(object.driverCarEstLapTime) ? globalThis.Number(object.driverCarEstLapTime) : 0,
+      carClasses: globalThis.Array.isArray(object?.carClasses)
+        ? object.carClasses.map((e: any) => CarClass.fromJSON(e))
+        : [],
     };
   },
 
@@ -2454,6 +2482,12 @@ export const SessionInfo: MessageFns<SessionInfo> = {
     const obj: any = {};
     if (message.drivers?.length) {
       obj.drivers = message.drivers.map((e) => Driver.toJSON(e));
+    }
+    if (message.driverCarEstLapTime !== 0) {
+      obj.driverCarEstLapTime = message.driverCarEstLapTime;
+    }
+    if (message.carClasses?.length) {
+      obj.carClasses = message.carClasses.map((e) => CarClass.toJSON(e));
     }
     return obj;
   },
@@ -2464,6 +2498,8 @@ export const SessionInfo: MessageFns<SessionInfo> = {
   fromPartial(object: DeepPartial<SessionInfo>): SessionInfo {
     const message = createBaseSessionInfo();
     message.drivers = object.drivers?.map((e) => Driver.fromPartial(e)) || [];
+    message.driverCarEstLapTime = object.driverCarEstLapTime ?? 0;
+    message.carClasses = object.carClasses?.map((e) => CarClass.fromPartial(e)) || [];
     return message;
   },
 };

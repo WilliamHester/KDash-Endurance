@@ -10,6 +10,7 @@ kt_jvm_library(
     deps = [
         "@maven//:io_grpc_grpc_protobuf",
         "//main/proto:live_telemetry_pusher_service_kt_proto",
+        "//main/java/me/williamhester/kdash/web/extensions",
         "//main/java/me/williamhester/kdash/web/models",
     ],
 )

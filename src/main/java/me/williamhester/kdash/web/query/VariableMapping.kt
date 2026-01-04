@@ -37,6 +37,9 @@ object VariableMapping {
       "PitOptRepairRemaining" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.optionalRepairsRemaining) }
       "PitReqRepairRemaining" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.requiredRepairsRemaining) }
       "LapFuelUsed" -> { tdp: TelemetryDataPoint -> ScalarValue(tdp.syntheticFields.lapFuelUsed) }
+      "CarIdxDriverCarClassEstTime" -> { tdp: TelemetryDataPoint ->
+        ListValue(tdp.syntheticFields.carIdxDriverCarClassEstTimeList.map(Float::toDouble))
+      }
       else -> throw VariableNotFoundException(fieldName)
     }
   }
