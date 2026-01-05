@@ -33,6 +33,7 @@
     'DECREASING_SUM(FuelLevel, 1)',
     'DECREASING_SUM(FuelLevel, 5) / 5',
     'CarIdxDriverCarClassEstTime',
+    'CarIdxClassPosition',
   ];
 
   $effect(() => {

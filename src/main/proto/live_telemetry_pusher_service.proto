@@ -49,10 +49,9 @@ extend google.protobuf.FieldOptions {
   optional string iracing_field = 50000;
 }
 
-// TODO: Name this something better.
 // This is the current data snapshot from a client. The server will describe this proto to the client, and the client
 // will hand pack it into an Any proto. The server is then free to deserialize it as a proper proto.
-// Next ID: 24;
+// Next ID: 25
 message DataSnapshot {
   int32 lap = 1 [(iracing_field) = "Lap"];
   float lap_dist_pct = 23 [(iracing_field) = "LapDistPct"];
@@ -73,6 +72,7 @@ message DataSnapshot {
   repeated int32 car_idx_lap_completed = 14 [(iracing_field) = "CarIdxLapCompleted"];
   repeated int32 car_idx_lap = 15 [(iracing_field) = "CarIdxLap"];
   repeated int32 car_idx_position = 16 [(iracing_field) = "CarIdxPosition"];
+  repeated int32 car_idx_class_position = 24 [(iracing_field) = "CarIdxClassPosition"];
   repeated bool car_idx_on_pit_road = 17 [(iracing_field) = "CarIdxOnPitRoad"];
   repeated float car_idx_lap_dist_pct = 18 [(iracing_field) = "CarIdxLapDistPct"];
   repeated float car_idx_est_time = 22 [(iracing_field) = "CarIdxEstTime"];
