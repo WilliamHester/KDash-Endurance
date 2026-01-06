@@ -1,6 +1,11 @@
 import { writable, get, derived } from 'svelte/store';
 import { browser } from '$app/environment';
-import {LiveTelemetryServiceDefinition, SessionInfo, StaticSessionInfo} from '$lib/grpc/live_telemetry_service';
+import {
+    LiveTelemetryServiceDefinition,
+    LookupTables,
+    SessionInfo,
+    StaticSessionInfo
+} from '$lib/grpc/live_telemetry_service';
 import { createChannel, createClient } from 'nice-grpc-web';
 
 const initialState = {
@@ -9,6 +14,7 @@ const initialState = {
     drivers: new Map(),
     sessionInfo: SessionInfo.create(),
     staticSessionInfo: StaticSessionInfo.create(),
+    lookupTables: LookupTables.create(),
     laps: [],
     stints: [],
     otherCarLaps: [],
@@ -82,13 +88,18 @@ function createSessionStore() {
             (async () => {
                 try {
                     for await (const response of client.monitorSessionInfo(request, { signal })) {
-                        const driverMap = new Map();
-                        update(state => ({ ...state, sessionInfo: response }));
-                        if (response.drivers) {
-                            response.drivers.forEach(d => {
-                                driverMap.set(d.carId, d);
-                            });
-                            update(state => ({ ...state, drivers: driverMap }));
+                        if (response.lookupTables) {
+                            console.log(response.lookupTables);
+                            update(state => ({ ...state, lookupTables: response.lookupTables }));
+                        } else {
+                            update(state => ({ ...state, sessionInfo: response }));
+                            if (response.drivers) {
+                                const driverMap = new Map();
+                                response.drivers.forEach(d => {
+                                    driverMap.set(d.carId, d);
+                                });
+                                update(state => ({ ...state, drivers: driverMap }));
+                            }
                         }
                     }
                 } catch (err) {

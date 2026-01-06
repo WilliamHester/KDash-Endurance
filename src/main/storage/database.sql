@@ -8,7 +8,7 @@ CREATE TABLE SessionCars (
   SimSessionNumber int NOT NULL,
   -- The number of the team
   CarNumber character varying (3) NOT NULL,
-  -- The current Session metadata proto, serialized to bytes.
+  -- The current Session metadata proto, serialized to bytes
   Metadata bytea NOT NULL,
 
   PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber)
@@ -20,15 +20,15 @@ DECLARE
 channel_name TEXT;
 BEGIN
   channel_name := format('sc_%s_%s_%s_%s', NEW.SessionID, NEW.SubSessionID, NEW.SimSessionNumber, NEW.CarNumber);
-  PERFORM pg_notify(channel_name);
+  PERFORM pg_notify(channel_name, '');
 RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER session_metadata_insert_trigger
-    AFTER INSERT ON SessionCars
-    FOR EACH ROW
-    EXECUTE FUNCTION notify_on_session_metadata();
+CREATE OR REPLACE TRIGGER session_metadata_insert_trigger
+AFTER INSERT OR UPDATE ON SessionCars
+FOR EACH ROW
+EXECUTE FUNCTION notify_on_session_metadata();
 
 CREATE TABLE TelemetryData (
   -- The SessionID variable from WeekendInfo in the session string
@@ -211,3 +211,34 @@ CREATE TRIGGER other_car_stint_insert_trigger
 AFTER INSERT ON OtherCarStints
 FOR EACH ROW
 EXECUTE FUNCTION notify_on_other_car_stint();
+
+CREATE TABLE LookupTables (
+    -- The SessionID variable from WeekendInfo in the session string
+    SessionID int NOT NULL,
+    -- The SubSessionID variable from WeekendInfo in the session string
+    SubSessionID int NOT NULL,
+    -- CurrentSessionNum from SessionInfo in the session string
+    SimSessionNumber int NOT NULL,
+    -- The number of the team
+    CarNumber character varying (3) NOT NULL,
+    -- The current LookupTables proto, serialized to bytes
+    LookupTables bytea NOT NULL,
+
+    PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber)
+);
+
+CREATE OR REPLACE FUNCTION notify_on_lookup_tables()
+RETURNS TRIGGER AS $$
+DECLARE
+channel_name TEXT;
+BEGIN
+  channel_name := format('lt_%s_%s_%s_%s', NEW.SessionID, NEW.SubSessionID, NEW.SimSessionNumber, NEW.CarNumber);
+  PERFORM pg_notify(channel_name, '');
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER lookup_tables_insert_trigger
+AFTER INSERT OR UPDATE ON LookupTables
+FOR EACH ROW
+EXECUTE FUNCTION notify_on_lookup_tables();

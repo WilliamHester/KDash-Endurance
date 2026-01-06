@@ -24,8 +24,9 @@ import me.williamhester.kdash.web.state.MetadataHolder
  * This uses buckets, spaced in 1 meter increments throughout the whole track length, giving us a pretty high
  * granularity.
  */
-internal class RelativeMonitor2(
+class RelativeMonitor2(
   metadataHolder: MetadataHolder,
+  private val mutableSyntheticFields: MutableSyntheticFields,
 ) {
   private val trackLengthMeters: Int by lazy {
     (metadataHolder.metadata["WeekendInfo"]["TrackLength"].value.substringBefore(" km").toDouble() * 1000).toInt()
@@ -33,7 +34,7 @@ internal class RelativeMonitor2(
   private val driverCarIdx: Int by lazy {
     metadataHolder.metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
   }
-  private val driverCarEstTimeAtDistance: FloatArray by lazy {
+  internal val driverCarEstTimeAtDistance: FloatArray by lazy {
     FloatArray(trackLengthMeters)
   }
   private var lastEstTime = 0.0F
@@ -67,6 +68,8 @@ internal class RelativeMonitor2(
     lastLapDistMeters = lapDistMeters
     lastLapDistPct = lapDistPct
     lastTotalDistancePct = totalDistancePct
+    mutableSyntheticFields.carIdxDriverCarClassEstTime =
+      dataSnapshot.carIdxLapDistPctList.map(this::getEstTimeForDistPct)
   }
 
   fun getEstTimeForDistPct(distPct: Float): Float {

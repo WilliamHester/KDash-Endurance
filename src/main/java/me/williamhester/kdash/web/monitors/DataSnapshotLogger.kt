@@ -19,7 +19,6 @@ class DataSnapshotLogger(
   private val trackLengthMeters: Double by lazy {
     metadataHolder.metadata["WeekendInfo"]["TrackLength"].value.substringBefore(" km").toDouble() * 1000
   }
-  private val relativeMonitor2 = RelativeMonitor2(metadataHolder)
 
   private var lastLapDistMeters = 0.0
   private var lastSessionTime = 0.0
@@ -28,8 +27,6 @@ class DataSnapshotLogger(
     val sessionTime = dataSnapshot.sessionTime
     val driverDistance = dataSnapshot.lap + dataSnapshot.getCarIdxLapDistPct(driverCarIdx)
 
-    relativeMonitor2.process(dataSnapshot)
-
     if (dataSnapshot.pitstopActive) {
       mutableSyntheticFields.optionalRepairsRemaining = dataSnapshot.pitOptRepairLeft
       mutableSyntheticFields.requiredRepairsRemaining = dataSnapshot.pitRepairLeft
@@ -37,8 +34,6 @@ class DataSnapshotLogger(
     estimateSpeed(dataSnapshot, sessionTime)
     mutableSyntheticFields.trackPrecip =
       metadataHolder.metadata["WeekendInfo"]["TrackPrecipitation"].value.substringBefore(" %", "0").toDouble()
-    mutableSyntheticFields.carIdxDriverCarClassEstTime =
-      dataSnapshot.carIdxLapDistPctList.map { relativeMonitor2.getEstTimeForDistPct(it) }
 
     sessionStore.insertTelemetryData(
       sessionTime,

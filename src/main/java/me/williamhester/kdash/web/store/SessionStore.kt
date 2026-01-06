@@ -1,6 +1,7 @@
 package me.williamhester.kdash.web.store
 
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
+import me.williamhester.kdash.enduranceweb.proto.LookupTables
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarStintEntry
 import me.williamhester.kdash.enduranceweb.proto.StintEntry
@@ -16,4 +17,5 @@ class SessionStore(private val sessionKey: SessionKey) {
   fun insertOtherCarLapEntry(lapEntry: OtherCarLapEntry) = Store.insertOtherCarLapEntry(sessionKey, lapEntry)
   fun insertOtherCarStintEntry(otherCarStintEntry: OtherCarStintEntry) =
     Store.insertOtherCarStintEntry(sessionKey, otherCarStintEntry)
+  fun insertCarIdxLookupTables(lookupTables: LookupTables) = Store.insertCarIdxLookupTables(sessionKey, lookupTables)
 }

@@ -8,6 +8,7 @@ import com.impossibl.postgres.api.jdbc.PGConnection
 import com.impossibl.postgres.api.jdbc.PGNotificationListener
 import com.impossibl.postgres.jdbc.PGSQLSimpleException
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
+import me.williamhester.kdash.enduranceweb.proto.LookupTables
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarStintEntry
 import me.williamhester.kdash.enduranceweb.proto.Session
@@ -98,6 +99,14 @@ object Store {
     )
   }
 
+  fun insertCarIdxLookupTables(sessionKey: SessionKey, lookupTables: LookupTables) {
+    insertOrUpdate(
+      Table.LOOKUP_TABLES,
+      *sessionKey.toQueryParams().map { Column(it.first, overwrite = false) to it.second }.toTypedArray(),
+      Column("LookupTables", overwrite = true) to lookupTables,
+    )
+  }
+
   fun listSessionCars(): List<Session> {
     return executeQuery(
       """
@@ -177,6 +186,37 @@ object Store {
           sessionKey.carNumber,
         ) {
           val next = if (it.next()) SessionMetadata.parseFrom(it.getBytes(1)) else null
+          responseListener.onNext(next)
+        }
+
+        // Wait for the next update
+        blockingQueue.take()
+      }
+    }
+  }
+
+  fun monitorLookupTables(sessionKey: SessionKey, responseListener: StreamedResponseListener<LookupTables?>) {
+    val channelName = with(sessionKey) { "lt_${sessionId}_${subSessionId}_${sessionNum}_${carNumber}" }
+    val blockingQueue = LinkedBlockingQueue<String>()
+
+    broadcastingListener.register(channelName, blockingQueue).use {
+      while (!Thread.interrupted()) {
+        executeQuery(
+          """
+            SELECT LookupTables
+            FROM LookupTables
+            WHERE
+              SessionID=? 
+              AND SubSessionID=? 
+              AND SimSessionNumber=? 
+              AND CarNumber=?
+          """.trimIndent(),
+          sessionKey.sessionId,
+          sessionKey.subSessionId,
+          sessionKey.sessionNum,
+          sessionKey.carNumber,
+        ) {
+          val next = if (it.next()) LookupTables.parseFrom(it.getBytes(1)) else null
           responseListener.onNext(next)
         }
 
@@ -642,6 +682,7 @@ object Store {
     DRIVER_STINTS("DriverStints"),
     OTHER_CAR_LAPS("OtherCarLaps"),
     OTHER_CAR_STINTS("OtherCarStints"),
+    LOOKUP_TABLES("LookupTables"),
   }
 
   private class BroadcastingListener : PGNotificationListener {

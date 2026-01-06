@@ -42,7 +42,9 @@ class LiveTelemetryService(
   }
 
   override fun monitorSessionInfo(request: ConnectRequest, responseObserver: StreamObserver<SessionInfo>) {
-    executeHandler("MonitorSessionInfo", responseObserver, MonitorSessionInfoHandler(request, responseObserver))
+    executeHandler(
+      "MonitorSessionInfo", responseObserver, MonitorSessionInfoHandler(request, responseObserver, executor)
+    )
   }
 
   override fun getStaticSessionInfo(request: ConnectRequest, responseObserver: StreamObserver<StaticSessionInfo>) {

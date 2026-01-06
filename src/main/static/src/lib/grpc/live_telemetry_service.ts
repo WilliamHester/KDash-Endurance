@@ -201,6 +201,7 @@ export interface SessionInfo {
   drivers: Driver[];
   driverCarEstLapTime: number;
   carClasses: CarClass[];
+  lookupTables: LookupTables | undefined;
 }
 
 export interface StaticSessionInfo {
@@ -242,6 +243,20 @@ export interface Session {
   simSessionNumber: number;
   carNumber: string;
   trackName: string;
+}
+
+export interface LookupTables {
+  carIdxEstTimeToDistance: { [key: number]: LookupTable };
+  driverCarDistanceMetersToEstTime: LookupTable | undefined;
+}
+
+export interface LookupTables_CarIdxEstTimeToDistanceEntry {
+  key: number;
+  value: LookupTable | undefined;
+}
+
+export interface LookupTable {
+  values: number[];
 }
 
 function createBaseConnectRequest(): ConnectRequest {
@@ -2411,7 +2426,7 @@ export const OtherCarStintEntry: MessageFns<OtherCarStintEntry> = {
 };
 
 function createBaseSessionInfo(): SessionInfo {
-  return { drivers: [], driverCarEstLapTime: 0, carClasses: [] };
+  return { drivers: [], driverCarEstLapTime: 0, carClasses: [], lookupTables: undefined };
 }
 
 export const SessionInfo: MessageFns<SessionInfo> = {
@@ -2424,6 +2439,9 @@ export const SessionInfo: MessageFns<SessionInfo> = {
     }
     for (const v of message.carClasses) {
       CarClass.encode(v!, writer.uint32(26).fork()).join();
+    }
+    if (message.lookupTables !== undefined) {
+      LookupTables.encode(message.lookupTables, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -2459,6 +2477,14 @@ export const SessionInfo: MessageFns<SessionInfo> = {
           message.carClasses.push(CarClass.decode(reader, reader.uint32()));
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.lookupTables = LookupTables.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2475,6 +2501,7 @@ export const SessionInfo: MessageFns<SessionInfo> = {
       carClasses: globalThis.Array.isArray(object?.carClasses)
         ? object.carClasses.map((e: any) => CarClass.fromJSON(e))
         : [],
+      lookupTables: isSet(object.lookupTables) ? LookupTables.fromJSON(object.lookupTables) : undefined,
     };
   },
 
@@ -2489,6 +2516,9 @@ export const SessionInfo: MessageFns<SessionInfo> = {
     if (message.carClasses?.length) {
       obj.carClasses = message.carClasses.map((e) => CarClass.toJSON(e));
     }
+    if (message.lookupTables !== undefined) {
+      obj.lookupTables = LookupTables.toJSON(message.lookupTables);
+    }
     return obj;
   },
 
@@ -2500,6 +2530,9 @@ export const SessionInfo: MessageFns<SessionInfo> = {
     message.drivers = object.drivers?.map((e) => Driver.fromPartial(e)) || [];
     message.driverCarEstLapTime = object.driverCarEstLapTime ?? 0;
     message.carClasses = object.carClasses?.map((e) => CarClass.fromPartial(e)) || [];
+    message.lookupTables = (object.lookupTables !== undefined && object.lookupTables !== null)
+      ? LookupTables.fromPartial(object.lookupTables)
+      : undefined;
     return message;
   },
 };
@@ -3142,6 +3175,260 @@ export const Session: MessageFns<Session> = {
     message.simSessionNumber = object.simSessionNumber ?? 0;
     message.carNumber = object.carNumber ?? "";
     message.trackName = object.trackName ?? "";
+    return message;
+  },
+};
+
+function createBaseLookupTables(): LookupTables {
+  return { carIdxEstTimeToDistance: {}, driverCarDistanceMetersToEstTime: undefined };
+}
+
+export const LookupTables: MessageFns<LookupTables> = {
+  encode(message: LookupTables, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    Object.entries(message.carIdxEstTimeToDistance).forEach(([key, value]) => {
+      LookupTables_CarIdxEstTimeToDistanceEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).join();
+    });
+    if (message.driverCarDistanceMetersToEstTime !== undefined) {
+      LookupTable.encode(message.driverCarDistanceMetersToEstTime, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): LookupTables {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseLookupTables();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          const entry1 = LookupTables_CarIdxEstTimeToDistanceEntry.decode(reader, reader.uint32());
+          if (entry1.value !== undefined) {
+            message.carIdxEstTimeToDistance[entry1.key] = entry1.value;
+          }
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.driverCarDistanceMetersToEstTime = LookupTable.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): LookupTables {
+    return {
+      carIdxEstTimeToDistance: isObject(object.carIdxEstTimeToDistance)
+        ? Object.entries(object.carIdxEstTimeToDistance).reduce<{ [key: number]: LookupTable }>((acc, [key, value]) => {
+          acc[globalThis.Number(key)] = LookupTable.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
+      driverCarDistanceMetersToEstTime: isSet(object.driverCarDistanceMetersToEstTime)
+        ? LookupTable.fromJSON(object.driverCarDistanceMetersToEstTime)
+        : undefined,
+    };
+  },
+
+  toJSON(message: LookupTables): unknown {
+    const obj: any = {};
+    if (message.carIdxEstTimeToDistance) {
+      const entries = Object.entries(message.carIdxEstTimeToDistance);
+      if (entries.length > 0) {
+        obj.carIdxEstTimeToDistance = {};
+        entries.forEach(([k, v]) => {
+          obj.carIdxEstTimeToDistance[k] = LookupTable.toJSON(v);
+        });
+      }
+    }
+    if (message.driverCarDistanceMetersToEstTime !== undefined) {
+      obj.driverCarDistanceMetersToEstTime = LookupTable.toJSON(message.driverCarDistanceMetersToEstTime);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<LookupTables>): LookupTables {
+    return LookupTables.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<LookupTables>): LookupTables {
+    const message = createBaseLookupTables();
+    message.carIdxEstTimeToDistance = Object.entries(object.carIdxEstTimeToDistance ?? {}).reduce<
+      { [key: number]: LookupTable }
+    >((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[globalThis.Number(key)] = LookupTable.fromPartial(value);
+      }
+      return acc;
+    }, {});
+    message.driverCarDistanceMetersToEstTime =
+      (object.driverCarDistanceMetersToEstTime !== undefined && object.driverCarDistanceMetersToEstTime !== null)
+        ? LookupTable.fromPartial(object.driverCarDistanceMetersToEstTime)
+        : undefined;
+    return message;
+  },
+};
+
+function createBaseLookupTables_CarIdxEstTimeToDistanceEntry(): LookupTables_CarIdxEstTimeToDistanceEntry {
+  return { key: 0, value: undefined };
+}
+
+export const LookupTables_CarIdxEstTimeToDistanceEntry: MessageFns<LookupTables_CarIdxEstTimeToDistanceEntry> = {
+  encode(message: LookupTables_CarIdxEstTimeToDistanceEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== 0) {
+      writer.uint32(8).int32(message.key);
+    }
+    if (message.value !== undefined) {
+      LookupTable.encode(message.value, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): LookupTables_CarIdxEstTimeToDistanceEntry {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseLookupTables_CarIdxEstTimeToDistanceEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.key = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = LookupTable.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): LookupTables_CarIdxEstTimeToDistanceEntry {
+    return {
+      key: isSet(object.key) ? globalThis.Number(object.key) : 0,
+      value: isSet(object.value) ? LookupTable.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: LookupTables_CarIdxEstTimeToDistanceEntry): unknown {
+    const obj: any = {};
+    if (message.key !== 0) {
+      obj.key = Math.round(message.key);
+    }
+    if (message.value !== undefined) {
+      obj.value = LookupTable.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<LookupTables_CarIdxEstTimeToDistanceEntry>): LookupTables_CarIdxEstTimeToDistanceEntry {
+    return LookupTables_CarIdxEstTimeToDistanceEntry.fromPartial(base ?? {});
+  },
+  fromPartial(
+    object: DeepPartial<LookupTables_CarIdxEstTimeToDistanceEntry>,
+  ): LookupTables_CarIdxEstTimeToDistanceEntry {
+    const message = createBaseLookupTables_CarIdxEstTimeToDistanceEntry();
+    message.key = object.key ?? 0;
+    message.value = (object.value !== undefined && object.value !== null)
+      ? LookupTable.fromPartial(object.value)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseLookupTable(): LookupTable {
+  return { values: [] };
+}
+
+export const LookupTable: MessageFns<LookupTable> = {
+  encode(message: LookupTable, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    writer.uint32(10).fork();
+    for (const v of message.values) {
+      writer.float(v);
+    }
+    writer.join();
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): LookupTable {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseLookupTable();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag === 13) {
+            message.values.push(reader.float());
+
+            continue;
+          }
+
+          if (tag === 10) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.values.push(reader.float());
+            }
+
+            continue;
+          }
+
+          break;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): LookupTable {
+    return {
+      values: globalThis.Array.isArray(object?.values) ? object.values.map((e: any) => globalThis.Number(e)) : [],
+    };
+  },
+
+  toJSON(message: LookupTable): unknown {
+    const obj: any = {};
+    if (message.values?.length) {
+      obj.values = message.values;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<LookupTable>): LookupTable {
+    return LookupTable.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<LookupTable>): LookupTable {
+    const message = createBaseLookupTable();
+    message.values = object.values?.map((e) => e) || [];
     return message;
   },
 };

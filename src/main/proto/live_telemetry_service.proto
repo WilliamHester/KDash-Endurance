@@ -193,6 +193,7 @@ message SessionInfo {
    repeated Driver drivers = 1;
    float driver_car_est_lap_time = 2;
    repeated CarClass car_classes = 3;
+   LookupTables lookup_tables = 4;
 }
 
 message StaticSessionInfo {
@@ -234,4 +235,13 @@ message Session {
    string car_number = 4;
 
    string track_name = 5;
+}
+
+message LookupTables {
+   map<int32, LookupTable> car_idx_est_time_to_distance = 1;
+   LookupTable driver_car_distance_meters_to_est_time = 2;
+}
+
+message LookupTable {
+   repeated float values = 1;
 }
