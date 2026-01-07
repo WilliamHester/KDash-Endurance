@@ -1,22 +1,27 @@
 <script>
   import {
     sessionStore,
+    sessionInfo,
+    staticSessionInfo,
     connected,
     drivers,
     driversList,
     laps,
     stints,
-    telemetry,
+    telemetry, lookupTables,
   } from '$lib/stores/session';
   import {
     selectedCars,
   } from "$lib/stores/drivers.svelte.js";
+  import options from '$lib/stores/options';
   import VariableBox from '$lib/components/VariableBox.svelte';
   import CarLapLog from '$lib/components/CarLapLog.svelte';
   import { timeOfDayFormatter, hourMinuteSecondFormatter, minuteSecondFormatter } from '$lib/formatters';
   import StintLogTable from "$lib/components/StintLogTable.svelte";
   import TeamSelectionDialog from "$lib/components/TeamSelectionDialog.svelte";
   import GapsTableTable from "$lib/components/GapsTable.svelte";
+
+  const DAYTONA_PIT_EXIT_LAP_DIST_PCT = 0.12898552;
 
   // The list of values we need for this dashboard
   const REQUIRED_QUERIES = [
@@ -34,6 +39,7 @@
     'DECREASING_SUM(FuelLevel, 5) / 5',
     'CarIdxDriverCarClassEstTime',
     'CarIdxClassPosition',
+    'CarIdxEstTime',
   ];
 
   $effect(() => {
@@ -55,6 +61,41 @@
   });
 
   const selectedDrivers = $derived($driversList.filter((driver) => selectedCars.has(driver.carId)));
+  const gaps = $derived($telemetry['CarIdxDriverCarClassEstTime']);
+
+  const carIdxEstTimesAfterDriverPits = $derived.by(() => {
+    const expectedStopTime = 40;
+    const stopAndGoSeconds =  $options.stopAndGoSeconds;
+    if (gaps === undefined) {
+      return [];
+    }
+    if ($lookupTables.driverCarDistanceMetersToEstTime.length === 0) {
+      return [];
+    }
+
+    const driverCurrentEstTime = gaps[$staticSessionInfo.driverCarIdx];
+    const driverMetersToEstTime = $lookupTables.driverCarDistanceMetersToEstTime;
+    const driverLapRemaining = $sessionInfo.driverCarEstLapTime - driverCurrentEstTime;
+    // TODO: interpolate instead of truncating only
+    const pitExitMeters = Math.trunc(DAYTONA_PIT_EXIT_LAP_DIST_PCT * $staticSessionInfo.lapLengthMeters);
+    const pitExitEstTime = driverMetersToEstTime.values[pitExitMeters];
+    const secondsToPitExitIfPitThisLap = driverLapRemaining + pitExitEstTime + expectedStopTime + stopAndGoSeconds;
+
+    const carIdxEstTimes = $telemetry['CarIdxEstTime'].map((est, idx) => {
+      const lookupTable = $lookupTables.carIdxEstTimeToDistance[idx];
+      if (!lookupTable) {
+        return 0;
+      }
+      const estDistanceAfterDriverPitStop =
+        (est + secondsToPitExitIfPitThisLap) % lookupTable.values[lookupTable.values.length - 1];
+      const estDistanceMetersAfterDriverPitStop = estDistanceAfterDriverPitStop * $staticSessionInfo.lapLengthMeters;
+      // TODO: interpolate instead of truncating only
+      return $lookupTables.driverCarDistanceMetersToEstTime.values[Math.trunc(estDistanceMetersAfterDriverPitStop)];
+    });
+    // The driver will be at the pit exit, not their predicted location if they were lapping normally.
+    carIdxEstTimes[$staticSessionInfo.driverCarIdx] = pitExitEstTime;
+    return carIdxEstTimes;
+  });
 </script>
 
 <div class="dashboard-container">
@@ -122,7 +163,8 @@
 
     <TeamSelectionDialog/>
 
-    <GapsTableTable />
+    <GapsTableTable {gaps} />
+    <GapsTableTable gaps={carIdxEstTimesAfterDriverPits} />
   </div>
 </div>
 

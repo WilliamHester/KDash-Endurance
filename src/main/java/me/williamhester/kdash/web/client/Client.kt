@@ -33,7 +33,7 @@ internal class Client(
 ) {
   private val logTag = if (clientName != null) "Client $clientName: " else ""
   private val latch = CountDownLatch(1)
-  private val rateLimiter = RateLimiter.create(60.0 * 10)
+  private val rateLimiter = RateLimiter.create(60.0 * 3)
   private lateinit var outputStreamObserver: StreamObserver<SessionMetadataOrDataSnapshot>
   private val sessionMetadataMonitorExecutor = Executors.newSingleThreadScheduledExecutor()
   private val dataReaderExecutor = Executors.newSingleThreadExecutor()

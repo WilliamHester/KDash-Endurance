@@ -41,6 +41,7 @@ class GetStaticSessionInfoHandler(
       staticSessionInfo {
         driverCarIdx = metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
         driverCarEstLapTime = metadata["DriverInfo"]["DriverCarEstLapTime"].value.toFloat()
+        lapLengthMeters = metadata["WeekendInfo"]["TrackLength"].value.substringBefore(" km").toFloat() * 1000
         isMulticlass = carClasses.size > 1
         this.carClasses += carClasses
         driverCarTankSize =

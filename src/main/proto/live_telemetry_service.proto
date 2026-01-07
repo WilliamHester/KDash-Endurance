@@ -199,6 +199,7 @@ message SessionInfo {
 message StaticSessionInfo {
    int32 driver_car_idx = 1;
    float driver_car_est_lap_time = 2;
+   float lap_length_meters = 9;
    bool is_multiclass = 3;
    repeated CarClass car_classes = 4;
    float driver_car_tank_size = 5;

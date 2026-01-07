@@ -207,6 +207,7 @@ export interface SessionInfo {
 export interface StaticSessionInfo {
   driverCarIdx: number;
   driverCarEstLapTime: number;
+  lapLengthMeters: number;
   isMulticlass: boolean;
   carClasses: CarClass[];
   driverCarTankSize: number;
@@ -2541,6 +2542,7 @@ function createBaseStaticSessionInfo(): StaticSessionInfo {
   return {
     driverCarIdx: 0,
     driverCarEstLapTime: 0,
+    lapLengthMeters: 0,
     isMulticlass: false,
     carClasses: [],
     driverCarTankSize: 0,
@@ -2557,6 +2559,9 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
     }
     if (message.driverCarEstLapTime !== 0) {
       writer.uint32(21).float(message.driverCarEstLapTime);
+    }
+    if (message.lapLengthMeters !== 0) {
+      writer.uint32(77).float(message.lapLengthMeters);
     }
     if (message.isMulticlass !== false) {
       writer.uint32(24).bool(message.isMulticlass);
@@ -2600,6 +2605,14 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
           }
 
           message.driverCarEstLapTime = reader.float();
+          continue;
+        }
+        case 9: {
+          if (tag !== 77) {
+            break;
+          }
+
+          message.lapLengthMeters = reader.float();
           continue;
         }
         case 3: {
@@ -2663,6 +2676,7 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
     return {
       driverCarIdx: isSet(object.driverCarIdx) ? globalThis.Number(object.driverCarIdx) : 0,
       driverCarEstLapTime: isSet(object.driverCarEstLapTime) ? globalThis.Number(object.driverCarEstLapTime) : 0,
+      lapLengthMeters: isSet(object.lapLengthMeters) ? globalThis.Number(object.lapLengthMeters) : 0,
       isMulticlass: isSet(object.isMulticlass) ? globalThis.Boolean(object.isMulticlass) : false,
       carClasses: globalThis.Array.isArray(object?.carClasses)
         ? object.carClasses.map((e: any) => CarClass.fromJSON(e))
@@ -2681,6 +2695,9 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
     }
     if (message.driverCarEstLapTime !== 0) {
       obj.driverCarEstLapTime = message.driverCarEstLapTime;
+    }
+    if (message.lapLengthMeters !== 0) {
+      obj.lapLengthMeters = message.lapLengthMeters;
     }
     if (message.isMulticlass !== false) {
       obj.isMulticlass = message.isMulticlass;
@@ -2710,6 +2727,7 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
     const message = createBaseStaticSessionInfo();
     message.driverCarIdx = object.driverCarIdx ?? 0;
     message.driverCarEstLapTime = object.driverCarEstLapTime ?? 0;
+    message.lapLengthMeters = object.lapLengthMeters ?? 0;
     message.isMulticlass = object.isMulticlass ?? false;
     message.carClasses = object.carClasses?.map((e) => CarClass.fromPartial(e)) || [];
     message.driverCarTankSize = object.driverCarTankSize ?? 0;

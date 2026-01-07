@@ -199,6 +199,7 @@ export const connected = derived(sessionStore, $s => $s.connected);
 export const sessionInfo = derived(sessionStore, $s => $s.sessionInfo);
 export const drivers = derived(sessionStore, $s => $s.drivers);
 export const driversList = derived(sessionStore, $s => Array.from($s.drivers.values()));
+export const lookupTables = derived(sessionStore, $s => $s.lookupTables);
 export const staticSessionInfo = derived(sessionStore, $s => $s.staticSessionInfo);
 export const telemetry = derived(sessionStore, $s => $s.telemetry);
 export const laps = derived(sessionStore, $s => $s.laps);

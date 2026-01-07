@@ -6,10 +6,14 @@
     telemetry,
   } from "$lib/stores/session.js";
 
+  let { gaps } = $props();
+
   const positions = $derived($telemetry['CarIdxClassPosition'] || []);
 
   const gapsList = $derived.by(() => {
-    const gaps = $telemetry['CarIdxDriverCarClassEstTime'] || [];
+    if (gaps === undefined) {
+      return [];
+    }
     const driverIdx = $staticSessionInfo.driverCarIdx;
     const driverGap = gaps[driverIdx];
 
@@ -64,7 +68,7 @@
     {#each gapsList as gap (gap[0])}
       <tr id={gap[0] === $staticSessionInfo.driverCarIdx ? 'driver-row' : ''}>
         {#if gap[1] === null}
-          <td colspan="4" style="height: 2rem;"></td>
+          <td colspan="4" style="visibility: hidden">placeholder</td>
         {:else}
           <td>
             { positions[gap[0]] }
@@ -73,10 +77,10 @@
             #{ $driversList[gap[0]].carNumber }
           </td>
           <td>
-            { ($driversList[gap[0]] || {driverName: 'unknown'}).driverName || 'unknown' }
+            { $driversList[gap[0]].driverName }
           </td>
           <td>
-            { gap[1].toFixed(2) }
+            { gap[1].toFixed(1) }
           </td>
         {/if}
       </tr>
