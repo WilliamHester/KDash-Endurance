@@ -1,31 +1,18 @@
 <script>
+  import DataBox from "$lib/components/DataBox.svelte";
+
   let { children, title } = $props();
 </script>
 
-<div class="variable-box-container">
-  <div class="variable-box-title">{title}</div>
+<DataBox {title}>
   <div class="variable-box-contents">
-    <span class="variable-text">
+    <span class="variable-text text-xl">
       {@render children?.()}
     </span>
   </div>
-</div>
+</DataBox>
 
 <style>
-  .variable-box-container {
-    width: fit-content;
-    border: #404040 1px solid;
-    display: inline-block; /* Aligns them in rows naturally */
-    vertical-align: top;
-  }
-
-  .variable-box-title {
-    background-color: #202020;
-    padding: 4px;
-    color: #888;
-    text-align: center;
-  }
-
   .variable-box-contents {
     display: flex;
     justify-content: center;
@@ -33,10 +20,8 @@
   }
 
   .variable-text {
-    font-size: 1.2rem;
     padding: 12px 24px;
     text-align: center;
     display: block;
-    font-family: Monospaced, sans-serif;
   }
 </style>

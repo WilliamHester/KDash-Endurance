@@ -1,5 +1,6 @@
 <script>
   import { formatNumberAsDuration, formatDriverName } from '$lib/formatters';
+  import DataBox from "$lib/components/DataBox.svelte";
 
   export let entries = []; // Array of StintEntry objects
 
@@ -9,56 +10,59 @@
     : 0;
 </script>
 
-<div class="table-container">
-    <table>
-        <thead>
-        <tr>
-            <th>Out Lap</th>
-            <th>In Lap</th>
-            <th>Driver</th>
-            <th>Total Time</th>
-            <th>Avg Lap</th>
-            <th>Fastest Lap</th>
-            <th>Track Temp</th>
-            <th>Incidents</th>
-        </tr>
-        </thead>
-        <tbody>
-        {#if entries.length === 0}
-            <tr>
-                <td colspan="8" class="empty">No completed stints yet.</td>
-            </tr>
-        {:else}
-            {#each entries as stint (stint.inLap)}
-                <tr>
-                    <td class="number">{stint.outLap}</td>
-                    <td class="number">{stint.inLap}</td>
-                    <td>{formatDriverName(stint.driverName)}</td>
+<DataBox title="Stints">
+  <div class="table-container">
+      <table>
+          <thead>
+          <tr>
+              <th>Out Lap</th>
+              <th>In Lap</th>
+              <th>Driver</th>
+              <th>Total Time</th>
+              <th>Avg Lap</th>
+              <th>Fastest Lap</th>
+              <th>Track Temp</th>
+              <th>Incidents</th>
+          </tr>
+          </thead>
+          <tbody>
+          {#if entries.length === 0}
+              <tr>
+                  <td colspan="8" class="empty">No completed stints yet.</td>
+              </tr>
+          {:else}
+              {#each entries as stint (stint.inLap)}
+                  <tr>
+                      <td class="number">{stint.outLap}</td>
+                      <td class="number">{stint.inLap}</td>
+                      <td>{formatDriverName(stint.driverName)}</td>
 
-                    <td class="number">
-                        {formatNumberAsDuration(stint.totalTime)}
-                    </td>
+                      <td class="number">
+                          {formatNumberAsDuration(stint.totalTime)}
+                      </td>
 
-                    <td class="number">
-                        {formatNumberAsDuration(stint.averageLapTime)}
-                    </td>
+                      <td class="number">
+                          {formatNumberAsDuration(stint.averageLapTime)}
+                      </td>
 
-                    <td class="number" class:purple={stint.fastestLapTime === overallFastestLap && stint.fastestLapTime > 0}>
-                        {formatNumberAsDuration(stint.fastestLapTime)}
-                    </td>
+                      <td class="number" class:purple={stint.fastestLapTime === overallFastestLap && stint.fastestLapTime > 0}>
+                          {formatNumberAsDuration(stint.fastestLapTime)}
+                      </td>
 
-                    <td class="number">{stint.trackTemp.toFixed(1)}°C</td>
-                    <td class="center">{stint.incidents}</td>
-                </tr>
-            {/each}
-        {/if}
-        </tbody>
-    </table>
-</div>
+                      <td class="number">{stint.trackTemp.toFixed(1)}°C</td>
+                      <td class="center">{stint.incidents}</td>
+                  </tr>
+              {/each}
+          {/if}
+          </tbody>
+      </table>
+  </div>
+  </DataBox>
 
 <style>
     .table-container {
-        overflow-x: auto;
+        flex: 1;
+        overflow: auto;
         width: 100%;
     }
 
@@ -70,15 +74,13 @@
     }
 
     th {
-        text-align: center;
-        padding: 8px;
-        border-bottom: 1px solid #444;
-        background-color: #1a1a1a;
-        color: #aaa;
-        font-weight: normal;
-        white-space: nowrap;
-        position: sticky;
-        top: 0;
+      padding: 6px 8px;
+      text-align: center;
+      border-bottom: 1px solid #333;
+      position: sticky;
+      top: 0;
+      background-color: #1a1a1a;
+      z-index: 1;
     }
 
     td {

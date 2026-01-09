@@ -11,6 +11,7 @@
   import {OtherCarLapEntry, OtherCarStintEntry} from "$lib/grpc/live_telemetry_service.ts";
   import { formatNumberAsDuration } from '$lib/formatters';
   import {calculateGaps} from "$lib/gaps.js";
+  import DataBox from "$lib/components/DataBox.svelte";
 
   const { driver } = $props();
 
@@ -53,29 +54,31 @@
   });
 </script>
 
-<VariableBox title={driver.teamName}>
-  <table class="w-full">
-    <tbody>
-      <tr>
-        <td class="text-left">Lap</td>
-        <td class="text-right">{ lastLap.lapNum }</td>
-      </tr>
-      <tr>
-        <td class="text-left">Gap</td>
-        <td class="text-right">{ gap.toFixed(1) }</td>
-      </tr>
-      <tr>
-        <td class="text-left">Last lap time</td>
-        <td class="text-right">{ formatNumberAsDuration(lastLap.lapTime) }</td>
-      </tr>
-      <tr>
-        <td class="text-left">Last pit out lap</td>
-        <td class="text-right">{ lastStint.outLap }</td>
-      </tr>
-<!--      <tr>-->
-<!--        <td class="text-left">Stint remaining laps</td>-->
-<!--        <td class="text-right">3</td>-->
-<!--      </tr>-->
-    </tbody>
-  </table>
-</VariableBox>
+<DataBox title={driver.teamName}>
+  <div class="px-4 py-1">
+    <table class="w-full text-sm">
+      <tbody class="border-separate border-spacing-x-2">
+        <tr>
+          <td class="text-left">Lap</td>
+          <td class="text-right">{ lastLap.lapNum }</td>
+        </tr>
+        <tr>
+          <td class="text-left">Gap</td>
+          <td class="text-right">{ gap.toFixed(1) }</td>
+        </tr>
+        <tr>
+          <td class="text-left">Last lap time</td>
+          <td class="text-right">{ formatNumberAsDuration(lastLap.lapTime) }</td>
+        </tr>
+        <tr>
+          <td class="text-left">Last pit out lap</td>
+          <td class="text-right">{ lastStint.outLap }</td>
+        </tr>
+    <!--      <tr>-->
+    <!--        <td class="text-left">Stint remaining laps</td>-->
+    <!--        <td class="text-right">3</td>-->
+    <!--      </tr>-->
+      </tbody>
+    </table>
+  </div>
+</DataBox>

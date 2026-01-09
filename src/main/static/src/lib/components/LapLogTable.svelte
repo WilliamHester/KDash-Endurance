@@ -30,7 +30,7 @@
         </thead>
         <tbody>
         {#each entries as entry (entry.lapNum)}
-            <tr>
+            <tr class="text-sm">
                 <td class="number">{entry.lapNum}</td>
                 <td class="center">{formatDriverName(entry.driverName)}</td>
                 <td class="number">{entry.position}</td>

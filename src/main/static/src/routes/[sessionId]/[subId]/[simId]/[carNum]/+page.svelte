@@ -147,12 +147,10 @@
 
   <div class="row logs-row">
     <div class="log-column">
-      <div class="header">Laps</div>
       <CarLapLog entries={$laps} />
     </div>
 
     <div class="log-column">
-      <div class="header">Stints</div>
       <StintLogTable entries={$stints} />
     </div>
 
@@ -189,19 +187,19 @@
   }
 
   .log-column {
-    border: 1px solid #404040;
+    /*border: 1px solid #404040;*/
     display: flex;
     flex-direction: column;
     min-width: 300px;
-    height: 500px;
+    height: 100%;
   }
 
-  .log-column .header {
-    background-color: #202020;
-    padding: 8px;
-    text-align: center;
-    font-weight: bold;
-    color: #ccc;
+  /* Target the DataBox component inside log-column to make it fill the height */
+  .log-column :global(.data-box-container) {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
   /* Sub-text smaller font for (Optional Repairs) etc */
