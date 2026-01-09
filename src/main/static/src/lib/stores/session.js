@@ -89,7 +89,6 @@ function createSessionStore() {
                 try {
                     for await (const response of client.monitorSessionInfo(request, { signal })) {
                         if (response.lookupTables) {
-                            console.log(response.lookupTables);
                             update(state => ({ ...state, lookupTables: response.lookupTables }));
                         } else {
                             update(state => ({ ...state, sessionInfo: response }));

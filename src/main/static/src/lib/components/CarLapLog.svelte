@@ -17,7 +17,7 @@
       <th>Gap</th>
     </tr>
   </thead>
-  <tbody>
+  <tbody style="overflow: scroll">
     {#each entries as entry (entry.lapNum)}
       <tr>
         <td class="number">{entry.lapNum}</td>
@@ -40,6 +40,7 @@
     border-spacing: 0;
     font-family: 'Roboto', sans-serif;
     width: 100%;
+    height: 100px;
   }
 
   th {

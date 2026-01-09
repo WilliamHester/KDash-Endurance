@@ -5,41 +5,21 @@
     staticSessionInfo,
     telemetry,
   } from "$lib/stores/session.js";
+  import { calculateGaps } from "$lib/gaps.js";
 
-  let { gaps } = $props();
+  let { estTimes } = $props();
 
   const positions = $derived($telemetry['CarIdxClassPosition'] || []);
 
   const gapsList = $derived.by(() => {
-    if (gaps === undefined) {
+    if (estTimes === undefined) {
       return [];
     }
     const driverIdx = $staticSessionInfo.driverCarIdx;
-    const driverGap = gaps[driverIdx];
-
-    if (driverGap == null) {
-      return [];
-    }
-
     const lapTime = $sessionInfo.driverCarEstLapTime;
-    const halfLapTime = lapTime / 2;
-    const numDrivers = $driversList.length;
-    const calculatedGaps = [];
 
-    for (let i = 0; i < numDrivers; i++) {
-      const gap = gaps[i];
-      if (gap == null) continue;
-
-      let diff = gap - driverGap;
-
-      if (diff > halfLapTime) {
-        diff -= lapTime;
-      } else if (diff < -halfLapTime) {
-        diff += lapTime;
-      }
-
-      calculatedGaps.push([i, diff]);
-    }
+    const calculatedGaps = calculateGaps(estTimes, $driversList, driverIdx, lapTime);
+    if (calculatedGaps.length === 0) return [];
 
     const sortedGaps = calculatedGaps.sort((a, b) => b[1] - a[1]);
     const driverRank = sortedGaps.findIndex((gap) => gap[0] === driverIdx);
@@ -74,7 +54,10 @@
             { positions[gap[0]] }
           </td>
           <td>
-            #{ $driversList[gap[0]].carNumber }
+            #{ $driversList[(() => {
+            console.log(gap[0]);
+            return gap[0];
+          })()].carNumber }
           </td>
           <td>
             { $driversList[gap[0]].driverName }

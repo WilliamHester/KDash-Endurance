@@ -1,0 +1,81 @@
+<script>
+  import VariableBox from "$lib/components/VariableBox.svelte";
+  import {
+    driversList,
+    otherCarLaps,
+    otherCarStints,
+    sessionInfo,
+    staticSessionInfo,
+    telemetry,
+  } from "$lib/stores/session.js";
+  import {OtherCarLapEntry, OtherCarStintEntry} from "$lib/grpc/live_telemetry_service.ts";
+  import { formatNumberAsDuration } from '$lib/formatters';
+  import {calculateGaps} from "$lib/gaps.js";
+
+  const { driver } = $props();
+
+  const lastLap = $derived.by(() => {
+    let lap = OtherCarLapEntry.create();
+    const driverLaps = $otherCarLaps.filter((lap) => lap.carId === driver.carId)
+    for (let i = 0; i < driverLaps.length; i++) {
+      if (driverLaps[i].lapNum > lap.lapNum) {
+        lap = driverLaps[i];
+      }
+    }
+    return lap;
+  });
+
+  const lastStint = $derived.by(() => {
+    let stint = OtherCarStintEntry.create();
+    const driverStints = $otherCarStints.filter((stint) => stint.carIdx === driver.carId);
+    for (let i = 0; i < driverStints.length; i++) {
+      // Use inLap here instead of outLap, because the first outLap will be 0 and the default will be 0
+      if (driverStints[i].inLap > stint.inLap) {
+        stint = driverStints[i];
+      }
+    }
+    return stint;
+  });
+
+  const gap = $derived.by(() => {
+    const distances = $telemetry['CarIdxDriverCarClassEstTime'];
+    console.log(distances);
+    const gaps =
+      calculateGaps(
+        $telemetry['CarIdxDriverCarClassEstTime'],
+        $driversList,
+        $staticSessionInfo.driverCarIdx,
+        $sessionInfo.driverCarEstLapTime);
+    if (gaps.length === 0) {
+      return 0;
+    }
+    return gaps.find((gap) => gap[0] === driver.carId)[1];
+  });
+</script>
+
+<VariableBox title={driver.teamName}>
+  <table class="w-full">
+    <tbody>
+      <tr>
+        <td class="text-left">Lap</td>
+        <td class="text-right">{ lastLap.lapNum }</td>
+      </tr>
+      <tr>
+        <td class="text-left">Gap</td>
+        <td class="text-right">{ gap.toFixed(1) }</td>
+      </tr>
+      <tr>
+        <td class="text-left">Last lap time</td>
+        <td class="text-right">{ formatNumberAsDuration(lastLap.lapTime) }</td>
+      </tr>
+      <tr>
+        <td class="text-left">Last pit out lap</td>
+        <td class="text-right">{ lastStint.outLap }</td>
+      </tr>
+<!--      <tr>-->
+<!--        <td class="text-left">Stint remaining laps</td>-->
+<!--        <td class="text-right">3</td>-->
+<!--      </tr>-->
+    </tbody>
+  </table>
+</VariableBox>

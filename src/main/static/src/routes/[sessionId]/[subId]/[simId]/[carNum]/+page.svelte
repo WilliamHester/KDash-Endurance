@@ -7,6 +7,7 @@
     drivers,
     driversList,
     laps,
+    otherCarLaps,
     stints,
     telemetry, lookupTables,
   } from '$lib/stores/session';
@@ -20,6 +21,7 @@
   import StintLogTable from "$lib/components/StintLogTable.svelte";
   import TeamSelectionDialog from "$lib/components/TeamSelectionDialog.svelte";
   import GapsTableTable from "$lib/components/GapsTable.svelte";
+  import DriverDataBox from "$lib/components/DriverDataBox.svelte";
 
   const DAYTONA_PIT_EXIT_LAP_DIST_PCT = 0.12898552;
 
@@ -154,17 +156,16 @@
       <StintLogTable entries={$stints} />
     </div>
 
-    <div class="log-column">
-      <div class="header">Other Laps</div>
-      <div class="placeholder">
-        {$drivers.size} Drivers Loaded
-      </div>
-    </div>
-
     <TeamSelectionDialog/>
 
-    <GapsTableTable {gaps} />
-    <GapsTableTable gaps={carIdxEstTimesAfterDriverPits} />
+    <GapsTableTable estTimes={gaps} />
+    <GapsTableTable estTimes={carIdxEstTimesAfterDriverPits} />
+  </div>
+
+  <div class="row">
+    {#each selectedDrivers as selectedDriver}
+      <DriverDataBox driver={selectedDriver}/>
+    {/each}
   </div>
 </div>
 
@@ -192,6 +193,7 @@
     display: flex;
     flex-direction: column;
     min-width: 300px;
+    height: 500px;
   }
 
   .log-column .header {
@@ -207,10 +209,5 @@
     font-size: 0.6em;
     color: #888;
     margin-left: 4px;
-  }
-  
-  .placeholder {
-    padding: 10px; 
-    color: #666;
   }
 </style>
