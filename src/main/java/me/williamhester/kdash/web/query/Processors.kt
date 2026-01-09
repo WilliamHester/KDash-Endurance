@@ -227,13 +227,20 @@ private fun interpolateDistance(targetDistance: Float, dataPoint1: DataPoint, da
 }
 
 internal class VariableProcessor(variableName: String): Processor {
+  private val isCarIdxField = variableName.contains("CarIdx")
   private val getter = VariableMapping.getGetter(variableName)
 
   override val requiredOffset: Float = 0.0F
 
+  private var lastValue: DataPoint? = null
+
   override fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint {
+    if (!isCarIdxField && !telemetryDataPoint.dataSnapshot.isOnTrack && lastValue != null) {
+      return lastValue!!
+    }
     val fieldValue = getter(telemetryDataPoint)
-    return DataPoint(telemetryDataPoint.sessionTime, telemetryDataPoint.driverDistance, fieldValue)
+    lastValue = DataPoint(telemetryDataPoint.sessionTime, telemetryDataPoint.driverDistance, fieldValue)
+    return lastValue!!
   }
 }
 
