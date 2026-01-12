@@ -4,10 +4,8 @@
     sessionInfo,
     staticSessionInfo,
     connected,
-    drivers,
     driversList,
     laps,
-    otherCarLaps,
     stints,
     telemetry, lookupTables,
   } from '$lib/stores/session';
@@ -52,7 +50,7 @@
 
   let fuelLevel = $derived($telemetry['FuelLevel'] || 0);
   let lapFuel = $derived($telemetry['DECREASING_SUM(FuelLevel, 1)'] || 0);
-  let avg5LapFuel = $derived($telemetry['DECREASING_SUM(FuelLevel, 5)'] || 0);
+  let avg5LapFuel = $derived($telemetry['DECREASING_SUM(FuelLevel, 5) / 5'] || 0);
 
   // Logic: (Fuel - 1) / Ceil( (Fuel - 1) / LapFuel )
   let fuelTargetPlus1 = $derived.by(() => {
@@ -63,19 +61,19 @@
   });
 
   const selectedDrivers = $derived($driversList.filter((driver) => selectedCars.has(driver.carId)));
-  const gaps = $derived($telemetry['CarIdxDriverCarClassEstTime']);
+  const carIdxEstTimeToPositionForDriverCarClass = $derived($telemetry['CarIdxDriverCarClassEstTime']);
 
   const carIdxEstTimesAfterDriverPits = $derived.by(() => {
     const expectedStopTime = 40;
     const stopAndGoSeconds =  $options.stopAndGoSeconds;
-    if (gaps === undefined) {
+    if (carIdxEstTimeToPositionForDriverCarClass === undefined) {
       return [];
     }
     if ($lookupTables.driverCarDistanceMetersToEstTime.length === 0) {
       return [];
     }
 
-    const driverCurrentEstTime = gaps[$staticSessionInfo.driverCarIdx];
+    const driverCurrentEstTime = carIdxEstTimeToPositionForDriverCarClass[$staticSessionInfo.driverCarIdx];
     const driverMetersToEstTime = $lookupTables.driverCarDistanceMetersToEstTime;
     const driverLapRemaining = $sessionInfo.driverCarEstLapTime - driverCurrentEstTime;
     // TODO: interpolate instead of truncating only
@@ -156,7 +154,7 @@
 
     <TeamSelectionDialog/>
 
-    <GapsTableTable estTimes={gaps} />
+    <GapsTableTable estTimes={carIdxEstTimeToPositionForDriverCarClass} />
     <GapsTableTable estTimes={carIdxEstTimesAfterDriverPits} />
   </div>
 

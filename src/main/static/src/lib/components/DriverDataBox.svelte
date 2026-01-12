@@ -54,7 +54,7 @@
   });
 </script>
 
-<DataBox title={driver.teamName}>
+<DataBox title={`#${driver.carNumber} ${driver.teamName}`}>
   <div class="px-4 py-1">
     <table class="w-full text-sm">
       <tbody class="border-separate border-spacing-x-2">
@@ -72,7 +72,7 @@
         </tr>
         <tr>
           <td class="text-left">Last pit out lap</td>
-          <td class="text-right">{ lastStint.outLap }</td>
+          <td class="text-right">{ lastStint.inLap + 1 }</td>
         </tr>
     <!--      <tr>-->
     <!--        <td class="text-left">Stint remaining laps</td>-->
