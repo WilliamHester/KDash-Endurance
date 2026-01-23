@@ -1,10 +1,7 @@
-package me.williamhester.kdash.web.query
+package me.williamhester.kdash.web.service.telemetry.query
 
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.LiveTelemetryPusherServiceOuterClass
-import me.williamhester.kdash.web.models.DataPointValue
-import me.williamhester.kdash.web.models.ListValue
-import me.williamhester.kdash.web.models.ScalarValue
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 
 object VariableMapping {

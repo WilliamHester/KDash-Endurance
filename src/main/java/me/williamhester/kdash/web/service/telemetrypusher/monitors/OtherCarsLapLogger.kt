@@ -1,11 +1,11 @@
-package me.williamhester.kdash.web.monitors
+package me.williamhester.kdash.web.service.telemetrypusher.monitors
 
 import com.google.common.flogger.FluentLogger
 import me.williamhester.kdash.api.TrackSurface
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.web.extensions.get
 import me.williamhester.kdash.web.extensions.getCarIdx
-import me.williamhester.kdash.web.state.MetadataHolder
+import me.williamhester.kdash.web.service.telemetrypusher.state.MetadataHolder
 import me.williamhester.kdash.web.store.SessionStore
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit

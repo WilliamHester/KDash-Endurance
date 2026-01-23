@@ -1,4 +1,4 @@
-package me.williamhester.kdash.web.state
+package me.williamhester.kdash.web.service.telemetrypusher.state
 
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 

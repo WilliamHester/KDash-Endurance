@@ -1,10 +1,10 @@
-package me.williamhester.kdash.web.monitors
+package me.williamhester.kdash.web.service.telemetrypusher.monitors
 
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.lookupTable
 import me.williamhester.kdash.enduranceweb.proto.lookupTables
 import me.williamhester.kdash.web.extensions.get
-import me.williamhester.kdash.web.state.MetadataHolder
+import me.williamhester.kdash.web.service.telemetrypusher.state.MetadataHolder
 import me.williamhester.kdash.web.store.SessionStore
 import kotlin.math.max
 

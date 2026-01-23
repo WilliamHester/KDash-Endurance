@@ -1,13 +1,10 @@
-package me.williamhester.kdash.web.query
+package me.williamhester.kdash.web.service.telemetry.query
 
-import me.williamhester.kdash.web.models.DataPoint
-import me.williamhester.kdash.web.models.DataPointValue
-import me.williamhester.kdash.web.models.DataPointValues.times
-import me.williamhester.kdash.web.models.ListValue
-import me.williamhester.kdash.web.models.ScalarValue
+import me.williamhester.kdash.web.service.telemetry.query.DataPointValues.times
 import me.williamhester.kdash.web.models.TelemetryDataPoint
-import me.williamhester.kdash.web.query.DecreasingSumProcessor.MonotonicRange.RangeType.DECREASING
-import me.williamhester.kdash.web.query.DecreasingSumProcessor.MonotonicRange.RangeType.INCREASING
+import me.williamhester.kdash.web.service.telemetry.query.DecreasingSumProcessor.MonotonicRange.RangeType.DECREASING
+import me.williamhester.kdash.web.service.telemetry.query.DecreasingSumProcessor.MonotonicRange.RangeType.INCREASING
+import kotlin.collections.iterator
 import kotlin.math.ceil
 
 sealed interface Processor {

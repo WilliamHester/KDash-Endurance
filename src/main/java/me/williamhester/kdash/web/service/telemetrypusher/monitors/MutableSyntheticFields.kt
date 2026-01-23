@@ -1,4 +1,4 @@
-package me.williamhester.kdash.web.monitors
+package me.williamhester.kdash.web.service.telemetrypusher.monitors
 
 import me.williamhester.kdash.enduranceweb.proto.syntheticFields
 

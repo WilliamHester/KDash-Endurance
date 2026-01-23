@@ -3,13 +3,13 @@ package me.williamhester.kdash.web.service.telemetrypusher
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import me.williamhester.kdash.web.models.SessionKey
-import me.williamhester.kdash.web.monitors.DataSnapshotLogger
-import me.williamhester.kdash.web.monitors.DriverCarLapLogger
-import me.williamhester.kdash.web.monitors.MutableSyntheticFields
-import me.williamhester.kdash.web.monitors.OtherCarsLapLogger
-import me.williamhester.kdash.web.monitors.RelativeMonitor
-import me.williamhester.kdash.web.monitors.RelativeMonitor2
-import me.williamhester.kdash.web.state.MetadataHolder
+import me.williamhester.kdash.web.service.telemetrypusher.monitors.DataSnapshotLogger
+import me.williamhester.kdash.web.service.telemetrypusher.monitors.DriverCarLapLogger
+import me.williamhester.kdash.web.service.telemetrypusher.monitors.MutableSyntheticFields
+import me.williamhester.kdash.web.service.telemetrypusher.monitors.OtherCarsLapLogger
+import me.williamhester.kdash.web.service.telemetrypusher.monitors.RelativeMonitor
+import me.williamhester.kdash.web.service.telemetrypusher.monitors.RelativeMonitor2
+import me.williamhester.kdash.web.service.telemetrypusher.state.MetadataHolder
 import me.williamhester.kdash.web.store.SessionStore
 import me.williamhester.kdash.web.store.Store
 

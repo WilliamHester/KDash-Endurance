@@ -1,9 +1,6 @@
-package me.williamhester.kdash.web.query
+package me.williamhester.kdash.web.service.telemetry.query
 
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
-import me.williamhester.kdash.web.models.DataPoint
-import me.williamhester.kdash.web.models.DataPointValue
-import me.williamhester.kdash.web.models.ScalarValue
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 
 class Query(

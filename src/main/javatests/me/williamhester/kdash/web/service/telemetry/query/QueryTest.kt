@@ -1,4 +1,4 @@
-package me.williamhester.kdash.web.query
+package me.williamhester.kdash.web.service.telemetry.query
 
 import com.google.common.truth.Truth.assertThat
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
@@ -32,7 +32,10 @@ class QueryTest {
 
     assertThat(expression)
       .containsExactly(
-        FunctionToken("LAP_AVERAGE", listOf(Expression(listOf(VariableToken("TelemetryVariable"))), Expression(listOf(NumberToken(5)))))
+        FunctionToken(
+          "LAP_AVERAGE",
+          listOf(Expression(listOf(VariableToken("TelemetryVariable"))), Expression(listOf(NumberToken(5))))
+        )
       )
       .inOrder()
   }

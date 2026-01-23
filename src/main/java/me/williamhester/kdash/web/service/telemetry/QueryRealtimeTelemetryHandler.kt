@@ -9,8 +9,8 @@ import me.williamhester.kdash.enduranceweb.proto.queryResult
 import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.models.TelemetryRange
-import me.williamhester.kdash.web.query.Processor
-import me.williamhester.kdash.web.query.Query
+import me.williamhester.kdash.web.service.telemetry.query.Processor
+import me.williamhester.kdash.web.service.telemetry.query.Query
 import me.williamhester.kdash.web.service.telemetry.Converters.toQueryResult
 import me.williamhester.kdash.web.store.Store
 import me.williamhester.kdash.web.store.StreamedResponseListener

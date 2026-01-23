@@ -1,4 +1,4 @@
-package me.williamhester.kdash.web.models
+package me.williamhester.kdash.web.service.telemetry.query
 
 data class DataPoint(
   val sessionTime: Double,

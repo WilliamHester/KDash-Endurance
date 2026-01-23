@@ -1,10 +1,8 @@
-package me.williamhester.kdash.web.query
+package me.williamhester.kdash.web.service.telemetry.query
 
 import com.google.common.truth.Truth.assertThat
 import me.williamhester.kdash.enduranceweb.proto.dataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.syntheticFields
-import me.williamhester.kdash.web.models.DataPoint
-import me.williamhester.kdash.web.models.ScalarValue
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import org.junit.Test
 import org.junit.runner.RunWith

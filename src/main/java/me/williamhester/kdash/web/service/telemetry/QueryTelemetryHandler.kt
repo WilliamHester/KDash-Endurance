@@ -8,12 +8,12 @@ import me.williamhester.kdash.enduranceweb.proto.dataRange
 import me.williamhester.kdash.enduranceweb.proto.dataRanges
 import me.williamhester.kdash.enduranceweb.proto.queryTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.telemetryData
-import me.williamhester.kdash.web.models.ScalarValue
+import me.williamhester.kdash.web.service.telemetry.query.ScalarValue
 import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.models.TelemetryRange
-import me.williamhester.kdash.web.query.Processor
-import me.williamhester.kdash.web.query.Query
+import me.williamhester.kdash.web.service.telemetry.query.Processor
+import me.williamhester.kdash.web.service.telemetry.query.Query
 import me.williamhester.kdash.web.store.Store
 import me.williamhester.kdash.web.store.StreamedResponseListener
 import java.time.Duration

@@ -13,6 +13,6 @@ kt_jvm_library(
         "//main/java/me/williamhester/kdash/web/common",
         "//main/java/me/williamhester/kdash/web/extensions",
         "//main/java/me/williamhester/kdash/web/models",
-        "//main/java/me/williamhester/kdash/web/state",
+        "//main/java/me/williamhester/kdash/web/service/telemetrypusher/state:state",
     ],
 )
