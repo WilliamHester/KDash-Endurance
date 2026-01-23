@@ -49,6 +49,7 @@ class DriverCarLapLogger(
   private val stintLaps = mutableListOf<LogEntry>()
 
   fun process(dataSnapshot: DataSnapshot) {
+    if (!dataSnapshot.isOnTrack) return
     if (driverCarIdx == -1) {
       driverCarIdx = metadataHolder.metadata["DriverInfo"]["DriverCarIdx"].value.toInt()
       stintStartTime = dataSnapshot.sessionTime
