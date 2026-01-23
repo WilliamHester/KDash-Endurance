@@ -22,7 +22,5 @@ export function calculateGaps(distances, driversList, driverIdx, lapTime) {
     calculatedGaps.push([i, diff]);
   }
 
-  console.log(calculatedGaps);
-
   return calculatedGaps;
 }

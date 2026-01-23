@@ -12,8 +12,10 @@ internal fun SessionMetadata.toSessionKey(): SessionKey {
   val driverCarIdx = this["DriverInfo"]["DriverCarIdx"].value.toInt()
   // DriverInfo:Drivers:idx:CarNumber and ...:CarNumberRaw both exist. However, CarNumberRaw is sometimes over 1000
   // and it's not clear why. Removing the quotes from CarNumber seems to more accurately get what's displayed.
+  val drivers = this["DriverInfo"]["Drivers"].listList
+  val driverCar = drivers.first { it["CarIdx"].value.toInt() == driverCarIdx }
   val carNumber =
-    this["DriverInfo"]["Drivers"][driverCarIdx]["CarNumber"]
+    driverCar["CarNumber"]
       .value
       .substringAfter('"')
       .substringBefore('"')

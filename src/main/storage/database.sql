@@ -238,7 +238,7 @@ RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER lookup_tables_insert_trigger
+CREATE TRIGGER lookup_tables_insert_trigger
 AFTER INSERT OR UPDATE ON LookupTables
 FOR EACH ROW
 EXECUTE FUNCTION notify_on_lookup_tables();

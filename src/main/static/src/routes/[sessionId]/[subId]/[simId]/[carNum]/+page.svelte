@@ -23,23 +23,35 @@
 
   const DAYTONA_PIT_EXIT_LAP_DIST_PCT = 0.12898552;
 
+  const last2FuelUsageQuery = 'DECREASING_SUM(FuelLevel, 2) / 2';
+  const last5FuelUsageQuery = 'DECREASING_SUM(FuelLevel, 5) / 5';
+  const fuelLevelQuery = 'FuelLevel';
+  const lapFuelUsedQuery = 'LapFuelUsed';
+  const stintLengthQuery = 'Lap + (LapFuelUsed / (DECREASING_SUM(FuelLevel, 2) / 2)) - LastPitLap';
+  const lapsRemainingQuery = 'SessionTimeRemain / ((0 - 1) * LAP_DELTA(SessionTime))';
+
   // The list of values we need for this dashboard
   const REQUIRED_QUERIES = [
     'SessionTimeOfDay',
     'SessionTimeRemain',
     'Lap',
     'TrackTempCrew',
-    'FuelLevel',
+    fuelLevelQuery,
+    lapFuelUsedQuery,
     'TrackPrecip',
     'PitReqRepairRemaining',
     'PitOptRepairRemaining',
     'PlayerCarTeamIncidentCount',
     'PlayerCarDriverIncidentCount',
+    'PlayerCarClassPosition',
     'DECREASING_SUM(FuelLevel, 1)',
-    'DECREASING_SUM(FuelLevel, 5) / 5',
+    last2FuelUsageQuery,
+    last5FuelUsageQuery,
     'CarIdxDriverCarClassEstTime',
     'CarIdxClassPosition',
     'CarIdxEstTime',
+    stintLengthQuery,
+    lapsRemainingQuery,
   ];
 
   $effect(() => {
@@ -48,53 +60,72 @@
     }
   })
 
-  let fuelLevel = $derived($telemetry['FuelLevel'] || 0);
-  let lapFuel = $derived($telemetry['DECREASING_SUM(FuelLevel, 1)'] || 0);
-  let avg5LapFuel = $derived($telemetry['DECREASING_SUM(FuelLevel, 5) / 5'] || 0);
-
-  // Logic: (Fuel - 1) / Ceil( (Fuel - 1) / LapFuel )
-  let fuelTargetPlus1 = $derived.by(() => {
-      if (lapFuel === 0) return 0;
-      const fuelMinus1 = fuelLevel - 1;
-      const lapsRemainingCurrentFuel = fuelMinus1 / lapFuel;
-      return fuelMinus1 / Math.ceil(lapsRemainingCurrentFuel);
-  });
-
   const selectedDrivers = $derived($driversList.filter((driver) => selectedCars.has(driver.carId)));
+  // TODO: Re-enable this after the race.
   const carIdxEstTimeToPositionForDriverCarClass = $derived($telemetry['CarIdxDriverCarClassEstTime']);
 
-  const carIdxEstTimesAfterDriverPits = $derived.by(() => {
-    const expectedStopTime = 40;
-    const stopAndGoSeconds =  $options.stopAndGoSeconds;
-    if (carIdxEstTimeToPositionForDriverCarClass === undefined) {
-      return [];
-    }
-    if ($lookupTables.driverCarDistanceMetersToEstTime.length === 0) {
-      return [];
-    }
+  // const carIdxEstTimesAfterDriverPits = $derived.by(() => {
+  //   const expectedStopTime = 40;
+  //   const stopAndGoSeconds =  $options.stopAndGoSeconds;
+  //   if (carIdxEstTimeToPositionForDriverCarClass === undefined) {
+  //     return [];
+  //   }
+  //   if ($lookupTables.driverCarDistanceMetersToEstTime == null
+  //     || $lookupTables.driverCarDistanceMetersToEstTime.length === 0) {
+  //     return [];
+  //   }
+  //
+  //   const driverCurrentEstTime = carIdxEstTimeToPositionForDriverCarClass[$staticSessionInfo.driverCarIdx];
+  //   const driverMetersToEstTime = $lookupTables.driverCarDistanceMetersToEstTime;
+  //   const driverLapRemaining = $sessionInfo.driverCarEstLapTime - driverCurrentEstTime;
+  //   // TODO: interpolate instead of truncating only
+  //   const pitExitMeters = Math.trunc(DAYTONA_PIT_EXIT_LAP_DIST_PCT * $staticSessionInfo.lapLengthMeters);
+  //   const pitExitEstTime = driverMetersToEstTime.values[pitExitMeters];
+  //   const secondsToPitExitIfPitThisLap = driverLapRemaining + pitExitEstTime + expectedStopTime + stopAndGoSeconds;
+  //
+  //   const carIdxEstTimes = $telemetry['CarIdxEstTime'].map((est, idx) => {
+  //     const lookupTable = $lookupTables.carIdxEstTimeToDistance[idx];
+  //     if (!lookupTable) {
+  //       return 0;
+  //     }
+  //     const estDistanceAfterDriverPitStop =
+  //       (est + secondsToPitExitIfPitThisLap) % lookupTable.values[lookupTable.values.length - 1];
+  //     const estDistanceMetersAfterDriverPitStop = estDistanceAfterDriverPitStop * $staticSessionInfo.lapLengthMeters;
+  //     // TODO: interpolate instead of truncating only
+  //     return $lookupTables.driverCarDistanceMetersToEstTime.values[Math.trunc(estDistanceMetersAfterDriverPitStop)];
+  //   });
+  //   // The driver will be at the pit exit, not their predicted location if they were lapping normally.
+  //   carIdxEstTimes[$staticSessionInfo.driverCarIdx] = pitExitEstTime;
+  //   return carIdxEstTimes;
+  // });
 
-    const driverCurrentEstTime = carIdxEstTimeToPositionForDriverCarClass[$staticSessionInfo.driverCarIdx];
-    const driverMetersToEstTime = $lookupTables.driverCarDistanceMetersToEstTime;
-    const driverLapRemaining = $sessionInfo.driverCarEstLapTime - driverCurrentEstTime;
-    // TODO: interpolate instead of truncating only
-    const pitExitMeters = Math.trunc(DAYTONA_PIT_EXIT_LAP_DIST_PCT * $staticSessionInfo.lapLengthMeters);
-    const pitExitEstTime = driverMetersToEstTime.values[pitExitMeters];
-    const secondsToPitExitIfPitThisLap = driverLapRemaining + pitExitEstTime + expectedStopTime + stopAndGoSeconds;
 
-    const carIdxEstTimes = $telemetry['CarIdxEstTime'].map((est, idx) => {
-      const lookupTable = $lookupTables.carIdxEstTimeToDistance[idx];
-      if (!lookupTable) {
-        return 0;
-      }
-      const estDistanceAfterDriverPitStop =
-        (est + secondsToPitExitIfPitThisLap) % lookupTable.values[lookupTable.values.length - 1];
-      const estDistanceMetersAfterDriverPitStop = estDistanceAfterDriverPitStop * $staticSessionInfo.lapLengthMeters;
-      // TODO: interpolate instead of truncating only
-      return $lookupTables.driverCarDistanceMetersToEstTime.values[Math.trunc(estDistanceMetersAfterDriverPitStop)];
-    });
-    // The driver will be at the pit exit, not their predicted location if they were lapping normally.
-    carIdxEstTimes[$staticSessionInfo.driverCarIdx] = pitExitEstTime;
-    return carIdxEstTimes;
+  const lapsAtLine = $derived.by(() => {
+    const averageFuelUsage = $telemetry[last2FuelUsageQuery];
+    const expectedFuelUsage = averageFuelUsage - $telemetry[lapFuelUsedQuery];
+    const tankRemaining = $telemetry[fuelLevelQuery] - $options.fuelMargin;
+    const remainingAtEndOfLap = tankRemaining - expectedFuelUsage;
+    return remainingAtEndOfLap / averageFuelUsage;
+  });
+
+  const fuelTarget = $derived.by(() => {
+    const currentStintLength = $telemetry[stintLengthQuery];
+    const targetRemainingLaps = $options.targetStintLength - currentStintLength;
+    if (targetRemainingLaps > 0) {
+      return ($telemetry[fuelLevelQuery] - $options.fuelMargin) / targetRemainingLaps;
+    } else {
+      return 0;
+    }
+  });
+
+  const fuelTargetPlus1 = $derived.by(() => {
+    const currentStintLength = $telemetry[stintLengthQuery];
+    const targetRemainingLaps = $options.targetStintLength + 1 - currentStintLength;
+    if (targetRemainingLaps > 0) {
+      return ($telemetry[fuelLevelQuery] - $options.fuelMargin) / targetRemainingLaps;
+    } else {
+      return 0;
+    }
   });
 </script>
 
@@ -107,29 +138,25 @@
     <VariableBox title="Time Remaining">
       {hourMinuteSecondFormatter($telemetry['SessionTimeRemain'])}
     </VariableBox>
-    
+
     <VariableBox title="Lap">
       {$telemetry['Lap'] || '--'}
     </VariableBox>
-    
+
+    <VariableBox title="Laps Remaining">
+      { ($telemetry[lapsRemainingQuery] || -1).toFixed(0) }
+    </VariableBox>
+
+    <VariableBox title="Position">
+      {$telemetry['PlayerCarClassPosition'] || 0}
+    </VariableBox>
+
     <VariableBox title="Track Temp">
       {($telemetry['TrackTempCrew'] || 0).toFixed(1)}°C
     </VariableBox>
     
-    <VariableBox title="Lap Fuel">
-      {lapFuel.toFixed(3)}
-    </VariableBox>
-    
-    <VariableBox title="Avg 5 Lap Fuel">
-      {avg5LapFuel.toFixed(3)}
-    </VariableBox>
-    
     <VariableBox title="Track Precip">
       {$telemetry['TrackPrecip'] || 0}%
-    </VariableBox>
-    
-    <VariableBox title="Fuel Target (+1 Lap)">
-      {fuelTargetPlus1.toFixed(3)}
     </VariableBox>
     
     <VariableBox title="Repairs (Opt)">
@@ -143,6 +170,32 @@
     </VariableBox>
   </div>
 
+  <div class="row">
+    <VariableBox title="Fuel Level">
+      { ($telemetry[fuelLevelQuery] || 0).toFixed(3) }
+    </VariableBox>
+
+    <VariableBox title="Lap over lap fuel">
+      { ($telemetry['DECREASING_SUM(FuelLevel, 1)'] || -1).toFixed(3) }
+    </VariableBox>
+
+    <VariableBox title="Avg 5 lap over lap fuel">
+      { ($telemetry[last5FuelUsageQuery] || -1).toFixed(3) }
+    </VariableBox>
+
+    <VariableBox title="Fuel Target">
+      { fuelTarget.toFixed(3) }
+    </VariableBox>
+
+    <VariableBox title="Fuel Target +1">
+      { fuelTargetPlus1.toFixed(3) }
+    </VariableBox>
+
+    <VariableBox title="Laps to go at line">
+      { (lapsAtLine || -1).toFixed(2) }
+    </VariableBox>
+  </div>
+
   <div class="row logs-row">
     <div class="log-column">
       <CarLapLog entries={$laps} />
@@ -152,11 +205,16 @@
       <StintLogTable entries={$stints} />
     </div>
 
-    <TeamSelectionDialog/>
-
     <GapsTableTable estTimes={carIdxEstTimeToPositionForDriverCarClass} />
-    <GapsTableTable estTimes={carIdxEstTimesAfterDriverPits} />
+<!--    <GapsTableTable estTimes={carIdxEstTimesAfterDriverPits} />-->
   </div>
+
+  <div class="row mt-1 ms-4">
+    <h1>Watched Drivers</h1>
+    <TeamSelectionDialog/>
+  </div>
+
+  <hr class="separator" />
 
   <div class="row">
     {#each selectedDrivers as selectedDriver}
@@ -205,5 +263,16 @@
     font-size: 0.6em;
     color: #888;
     margin-left: 4px;
+  }
+
+  .separator {
+    width: 100%;
+    border: 0;
+    border-top: 1px solid #404040;
+    margin: 8px 0;
+  }
+
+  h1 {
+    font-size: 1.5rem;
   }
 </style>

@@ -227,7 +227,7 @@ private fun interpolateDistance(targetDistance: Float, dataPoint1: DataPoint, da
 }
 
 internal class VariableProcessor(variableName: String): Processor {
-  private val isCarIdxField = variableName.contains("CarIdx")
+  private val canLogWhenNotOnTrack = variableName.contains("CarIdx") || variableName in DRIVER_NOT_IN_CAR_ALLOWLIST
   private val getter = VariableMapping.getGetter(variableName)
 
   override val requiredOffset: Float = 0.0F
@@ -235,12 +235,24 @@ internal class VariableProcessor(variableName: String): Processor {
   private var lastValue: DataPoint? = null
 
   override fun process(telemetryDataPoint: TelemetryDataPoint): DataPoint {
-    if (!isCarIdxField && !telemetryDataPoint.dataSnapshot.isOnTrack && lastValue != null) {
+    if (!canLogWhenNotOnTrack && !telemetryDataPoint.dataSnapshot.isOnTrack && lastValue != null) {
       return lastValue!!
     }
     val fieldValue = getter(telemetryDataPoint)
     lastValue = DataPoint(telemetryDataPoint.sessionTime, telemetryDataPoint.driverDistance, fieldValue)
     return lastValue!!
+  }
+
+  companion object {
+    private val DRIVER_NOT_IN_CAR_ALLOWLIST = setOf(
+      "SessionTime",
+      "SessionTimeOfDay",
+      "PlayerCarPosition",
+      "PlayerCarClassPosition",
+      "TrackTempCrew",
+      "PlayerCarTeamIncidentCount",
+      "PlayerCarDriverIncidentCount",
+    )
   }
 }
 

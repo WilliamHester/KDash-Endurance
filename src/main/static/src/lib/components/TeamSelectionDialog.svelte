@@ -1,5 +1,6 @@
 <script>
   import * as Command from "$lib/components/ui/command/index.js";
+  import Pencil from "@lucide/svelte/icons/pencil";
   import {Button} from "$lib/components/ui/button/index.js";
   import {
     driversList,
@@ -24,7 +25,9 @@
   const carType = $derived(staticSessionInfo == null || staticSessionInfo.isTeamEvent ? "team" : "driver");
 </script>
 
-<Button onclick={() => open = !open}>Select {carType}s to watch</Button>
+<Button size="icon" aria-label="Submit" onclick={() => open = !open} variant="outline">
+  <Pencil/>
+</Button>
 
 <Command.Dialog bind:open>
   <Command.Input placeholder={`Enter a ${carType} name...`}/>

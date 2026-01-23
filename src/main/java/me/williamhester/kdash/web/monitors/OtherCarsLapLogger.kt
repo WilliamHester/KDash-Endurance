@@ -1,11 +1,14 @@
 package me.williamhester.kdash.web.monitors
 
+import com.google.common.flogger.FluentLogger
 import me.williamhester.kdash.api.TrackSurface
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.web.extensions.get
+import me.williamhester.kdash.web.extensions.getCarIdx
 import me.williamhester.kdash.web.state.MetadataHolder
 import me.williamhester.kdash.web.store.SessionStore
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
 class OtherCarsLapLogger(
@@ -76,7 +79,12 @@ class OtherCarsLapLogger(
           position = dataSnapshot.getCarIdxPosition(carIdx)
           lapTime = sessionTime - lapStartTime
           trackTemp = dataSnapshot.trackTempCrew
-          driverName = metadataHolder.metadata["DriverInfo"]["Drivers"][carIdx]["UserName"].value
+          val driver = metadataHolder.metadata.getCarIdx(carIdx)
+          if (driver == null) {
+            logger.atWarning().atMostEvery(10, TimeUnit.SECONDS).log("Driver %s not found in metadata", carIdx)
+            return@with // effectively the same as continue
+          }
+          driverName = driver["UserName"].value
 
           val gaps = relativeMonitor.getGaps()
           val gapToLeader = if (gaps.size > carIdx) relativeMonitor.getGaps()[carIdx].gap else 0.0
@@ -169,4 +177,8 @@ class OtherCarsLapLogger(
     /** Average track temperature, in Celsius. */
     val trackTemp: Float,
   )
+
+  companion object {
+    private val logger = FluentLogger.forEnclosingClass()
+  }
 }

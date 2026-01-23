@@ -59,20 +59,24 @@
     <table class="w-full text-sm">
       <tbody class="border-separate border-spacing-x-2">
         <tr>
-          <td class="text-left">Lap</td>
-          <td class="text-right">{ lastLap.lapNum }</td>
-        </tr>
-        <tr>
           <td class="text-left">Gap</td>
           <td class="text-right">{ gap.toFixed(1) }</td>
         </tr>
         <tr>
-          <td class="text-left">Last lap time</td>
-          <td class="text-right">{ formatNumberAsDuration(lastLap.lapTime) }</td>
+          <td class="text-left">Current lap</td>
+          <td class="text-right">{ lastLap.lapNum }</td>
+        </tr>
+        <tr>
+          <td class="text-left">Stint current lap</td>
+          <td class="text-right">{ lastLap.lapNum - (lastStint.inLap) }</td>
         </tr>
         <tr>
           <td class="text-left">Last pit out lap</td>
           <td class="text-right">{ lastStint.inLap + 1 }</td>
+        </tr>
+        <tr>
+          <td class="text-left">Last lap time</td>
+          <td class="text-right">{ formatNumberAsDuration(lastLap.lapTime) }</td>
         </tr>
     <!--      <tr>-->
     <!--        <td class="text-left">Stint remaining laps</td>-->

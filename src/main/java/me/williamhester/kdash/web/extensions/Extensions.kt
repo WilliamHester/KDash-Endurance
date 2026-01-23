@@ -6,3 +6,8 @@ operator fun SessionMetadata.get(index: Int): SessionMetadata = this.getList(ind
 
 operator fun SessionMetadata.get(key: String): SessionMetadata =
   this.keyValuePairsMap[key] ?: SessionMetadata.getDefaultInstance()
+
+fun SessionMetadata.getCarIdx(carIdx: Int): SessionMetadata? {
+  val drivers = this["DriverInfo"]["Drivers"].listList
+  return drivers.firstOrNull { it["CarIdx"].value.toInt() == carIdx }
+}

@@ -4,6 +4,7 @@ import com.google.common.flogger.FluentLogger
 import me.williamhester.kdash.api.TrackSurface
 import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.web.extensions.get
+import me.williamhester.kdash.web.extensions.getCarIdx
 import me.williamhester.kdash.web.state.MetadataHolder
 import me.williamhester.kdash.web.store.SessionStore
 import kotlin.math.max
@@ -65,7 +66,8 @@ class DriverCarLapLogger(
       position = dataSnapshot.playerCarPosition
       lapTime = sessionTime - lapStartTime
       trackTemp = dataSnapshot.trackTempCrew
-      driverName = metadataHolder.metadata["DriverInfo"]["Drivers"][driverCarIdx]["UserName"].value
+      val driver = metadataHolder.metadata.getCarIdx(driverCarIdx) ?: return
+      driverName = driver["UserName"].value
       driverIncidents = dataSnapshot.driverIncidentCount
       teamIncidents = dataSnapshot.teamIncidentCount
       this.fuelRemaining = fuelRemaining

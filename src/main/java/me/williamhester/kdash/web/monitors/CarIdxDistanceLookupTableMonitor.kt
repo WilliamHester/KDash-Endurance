@@ -5,6 +5,7 @@ import me.williamhester.kdash.enduranceweb.proto.LookupTable
 import me.williamhester.kdash.enduranceweb.proto.lookupTable
 import me.williamhester.kdash.web.common.Interpolation.interpolate
 import me.williamhester.kdash.web.extensions.get
+import me.williamhester.kdash.web.extensions.getCarIdx
 import me.williamhester.kdash.web.state.MetadataHolder
 
 /**
@@ -15,7 +16,7 @@ class CarIdxDistanceLookupTableMonitor(
   private val carIdx: Int,
 ) {
   private val buckets: Int by lazy {
-    (metadataHolder.metadata["DriverInfo"]["Drivers"][carIdx]["CarClassEstLapTime"].value.toFloat() *
+    (metadataHolder.metadata.getCarIdx(carIdx)!!["CarClassEstLapTime"].value.toFloat() *
         1.5 *
         BUCKETS_PER_SECOND).toInt()
   }

@@ -9,6 +9,9 @@ export default defineConfig({
     tailwindcss(),
     sveltekit(),
   ],
+  build: {
+    minify: false,
+  },
   server: {
     port: 3000,
     strictPort: true
