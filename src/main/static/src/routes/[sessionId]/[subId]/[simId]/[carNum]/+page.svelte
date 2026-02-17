@@ -1,13 +1,11 @@
 <script>
   import {
     sessionStore,
-    sessionInfo,
-    staticSessionInfo,
     connected,
     driversList,
     laps,
     stints,
-    telemetry, lookupTables,
+    telemetry,
   } from '$lib/stores/session';
   import {
     selectedCars,

@@ -1,6 +1,6 @@
 <script>
   import {
-    driversList,
+    drivers,
     sessionInfo,
     staticSessionInfo,
     telemetry,
@@ -19,7 +19,7 @@
     const driverIdx = $staticSessionInfo.driverCarIdx;
     const lapTime = $sessionInfo.driverCarEstLapTime;
 
-    const calculatedGaps = calculateGaps(estTimes, $driversList, driverIdx, lapTime);
+    const calculatedGaps = calculateGaps(estTimes, $drivers, driverIdx, lapTime);
     if (calculatedGaps.length === 0) return [];
 
     const sortedGaps = calculatedGaps.sort((a, b) => b[1] - a[1]);
@@ -46,10 +46,9 @@
 
   function getCarClassColor(driverIdx) {
     if (driverIdx < 0) return 'transparent';
-    const driver = $driversList[driverIdx];
+    const driver = $drivers.get(driverIdx);
     if (!driver) return 'transparent';
     const carClass = $staticSessionInfo.carClasses.find(c => c.carClassId === driver.carClassId);
-    console.log(carClass.carClassColor);
     return carClass ? carClass.carClassColor : 'transparent';
   }
 </script>
@@ -77,10 +76,10 @@
               { positions[gap[0]] }
             </td>
             <td class="text-end">
-              #{ $driversList[gap[0]].carNumber }
+              #{ $drivers.get(gap[0]).carNumber }
             </td>
             <td class="text-start px-2">
-              { $driversList[gap[0]].driverName }
+              { $drivers.get(gap[0]).driverName }
             </td>
             <td class="text-end">
               { gap[1].toFixed(1) }

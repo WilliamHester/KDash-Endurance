@@ -1,4 +1,4 @@
-export function calculateGaps(distances, driversList, driverIdx, lapTime) {
+export function calculateGaps(distances, drivers, driverIdx, lapTime) {
   if (!distances || driverIdx == null || !lapTime) return [];
 
   const driverGap = distances[driverIdx];
@@ -7,8 +7,8 @@ export function calculateGaps(distances, driversList, driverIdx, lapTime) {
   const halfLapTime = lapTime / 2;
   const calculatedGaps = [];
 
-  for (let i = 0; i < driversList.length; i++) {
-    const gap = distances[i];
+  for (const driverIdx of drivers.keys()) {
+    const gap = distances[driverIdx];
     if (gap == null) continue;
 
     let diff = gap - driverGap;
@@ -19,7 +19,7 @@ export function calculateGaps(distances, driversList, driverIdx, lapTime) {
       diff += lapTime;
     }
 
-    calculatedGaps.push([i, diff]);
+    calculatedGaps.push([driverIdx, diff]);
   }
 
   return calculatedGaps;
