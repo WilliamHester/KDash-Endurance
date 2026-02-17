@@ -21,7 +21,7 @@ internal object ProdClient {
     }
     val reader = createDataReader()
     val channel = createAndConnectToChannel()
-    Client(reader, channel).connect()
+    Client(reader, channel).start()
     Thread.sleep(365 * 24 * 60 * 60 * 1000L)
   }
 

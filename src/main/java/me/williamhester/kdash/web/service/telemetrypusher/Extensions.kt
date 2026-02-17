@@ -5,7 +5,8 @@ import me.williamhester.kdash.web.extensions.get
 import me.williamhester.kdash.web.models.SessionKey
 
 /** Convert a [SessionMetadata] to a [SessionKey]. */
-internal fun SessionMetadata.toSessionKey(): SessionKey {
+internal fun SessionMetadata.toSessionKey(): SessionKey? {
+  if (this["WeekendInfo"].keyValuePairsMap.isEmpty()) return null
   val sessionId = this["WeekendInfo"]["SessionID"].value.toInt()
   val subSessionId = this["WeekendInfo"]["SubSessionID"].value.toInt()
   val simSessionNumber = this["SessionInfo"]["CurrentSessionNum"].value.ifBlank { "0" }.toInt()

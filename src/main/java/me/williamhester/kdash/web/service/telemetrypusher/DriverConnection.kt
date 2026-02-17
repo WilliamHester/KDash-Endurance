@@ -45,7 +45,12 @@ internal class DriverConnection(
       }
       SESSION_METADATA -> {
         val metadata = sessionMetadataOrDataSnapshot.sessionMetadata
-        liveTelemetryDataWriter = sessionConnectionRegistry.register(this, metadata.toSessionKey())
+        val sessionKey = metadata.toSessionKey()
+        if (sessionKey == null) {
+          logger.atWarning().log("Empty session key. Ignoring.")
+          return
+        }
+        liveTelemetryDataWriter = sessionConnectionRegistry.register(this, sessionKey)
         liveTelemetryDataWriter.onSessionMetadata(metadata)
       }
       VALUE_NOT_SET -> {} // Ignore. Probably just a ping from the client that it is setting up the connection.

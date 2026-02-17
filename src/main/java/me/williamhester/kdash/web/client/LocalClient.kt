@@ -33,7 +33,7 @@ internal object LocalClient {
       ibtFilePath = basePath.resolve("telemetry.ibt"),
       sessionInfoFilePath = basePath.resolve("sessioninfo.irh"),
     )
-    Client(loggedDataReader, channel).connect()
+    Client(loggedDataReader, channel).start()
     Thread.sleep(365 * 24 * 60 * 60 * 1000L)
   }
 }
