@@ -12,7 +12,6 @@ import kotlin.math.min
 
 class DriverCarLapLogger(
   private val metadataHolder: MetadataHolder,
-  private val relativeMonitor: RelativeMonitor,
   private val sessionStore: SessionStore,
   private val mutableSyntheticFields: MutableSyntheticFields,
 ) {
@@ -73,11 +72,7 @@ class DriverCarLapLogger(
       teamIncidents = dataSnapshot.teamIncidentCount
       this.fuelRemaining = fuelRemaining
 
-      val gapToLeader = if (driverCarIdx < relativeMonitor.getGaps().size) {
-        relativeMonitor.getGaps()[driverCarIdx].gap
-      } else {
-        0.0
-      }
+      val gapToLeader = 0.0
 
       // Log the previous lap
       val newEntry =

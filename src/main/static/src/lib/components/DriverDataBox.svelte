@@ -1,7 +1,7 @@
 <script>
   import VariableBox from "$lib/components/VariableBox.svelte";
   import {
-    driversList,
+    drivers,
     otherCarLaps,
     otherCarStints,
     sessionInfo,
@@ -44,7 +44,7 @@
     const gaps =
       calculateGaps(
         $telemetry['CarIdxDriverCarClassEstTime'],
-        $driversList,
+        $drivers,
         $staticSessionInfo.driverCarIdx,
         $sessionInfo.driverCarEstLapTime);
     if (gaps.length === 0) {

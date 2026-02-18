@@ -7,7 +7,6 @@ import me.williamhester.kdash.web.service.telemetrypusher.monitors.DataSnapshotL
 import me.williamhester.kdash.web.service.telemetrypusher.monitors.DriverCarLapLogger
 import me.williamhester.kdash.web.service.telemetrypusher.monitors.MutableSyntheticFields
 import me.williamhester.kdash.web.service.telemetrypusher.monitors.OtherCarsLapLogger
-import me.williamhester.kdash.web.service.telemetrypusher.monitors.RelativeMonitor
 import me.williamhester.kdash.web.service.telemetrypusher.monitors.RelativeMonitor2
 import me.williamhester.kdash.web.service.telemetrypusher.state.MetadataHolder
 import me.williamhester.kdash.web.store.SessionStore
@@ -32,15 +31,13 @@ internal class LiveTelemetryDataWriter(
     val metadataHolder = MetadataHolder()
     private val mutableSyntheticFields = MutableSyntheticFields()
 
-    private val relativeMonitor = RelativeMonitor()
-    private val lapMonitor = DriverCarLapLogger(metadataHolder, relativeMonitor, sessionStore, mutableSyntheticFields)
-    private val otherCarsLapLogger = OtherCarsLapLogger(metadataHolder, relativeMonitor, sessionStore)
+    private val lapMonitor = DriverCarLapLogger(metadataHolder,sessionStore, mutableSyntheticFields)
+    private val otherCarsLapLogger = OtherCarsLapLogger(metadataHolder, sessionStore)
     private val dataSnapshotLogger = DataSnapshotLogger(metadataHolder, sessionStore, mutableSyntheticFields)
     private val relativeMonitor2 = RelativeMonitor2(metadataHolder, mutableSyntheticFields)
     // private val distanceLookupTableMonitor = DistanceLookupTableMonitor(metadataHolder, sessionStore, relativeMonitor2)
 
     fun process(dataSnapshot: DataSnapshot) {
-      relativeMonitor.process(dataSnapshot)
       lapMonitor.process(dataSnapshot)
       otherCarsLapLogger.process(dataSnapshot)
       dataSnapshotLogger.process(dataSnapshot)

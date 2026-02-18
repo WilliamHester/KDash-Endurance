@@ -13,7 +13,6 @@ import kotlin.math.max
 
 class OtherCarsLapLogger(
   private val metadataHolder: MetadataHolder,
-  private val relativeMonitor: RelativeMonitor,
   private val sessionStore: SessionStore,
 ) {
   private val carIdxStates = ConcurrentHashMap<Int, CarState>()
@@ -86,8 +85,7 @@ class OtherCarsLapLogger(
           }
           driverName = driver["UserName"].value
 
-          val gaps = relativeMonitor.getGaps()
-          val gapToLeader = if (gaps.size > carIdx) relativeMonitor.getGaps()[carIdx].gap else 0.0
+          val gapToLeader = 0.0
 
           // Log the previous lap
           val newEntry =
