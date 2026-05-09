@@ -4,8 +4,6 @@ import com.google.common.base.Joiner
 import com.google.common.flogger.FluentLogger
 import com.google.common.util.concurrent.RateLimiter
 import com.google.protobuf.Message
-import com.google.protobuf.Timestamp
-import com.google.protobuf.util.Timestamps
 import com.impossibl.postgres.api.jdbc.PGConnection
 import com.impossibl.postgres.api.jdbc.PGNotificationListener
 import com.impossibl.postgres.jdbc.PGSQLSimpleException
@@ -13,11 +11,9 @@ import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.LookupTables
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
 import me.williamhester.kdash.enduranceweb.proto.OtherCarStintEntry
-import me.williamhester.kdash.enduranceweb.proto.Session
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import me.williamhester.kdash.enduranceweb.proto.StintEntry
-import me.williamhester.kdash.enduranceweb.proto.session
-import me.williamhester.kdash.web.extensions.get
+import me.williamhester.kdash.web.models.Session
 import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.models.TelemetryDataPoint
 import me.williamhester.kdash.web.models.TelemetryRange
@@ -126,15 +122,14 @@ object Store {
     ) {
       val sessionCars = mutableListOf<Session>()
       while (it.next()) {
-        sessionCars += session {
-          sessionId = it.getInt(1)
-          subSessionId = it.getInt(2)
-          simSessionNumber = it.getInt(3)
-          carNumber = it.getString(4)
-          // TODO: Probably move this somewhere else, but it's 12:35 AM on a Thursday night, before a race on Saturday.
-          trackName = SessionMetadata.parseFrom(it.getBytes(5))["WeekendInfo"]["TrackDisplayName"].value
-          sessionCreated = it.getTimestampTzAsInstant(6).toProtoTimestamp()
-        }
+        sessionCars += Session(
+          sessionId = it.getInt(1),
+          subSessionId = it.getInt(2),
+          simSessionNumber = it.getInt(3),
+          carNumber = it.getString(4),
+          sessionMetadata = SessionMetadata.parseFrom(it.getBytes(5)),
+          sessionCreated = it.getTimestampTzAsInstant(6),
+        )
       }
       return@executeQuery sessionCars
     }
@@ -747,9 +742,4 @@ private fun SessionKey.toQueryParams(): Array<Pair<String, Any>> {
 
 private fun ResultSet.getTimestampTzAsInstant(columnIndex: Int): Instant? {
   return getObject(columnIndex, OffsetDateTime::class.java)?.toInstant()
-}
-
-private fun Instant?.toProtoTimestamp(): Timestamp {
-  if (this == null) return Timestamp.getDefaultInstance()
-  return Timestamps.fromMillis(this.toEpochMilli())
 }
