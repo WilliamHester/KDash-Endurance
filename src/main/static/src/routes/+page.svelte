@@ -36,21 +36,19 @@
   <table class="session-table">
       <thead>
         <tr>
-          <th>Session ID</th>
-          <th>Sub Session ID</th>
-          <th>Sim Session #</th>
-          <th>Car #</th>
+          <th>Date Created</th>
           <th>Track</th>
+          <th>Car #</th>
+          <th>Sim Session #</th>
         </tr>
       </thead>
       <tbody>
         {#each sessions as session}
           <tr onclick={() => selectSession(session)} class="session-row">
-            <td>{session.sessionId}</td>
-            <td>{session.subSessionId}</td>
-            <td>{session.simSessionNumber}</td>
-            <td>{session.carNumber}</td>
+            <td>{session.sessionCreated.toLocaleString()}</td>
             <td>{session.trackName}</td>
+            <td>{session.carNumber}</td>
+            <td>{session.simSessionNumber}</td>
           </tr>
         {/each}
       </tbody>

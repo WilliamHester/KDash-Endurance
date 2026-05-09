@@ -4,6 +4,8 @@ import com.google.common.base.Joiner
 import com.google.common.flogger.FluentLogger
 import com.google.common.util.concurrent.RateLimiter
 import com.google.protobuf.Message
+import com.google.protobuf.Timestamp
+import com.google.protobuf.util.Timestamps
 import com.impossibl.postgres.api.jdbc.PGConnection
 import com.impossibl.postgres.api.jdbc.PGNotificationListener
 import com.impossibl.postgres.jdbc.PGSQLSimpleException
@@ -22,8 +24,9 @@ import me.williamhester.kdash.web.models.TelemetryRange
 import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.sql.ResultSet
-import java.sql.Timestamp
 import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
@@ -102,8 +105,8 @@ object Store {
   fun insertCarIdxLookupTables(sessionKey: SessionKey, lookupTables: LookupTables) {
     insertOrUpdate(
       Table.LOOKUP_TABLES,
-      *sessionKey.toQueryParams().map { Column(it.first, overwrite = false) to it.second }.toTypedArray(),
-      Column("LookupTables", overwrite = true) to lookupTables,
+      *sessionKey.toQueryParams().map { KeyColumn(it.first) to it.second }.toTypedArray(),
+      ValueColumn("LookupTables", overwrite = true) to lookupTables,
     )
   }
 
@@ -115,8 +118,10 @@ object Store {
           SubSessionID, 
           SimSessionNumber, 
           CarNumber,
-          Metadata
+          Metadata,
+          SessionCreated
         FROM SessionCars
+        ORDER BY SessionCreated DESC NULLS LAST
       """.trimIndent(),
     ) {
       val sessionCars = mutableListOf<Session>()
@@ -128,6 +133,7 @@ object Store {
           carNumber = it.getString(4)
           // TODO: Probably move this somewhere else, but it's 12:35 AM on a Thursday night, before a race on Saturday.
           trackName = SessionMetadata.parseFrom(it.getBytes(5))["WeekendInfo"]["TrackDisplayName"].value
+          sessionCreated = it.getTimestampTzAsInstant(6).toProtoTimestamp()
         }
       }
       return@executeQuery sessionCars
@@ -135,8 +141,11 @@ object Store {
   }
 
   fun insertSessionMetadata(sessionKey: SessionKey, sessionMetadata: SessionMetadata) {
-    val queryParams = sessionKey.toQueryParams().map { Column(it.first, false) to it.second }.toMutableList()
-    queryParams += Column("Metadata", true) to sessionMetadata
+    val queryParams: MutableList<Pair<Column, Any>> =
+      sessionKey.toQueryParams().map { KeyColumn(it.first) to it.second }.toMutableList()
+    queryParams += ValueColumn("Metadata", overwrite = true) to sessionMetadata
+    // Do not overwrite the session created time, because the session created time should be from when it's first seen.
+    queryParams += ValueColumn("SessionCreated", overwrite = false) to Instant.now()
     insertOrUpdate(
       Table.SESSION_CARS,
       *queryParams.toTypedArray(),
@@ -602,11 +611,15 @@ object Store {
     }
   }
 
-  private data class Column(val name: String, val overwrite: Boolean)
+  private sealed class Column(val name: String, val overwrite: Boolean)
+
+  private class KeyColumn(name: String) : Column(name, false)
+
+  private class ValueColumn(name: String, overwrite: Boolean) : Column(name, overwrite)
 
   private fun insertOrUpdate(table: Table, vararg args: Pair<Column, Any>) {
     val columns = Joiner.on(", ").join(args.map { it.first.name })
-    val keyColumns = args.filterNot { it.first.overwrite }.joinToString(", ") { it.first.name }
+    val keyColumns = args.filter { it.first is KeyColumn }.joinToString(", ") { it.first.name }
     val questionMarks = Joiner.on(", ").join(args.map { "?" })
 
     val argsToUpdate = args.filter { it.first.overwrite }
@@ -658,7 +671,7 @@ object Store {
           is Int -> statement.setInt(paramIndex, value)
           is Float -> statement.setFloat(paramIndex, value)
           is Double -> statement.setDouble(paramIndex, value)
-          is Instant -> statement.setTimestamp(paramIndex, Timestamp.from(value))
+          is Instant -> statement.setObject(paramIndex, OffsetDateTime.ofInstant(value, ZoneId.systemDefault()))
           is Message -> statement.setBytes(paramIndex, value.toByteArray())
           else -> throw Exception("Unsupported arg type: ${value.javaClass.simpleName}")
         }
@@ -730,4 +743,13 @@ private fun SessionKey.toQueryParams(): Array<Pair<String, Any>> {
     "SimSessionNumber" to sessionNum,
     "CarNumber" to carNumber,
   )
+}
+
+private fun ResultSet.getTimestampTzAsInstant(columnIndex: Int): Instant? {
+  return getObject(columnIndex, OffsetDateTime::class.java)?.toInstant()
+}
+
+private fun Instant?.toProtoTimestamp(): Timestamp {
+  if (this == null) return Timestamp.getDefaultInstance()
+  return Timestamps.fromMillis(this.toEpochMilli())
 }

@@ -7,6 +7,7 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import type { CallContext, CallOptions } from "nice-grpc-common";
+import { Timestamp } from "./google/protobuf/timestamp";
 
 export const protobufPackage = "me.williamhester.kdash.enduranceweb";
 
@@ -244,6 +245,7 @@ export interface Session {
   simSessionNumber: number;
   carNumber: string;
   trackName: string;
+  sessionCreated: Date | undefined;
 }
 
 export interface LookupTables {
@@ -3074,7 +3076,14 @@ export const ListSessionsResponse: MessageFns<ListSessionsResponse> = {
 };
 
 function createBaseSession(): Session {
-  return { sessionId: 0, subSessionId: 0, simSessionNumber: 0, carNumber: "", trackName: "" };
+  return {
+    sessionId: 0,
+    subSessionId: 0,
+    simSessionNumber: 0,
+    carNumber: "",
+    trackName: "",
+    sessionCreated: undefined,
+  };
 }
 
 export const Session: MessageFns<Session> = {
@@ -3093,6 +3102,9 @@ export const Session: MessageFns<Session> = {
     }
     if (message.trackName !== "") {
       writer.uint32(42).string(message.trackName);
+    }
+    if (message.sessionCreated !== undefined) {
+      Timestamp.encode(toTimestamp(message.sessionCreated), writer.uint32(50).fork()).join();
     }
     return writer;
   },
@@ -3144,6 +3156,14 @@ export const Session: MessageFns<Session> = {
           message.trackName = reader.string();
           continue;
         }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.sessionCreated = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3160,6 +3180,7 @@ export const Session: MessageFns<Session> = {
       simSessionNumber: isSet(object.simSessionNumber) ? globalThis.Number(object.simSessionNumber) : 0,
       carNumber: isSet(object.carNumber) ? globalThis.String(object.carNumber) : "",
       trackName: isSet(object.trackName) ? globalThis.String(object.trackName) : "",
+      sessionCreated: isSet(object.sessionCreated) ? fromJsonTimestamp(object.sessionCreated) : undefined,
     };
   },
 
@@ -3180,6 +3201,9 @@ export const Session: MessageFns<Session> = {
     if (message.trackName !== "") {
       obj.trackName = message.trackName;
     }
+    if (message.sessionCreated !== undefined) {
+      obj.sessionCreated = message.sessionCreated.toISOString();
+    }
     return obj;
   },
 
@@ -3193,6 +3217,7 @@ export const Session: MessageFns<Session> = {
     message.simSessionNumber = object.simSessionNumber ?? 0;
     message.carNumber = object.carNumber ?? "";
     message.trackName = object.trackName ?? "";
+    message.sessionCreated = object.sessionCreated ?? undefined;
     return message;
   },
 };
@@ -3565,6 +3590,28 @@ export type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function toTimestamp(date: Date): Timestamp {
+  const seconds = Math.trunc(date.getTime() / 1_000);
+  const nanos = (date.getTime() % 1_000) * 1_000_000;
+  return { seconds, nanos };
+}
+
+function fromTimestamp(t: Timestamp): Date {
+  let millis = (t.seconds || 0) * 1_000;
+  millis += (t.nanos || 0) / 1_000_000;
+  return new globalThis.Date(millis);
+}
+
+function fromJsonTimestamp(o: any): Date {
+  if (o instanceof globalThis.Date) {
+    return o;
+  } else if (typeof o === "string") {
+    return new globalThis.Date(o);
+  } else {
+    return fromTimestamp(Timestamp.fromJSON(o));
+  }
+}
 
 function isObject(value: any): boolean {
   return typeof value === "object" && value !== null;

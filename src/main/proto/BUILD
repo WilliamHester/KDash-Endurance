@@ -20,7 +20,9 @@ java_grpc_library(
 proto_library(
     name = "live_telemetry_service",
     srcs = ["live_telemetry_service.proto"],
-    deps = []
+    deps = [
+        "@protobuf//:timestamp_proto",
+    ]
 )
 
 kt_jvm_proto_library(

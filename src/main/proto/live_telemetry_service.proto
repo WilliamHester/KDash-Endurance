@@ -5,6 +5,8 @@ package me.williamhester.kdash.enduranceweb;
 option java_package = "me.williamhester.kdash.enduranceweb.proto";
 option java_multiple_files = true;
 
+import "google/protobuf/timestamp.proto";
+
 service LiveTelemetryService {
    rpc QueryTelemetry(QueryTelemetryRequest) returns (stream QueryTelemetryResponse);
 
@@ -236,6 +238,7 @@ message Session {
    string car_number = 4;
 
    string track_name = 5;
+   google.protobuf.Timestamp session_created = 6;
 }
 
 message LookupTables {
