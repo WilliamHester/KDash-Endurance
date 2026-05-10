@@ -118,7 +118,7 @@ object Store {
           SessionCreated,
           SessionMetadataTimestamp
         FROM SessionCars
-        ORDER BY SessionCreated DESC NULLS LAST
+        ORDER BY SessionCreated DESC NULLS LAST, SessionID, SubSessionID, CarNumber, SimSessionNumber DESC
       """.trimIndent(),
     ) {
       val sessionCars = mutableListOf<Session>()
