@@ -37,18 +37,20 @@
       <thead>
         <tr>
           <th>Date Created</th>
+          <th>Most Recent Driver</th>
           <th>Track</th>
           <th>Car #</th>
-          <th>Sim Session #</th>
+          <th>Session</th>
         </tr>
       </thead>
       <tbody>
         {#each sessions as session}
           <tr onclick={() => selectSession(session)} class="session-row">
             <td>{session.sessionCreated.toLocaleString()}</td>
+            <td>{session.mostRecentDriver}</td>
             <td>{session.trackName}</td>
             <td>{session.carNumber}</td>
-            <td>{session.simSessionNumber}</td>
+            <td>{session.sessionName}</td>
           </tr>
         {/each}
       </tbody>

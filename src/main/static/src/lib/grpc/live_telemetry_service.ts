@@ -245,7 +245,12 @@ export interface Session {
   simSessionNumber: number;
   carNumber: string;
   trackName: string;
-  sessionCreated: Date | undefined;
+  sessionCreated:
+    | Date
+    | undefined;
+  /** The human readable value of the sim session number */
+  sessionName: string;
+  mostRecentDriver: string;
 }
 
 export interface LookupTables {
@@ -3083,6 +3088,8 @@ function createBaseSession(): Session {
     carNumber: "",
     trackName: "",
     sessionCreated: undefined,
+    sessionName: "",
+    mostRecentDriver: "",
   };
 }
 
@@ -3105,6 +3112,12 @@ export const Session: MessageFns<Session> = {
     }
     if (message.sessionCreated !== undefined) {
       Timestamp.encode(toTimestamp(message.sessionCreated), writer.uint32(50).fork()).join();
+    }
+    if (message.sessionName !== "") {
+      writer.uint32(58).string(message.sessionName);
+    }
+    if (message.mostRecentDriver !== "") {
+      writer.uint32(66).string(message.mostRecentDriver);
     }
     return writer;
   },
@@ -3164,6 +3177,22 @@ export const Session: MessageFns<Session> = {
           message.sessionCreated = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
           continue;
         }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.sessionName = reader.string();
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.mostRecentDriver = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3181,6 +3210,8 @@ export const Session: MessageFns<Session> = {
       carNumber: isSet(object.carNumber) ? globalThis.String(object.carNumber) : "",
       trackName: isSet(object.trackName) ? globalThis.String(object.trackName) : "",
       sessionCreated: isSet(object.sessionCreated) ? fromJsonTimestamp(object.sessionCreated) : undefined,
+      sessionName: isSet(object.sessionName) ? globalThis.String(object.sessionName) : "",
+      mostRecentDriver: isSet(object.mostRecentDriver) ? globalThis.String(object.mostRecentDriver) : "",
     };
   },
 
@@ -3204,6 +3235,12 @@ export const Session: MessageFns<Session> = {
     if (message.sessionCreated !== undefined) {
       obj.sessionCreated = message.sessionCreated.toISOString();
     }
+    if (message.sessionName !== "") {
+      obj.sessionName = message.sessionName;
+    }
+    if (message.mostRecentDriver !== "") {
+      obj.mostRecentDriver = message.mostRecentDriver;
+    }
     return obj;
   },
 
@@ -3218,6 +3255,8 @@ export const Session: MessageFns<Session> = {
     message.carNumber = object.carNumber ?? "";
     message.trackName = object.trackName ?? "";
     message.sessionCreated = object.sessionCreated ?? undefined;
+    message.sessionName = object.sessionName ?? "";
+    message.mostRecentDriver = object.mostRecentDriver ?? "";
     return message;
   },
 };
