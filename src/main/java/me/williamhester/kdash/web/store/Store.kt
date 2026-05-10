@@ -115,7 +115,8 @@ object Store {
           SimSessionNumber, 
           CarNumber,
           Metadata,
-          SessionCreated
+          SessionCreated,
+          SessionMetadataTimestamp
         FROM SessionCars
         ORDER BY SessionCreated DESC NULLS LAST
       """.trimIndent(),
@@ -129,6 +130,7 @@ object Store {
           carNumber = it.getString(4),
           sessionMetadata = SessionMetadata.parseFrom(it.getBytes(5)),
           sessionCreated = it.getTimestampTzAsInstant(6),
+          sessionMetadataTimestamp = it.getTimestampTzAsInstant(7),
         )
       }
       return@executeQuery sessionCars
@@ -141,6 +143,7 @@ object Store {
     queryParams += ValueColumn("Metadata", overwrite = true) to sessionMetadata
     // Do not overwrite the session created time, because the session created time should be from when it's first seen.
     queryParams += ValueColumn("SessionCreated", overwrite = false) to Instant.now()
+    queryParams += ValueColumn("SessionMetadataTimestamp", overwrite = true) to Instant.now()
     insertOrUpdate(
       Table.SESSION_CARS,
       *queryParams.toTypedArray(),

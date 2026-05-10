@@ -10,4 +10,5 @@ data class Session(
   val carNumber: String,
   val sessionMetadata: SessionMetadata,
   val sessionCreated: Instant?,
+  val sessionMetadataTimestamp: Instant?,
 )

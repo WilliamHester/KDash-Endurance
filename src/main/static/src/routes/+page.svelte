@@ -40,6 +40,31 @@
       accessorKey: "sessionName",
       header: "Session",
     },
+    {
+      accessorKey: 'sessionMetadataTimestamp',
+      header: '',
+      cell: ({ row }) => {
+        const liveSnippet = createRawSnippet((getTimestamp) => {
+          const { timestamp } = getTimestamp();
+          if (!timestamp || Date.now() - timestamp > 60_000) {
+            return { render: () => `<div></div>` };
+          }
+
+          return {
+            render: () => `<div class="inline-flex items-center gap-1.5 bg-red-600 text-white px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide w-fit">
+              Live
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+              </span>
+            </div>`
+          };
+        });
+        return renderSnippet(liveSnippet, {
+          timestamp: row.original.sessionMetadataTimestamp,
+        });
+      }
+    }
   ];
 
   let sessions = $state([]);

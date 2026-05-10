@@ -239,6 +239,7 @@ message Session {
 
    string track_name = 5;
    google.protobuf.Timestamp session_created = 6;
+   google.protobuf.Timestamp session_metadata_timestamp = 9;
    // The human readable value of the sim session number
    string session_name = 7;
    string most_recent_driver = 8;

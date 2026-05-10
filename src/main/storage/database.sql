@@ -10,8 +10,10 @@ CREATE TABLE SessionCars (
   CarNumber character varying (3) NOT NULL,
   -- The current Session metadata proto, serialized to bytes
   Metadata bytea NOT NULL,
-  -- The time that the session was first observed
+    -- The time that the session was first observed
   SessionCreated timestamptz,
+    -- The time that the session metadata was most recently updated
+  SessionMetadataTimestamp timestamptz,
 
   PRIMARY KEY (SessionID, SubSessionID, SimSessionNumber, CarNumber)
 );
