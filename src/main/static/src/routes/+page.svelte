@@ -1,21 +1,57 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, createRawSnippet } from 'svelte';
   import { goto } from '$app/navigation';
   import {
     LiveTelemetryServiceDefinition
   } from '$lib/grpc/live_telemetry_service';
   import {createChannel, createClient} from "nice-grpc-web";
+  import DataTable from '$lib/components/DataTable.svelte';
+  import { renderSnippet } from "$lib/components/ui/data-table/index.js";
 
-  let sessions = [];
-  let loading = true;
-  let error = null;
+  const columns = [
+    {
+      accessorKey: "sessionCreated",
+      header: "Date Created",
+      cell: ({ row }) => {
+        const dateSnippet = createRawSnippet((getDate) => {
+          const { date } = getDate();
+          return {
+            render: () => `<div>${date ? date.toLocaleString() : ''}</div>`
+          };
+        });
+        return renderSnippet(dateSnippet, {
+          date: row.original.sessionCreated,
+        });
+      },
+    },
+    {
+      accessorKey: "mostRecentDriver",
+      header: "Most Recent Driver",
+    },
+    {
+      accessorKey: "trackName",
+      header: "Track",
+    },
+    {
+      accessorKey: "carNumber",
+      header: "Car #",
+    },
+    {
+      accessorKey: "sessionName",
+      header: "Session",
+    },
+  ];
+
+  let sessions = $state([]);
+  let loading = $state(true);
+  let error = $state(null);
 
   onMount(async () => {
     try {
       const channel = createChannel(window.location.origin + '/api');
       const client = createClient(LiveTelemetryServiceDefinition, channel);
 
-      const response = await client.listSessions();
+      const response = await client.listSessions({});
       sessions = response.sessions;
 
       loading = false;
@@ -31,68 +67,19 @@
   }
 </script>
 
-<div class="container">
-  <h2>🏁 Session List</h2>
-  <table class="session-table">
-      <thead>
-        <tr>
-          <th>Date Created</th>
-          <th>Most Recent Driver</th>
-          <th>Track</th>
-          <th>Car #</th>
-          <th>Session</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each sessions as session}
-          <tr onclick={() => selectSession(session)} class="session-row">
-            <td>{session.sessionCreated.toLocaleString()}</td>
-            <td>{session.mostRecentDriver}</td>
-            <td>{session.trackName}</td>
-            <td>{session.carNumber}</td>
-            <td>{session.sessionName}</td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
+<div class="container mx-auto py-10 max-w-300">
+  <h2 class="text-2xl font-bold mb-4">Session List</h2>
+  {#if loading}
+    <p class="text-sm text-muted-foreground">Loading sessions...</p>
+  {:else if error}
+    <p class="text-sm text-destructive">Error loading sessions.</p>
+  {:else}
+    <DataTable data={sessions} {columns} onRowClick={selectSession} />
+  {/if}
 </div>
 
 <style>
-  .container {
+  * {
     font-family: sans-serif;
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .session-table {
-    width: 100%;
-    border-collapse: collapse;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-top: 1rem;
-  }
-
-  th {
-    border-bottom: 2px solid #ddd;
-    padding: 12px;
-    text-align: left;
-    background-color: #fafafa;
-    font-weight: 600;
-    color: #333;
-  }
-
-  td {
-    border-bottom: 1px solid #ddd;
-    padding: 12px;
-    color: #333;
-  }
-
-  .session-row {
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .session-row:hover {
-    background-color: #f0f0f0;
   }
 </style>
