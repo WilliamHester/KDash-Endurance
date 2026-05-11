@@ -105,6 +105,7 @@ maven.install(
         "org.mindrot:jbcrypt:0.4",
         "org.slf4j:slf4j-simple:1.8.0-beta4",
         "com.impossibl.pgjdbc-ng:pgjdbc-ng:0.8.9",
+        "com.zaxxer:HikariCP:7.0.2",
 
         # For testing
         "com.google.truth:truth:1.1.3",

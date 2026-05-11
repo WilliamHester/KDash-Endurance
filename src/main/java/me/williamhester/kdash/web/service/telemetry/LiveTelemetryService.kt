@@ -17,7 +17,9 @@ import me.williamhester.kdash.enduranceweb.proto.QueryTelemetryResponse
 import me.williamhester.kdash.enduranceweb.proto.SessionInfo
 import me.williamhester.kdash.enduranceweb.proto.StaticSessionInfo
 import java.time.Duration
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit.MILLISECONDS
+import kotlin.coroutines.cancellation.CancellationException
 
 class LiveTelemetryService(
   private val executor: ListeningExecutorService,
@@ -75,9 +77,20 @@ class LiveTelemetryService(
       }
     }
     val serverCallStreamObserver = streamObserver as ServerCallStreamObserver
-    serverCallStreamObserver.setOnCancelHandler {
+    fun handler(type: String) = Runnable {
+      logger.atInfo().log("Cancelling LiveTelemetryService.%s (%s)", rpcName, type)
       future.cancel(true)
+      try {
+        future.get()
+      } catch (e: CancellationException) {
+        // expected
+      } catch (e: ExecutionException) {
+        logger.atWarning().withCause(e).log("Error while cancelling LiveTelemetryService.%s (%s)", rpcName, type)
+      }
+      logger.atInfo().log("Cancelled LiveTelemetryService.%s (%s)", rpcName, type)
     }
+    serverCallStreamObserver.setOnCloseHandler(handler("onClose"))
+    serverCallStreamObserver.setOnCancelHandler(handler("onCancel"))
   }
 
   companion object {
