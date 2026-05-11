@@ -7,6 +7,8 @@ import com.google.protobuf.Message
 import com.impossibl.postgres.api.jdbc.PGConnection
 import com.impossibl.postgres.api.jdbc.PGNotificationListener
 import com.impossibl.postgres.jdbc.PGSQLSimpleException
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import me.williamhester.kdash.enduranceweb.proto.LapEntry
 import me.williamhester.kdash.enduranceweb.proto.LookupTables
 import me.williamhester.kdash.enduranceweb.proto.OtherCarLapEntry
@@ -23,8 +25,8 @@ import java.sql.ResultSet
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -37,10 +39,19 @@ object Store {
   private val postgresUser by lazy {
     System.getenv("DB_USER") ?: System.getenv("USER") ?: "postgres"
   }
-  private val connection: PGConnection by lazy {
+  // We can't use the HikariDataSource for listening, since it can only be open for a maximum of 30 minutes.
+  // This connection is kept alive forever and is only used for listening to notifications.
+  private val listenConnection: PGConnection by lazy {
     DriverManager.getConnection("jdbc:pgsql://localhost:5432/$postgresUser").unwrap(PGConnection::class.java).apply {
       addNotificationListener(broadcastingListener)
     }
+  }
+  private val dataSource: HikariDataSource by lazy {
+    val config = HikariConfig().apply {
+      jdbcUrl = "jdbc:pgsql://localhost:5432/$postgresUser"
+      maximumPoolSize = 10
+    }
+    HikariDataSource(config)
   }
   private val executor = Executors.newCachedThreadPool()
   private const val LIMIT = 100_000
@@ -660,30 +671,32 @@ object Store {
   }
 
   private fun <T> useStatement(query: String, vararg args: Any, block: (PreparedStatement) -> T): T = retry {
-    return connection.prepareStatement(query).use { statement ->
-      args.withIndex().forEach {
-        val value = it.value
-        val paramIndex = it.index + 1 // For some reason, JDBC uses 1-based indices
-        when (value) {
-          is String -> statement.setString(paramIndex, value)
-          is Int -> statement.setInt(paramIndex, value)
-          is Float -> statement.setFloat(paramIndex, value)
-          is Double -> statement.setDouble(paramIndex, value)
-          is Instant -> statement.setObject(paramIndex, OffsetDateTime.ofInstant(value, ZoneId.systemDefault()))
-          is Message -> statement.setBytes(paramIndex, value.toByteArray())
-          else -> throw Exception("Unsupported arg type: ${value.javaClass.simpleName}")
+    return dataSource.connection.use { connection ->
+      connection.prepareStatement(query).use { statement ->
+        args.withIndex().forEach {
+          val value = it.value
+          val paramIndex = it.index + 1 // For some reason, JDBC uses 1-based indices
+          when (value) {
+            is String -> statement.setString(paramIndex, value)
+            is Int -> statement.setInt(paramIndex, value)
+            is Float -> statement.setFloat(paramIndex, value)
+            is Double -> statement.setDouble(paramIndex, value)
+            is Instant -> statement.setObject(paramIndex, OffsetDateTime.ofInstant(value, ZoneId.systemDefault()))
+            is Message -> statement.setBytes(paramIndex, value.toByteArray())
+            else -> throw Exception("Unsupported arg type: ${value.javaClass.simpleName}")
+          }
         }
+        block(statement)
       }
-      block(statement)
     }
   }
 
   private fun listen(channelName: String) {
-    connection.createStatement().use { it.executeUpdate("LISTEN \"$channelName\"") }
+    listenConnection.createStatement().use { it.executeUpdate("LISTEN \"$channelName\"") }
   }
 
   private fun unlisten(channelName: String) {
-    connection.createStatement().use { it.executeUpdate("UNLISTEN \"$channelName\"") }
+    listenConnection.createStatement().use { it.executeUpdate("UNLISTEN \"$channelName\"") }
   }
 
   private enum class Table(val tableName: String) {
@@ -697,14 +710,14 @@ object Store {
   }
 
   private class BroadcastingListener : PGNotificationListener {
-    private val registry = ConcurrentHashMap<String, CopyOnWriteArrayList<LinkedBlockingQueue<String>>>()
+    private val registry = ConcurrentHashMap<String, MutableList<LinkedBlockingQueue<String>>>()
 
     fun register(channelName: String, blockingQueue: LinkedBlockingQueue<String>): AutoCloseable {
       registry.compute(channelName) { key, oldValue ->
         val list =
           if (oldValue == null) {
             listen(channelName)
-            CopyOnWriteArrayList<LinkedBlockingQueue<String>>()
+            Collections.synchronizedList(ArrayList<LinkedBlockingQueue<String>>())
           } else {
             oldValue
           }

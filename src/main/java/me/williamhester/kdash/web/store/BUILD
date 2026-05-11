@@ -10,6 +10,7 @@ kt_jvm_library(
         "@maven//:com_google_flogger_flogger",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_protobuf_protobuf_java_util",
+        "@maven//:com_zaxxer_HikariCP",
         "@kdash//main/java/me/williamhester/kdash/api",
         "//main/java/me/williamhester/kdash/web/extensions",
         "//main/java/me/williamhester/kdash/web/models",
