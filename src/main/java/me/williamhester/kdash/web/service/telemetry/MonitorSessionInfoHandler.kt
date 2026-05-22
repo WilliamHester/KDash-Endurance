@@ -28,9 +28,7 @@ class MonitorSessionInfoHandler(
 
   override fun run() {
     val future1 = threadPool.submit { Store.getMetadataForSession(sessionKey, this::onNext) }
-    // TODO: Re-enable this after it's fixed.
-    val future2 = Futures.immediateFuture(null)
-//    val future2 = threadPool.submit { Store.monitorLookupTables(sessionKey, this::onNext) }
+    val future2 = threadPool.submit { Store.monitorLookupTables(sessionKey, this::onNext) }
 
     val allFutures = Futures.allAsList(future1, future2)
     try {

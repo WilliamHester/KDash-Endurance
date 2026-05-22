@@ -4,6 +4,7 @@ import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.SessionMetadata
 import me.williamhester.kdash.web.models.SessionKey
 import me.williamhester.kdash.web.service.telemetrypusher.monitors.DataSnapshotLogger
+import me.williamhester.kdash.web.service.telemetrypusher.monitors.DistanceLookupTableMonitor
 import me.williamhester.kdash.web.service.telemetrypusher.monitors.DriverCarLapLogger
 import me.williamhester.kdash.web.service.telemetrypusher.monitors.MutableSyntheticFields
 import me.williamhester.kdash.web.service.telemetrypusher.monitors.OtherCarsLapLogger
@@ -35,17 +36,14 @@ internal class LiveTelemetryDataWriter(
     private val otherCarsLapLogger = OtherCarsLapLogger(metadataHolder, sessionStore)
     private val dataSnapshotLogger = DataSnapshotLogger(metadataHolder, sessionStore, mutableSyntheticFields)
     private val relativeMonitor2 = RelativeMonitor2(metadataHolder, mutableSyntheticFields)
-    // private val distanceLookupTableMonitor = DistanceLookupTableMonitor(metadataHolder, sessionStore, relativeMonitor2)
+     private val distanceLookupTableMonitor = DistanceLookupTableMonitor(metadataHolder, sessionStore, relativeMonitor2)
 
     fun process(dataSnapshot: DataSnapshot) {
       lapMonitor.process(dataSnapshot)
       otherCarsLapLogger.process(dataSnapshot)
-      dataSnapshotLogger.process(dataSnapshot)
       relativeMonitor2.process(dataSnapshot)
-      // Disable the DistanceLookupTableMonitor for now, since it uses too much CPU for each tick. It currently does
-      // numDrivers * 60 operations per second. In large races, this consumes so much CPU that we can't log the data
-      // fast enough.
-      // distanceLookupTableMonitor.process(dataSnapshot)
+      distanceLookupTableMonitor.process(dataSnapshot)
+      dataSnapshotLogger.process(dataSnapshot)
     }
   }
 }

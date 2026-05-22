@@ -4,6 +4,7 @@ import me.williamhester.kdash.enduranceweb.proto.DataSnapshot
 import me.williamhester.kdash.enduranceweb.proto.LookupTable
 import me.williamhester.kdash.enduranceweb.proto.lookupTable
 import me.williamhester.kdash.web.common.Interpolation.interpolate
+import me.williamhester.kdash.web.extensions.ProtoExtensions.toIterable
 import me.williamhester.kdash.web.extensions.get
 import me.williamhester.kdash.web.extensions.getCarIdx
 import me.williamhester.kdash.web.service.telemetrypusher.state.MetadataHolder
@@ -56,6 +57,8 @@ class CarIdxDistanceLookupTableMonitor(
       currentMaxEstTimeBucket = timeBucket
     }
 
+    if (currentMaxEstTimeBucket <= 0) return estTime
+
     for (i in bucketsBetween(lastTimeBucket, timeBucket)) {
       val index = i % currentMaxEstTimeBucket.toInt()
       carIdxEstDistanceTimeAtTime[index] =
@@ -70,9 +73,7 @@ class CarIdxDistanceLookupTableMonitor(
   }
 
   fun getLookupTable(): LookupTable = lookupTable {
-    for (i in 0 until currentMaxEstTimeBucket.toInt()) {
-      values.add(carIdxEstDistanceTimeAtTime[i])
-    }
+    values += carIdxEstDistanceTimeAtTime.toIterable(currentMaxEstTimeBucket.toInt())
   }
 
   /** Range of ints [lastDistance, newDistance) */
