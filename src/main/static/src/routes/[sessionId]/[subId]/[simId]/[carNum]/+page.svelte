@@ -1,9 +1,12 @@
 <script>
   import {
+    sessionInfo,
     sessionStore,
+    staticSessionInfo,
     connected,
     driversList,
     laps,
+    lookupTables,
     stints,
     telemetry,
   } from '$lib/stores/session';
@@ -59,43 +62,59 @@
   })
 
   const selectedDrivers = $derived($driversList.filter((driver) => selectedCars.has(driver.carId)));
-  // TODO: Re-enable this after the race.
   const carIdxEstTimeToPositionForDriverCarClass = $derived($telemetry['CarIdxDriverCarClassEstTime']);
 
-  // const carIdxEstTimesAfterDriverPits = $derived.by(() => {
-  //   const expectedStopTime = 40;
-  //   const stopAndGoSeconds =  $options.stopAndGoSeconds;
-  //   if (carIdxEstTimeToPositionForDriverCarClass === undefined) {
-  //     return [];
-  //   }
-  //   if ($lookupTables.driverCarDistanceMetersToEstTime == null
-  //     || $lookupTables.driverCarDistanceMetersToEstTime.length === 0) {
-  //     return [];
-  //   }
-  //
-  //   const driverCurrentEstTime = carIdxEstTimeToPositionForDriverCarClass[$staticSessionInfo.driverCarIdx];
-  //   const driverMetersToEstTime = $lookupTables.driverCarDistanceMetersToEstTime;
-  //   const driverLapRemaining = $sessionInfo.driverCarEstLapTime - driverCurrentEstTime;
-  //   // TODO: interpolate instead of truncating only
-  //   const pitExitMeters = Math.trunc(DAYTONA_PIT_EXIT_LAP_DIST_PCT * $staticSessionInfo.lapLengthMeters);
-  //   const pitExitEstTime = driverMetersToEstTime.values[pitExitMeters];
-  //   const secondsToPitExitIfPitThisLap = driverLapRemaining + pitExitEstTime + expectedStopTime + stopAndGoSeconds;
-  //
-  //   const carIdxEstTimes = $telemetry['CarIdxEstTime'].map((est, idx) => {
-  //     const lookupTable = $lookupTables.carIdxEstTimeToDistance[idx];
-  //     if (!lookupTable) {
-  //       return 0;
-  //     }
-  //     const estDistanceAfterDriverPitStop =
-  //       (est + secondsToPitExitIfPitThisLap) % lookupTable.values[lookupTable.values.length - 1];
-  //     const estDistanceMetersAfterDriverPitStop = estDistanceAfterDriverPitStop * $staticSessionInfo.lapLengthMeters;
-  //     // TODO: interpolate instead of truncating only
-  //     return $lookupTables.driverCarDistanceMetersToEstTime.values[Math.trunc(estDistanceMetersAfterDriverPitStop)];
-  //   });
-  //   // The driver will be at the pit exit, not their predicted location if they were lapping normally.
-  //   carIdxEstTimes[$staticSessionInfo.driverCarIdx] = pitExitEstTime;
-  //   return carIdxEstTimes;
-  // });
+  const carIdxEstTimesAfterDriverPits = $derived.by(() => {
+    const expectedStopTime = 40;
+    const stopAndGoSeconds =  $options.stopAndGoSeconds;
+    if (carIdxEstTimeToPositionForDriverCarClass === undefined) {
+      return [];
+    }
+    
+    const driverMetersToEstTime = $lookupTables.driverCarDistanceMetersToEstTime;
+    if ($lookupTables.driverCarDistanceMetersToEstTime == null
+      || !driverMetersToEstTime.values
+      || driverMetersToEstTime.values.length === 0) {
+      return [];
+    }
+
+    // Helper for linear interpolation instead of truncating
+    const interpolate = (arr, exactIndex) => {
+      const floor = Math.max(0, Math.floor(exactIndex));
+      const ceil = Math.min(floor + 1, arr.length - 1);
+      const fraction = exactIndex - floor;
+      return arr[floor] + (arr[ceil] - arr[floor]) * fraction;
+    };
+
+    const driverCurrentEstTime = carIdxEstTimeToPositionForDriverCarClass[$staticSessionInfo.driverCarIdx];
+    const driverLapRemainingSeconds = $sessionInfo.driverCarEstLapTime - driverCurrentEstTime;
+    
+    const pitExitMeters = DAYTONA_PIT_EXIT_LAP_DIST_PCT * $staticSessionInfo.lapLengthMeters;
+    const pitExitEstTime = interpolate(driverMetersToEstTime.values, pitExitMeters);
+    const secondsToPitExitIfPitThisLap = driverLapRemainingSeconds + pitExitEstTime + expectedStopTime + stopAndGoSeconds;
+
+    const carIdxEstTimes = $telemetry['CarIdxEstTime'].map((est, idx) => {
+      const lookupTable = $lookupTables.carIdxEstTimeToDistance[idx];
+      if (!lookupTable || !lookupTable.values || lookupTable.values.length <= 1) {
+        return 0;
+      }
+
+      // Buckets are at 60 Hz. Divide the max bucket by 60 to get the lap time.
+      // TODO: Consider storing the car's lap time in a proto to avoid looking it up like this.
+      // TODO: Also, report a scalar for each driver to calculate their lap time (since it'll differ from iRacing's
+      //  predicted lap time).
+      const carLapTimeSeconds = (lookupTable.values.length - 1) / 60;
+      const wrappedTimeSeconds = (est + secondsToPitExitIfPitThisLap) % carLapTimeSeconds;
+      const wrappedTimeSecondsBucket = wrappedTimeSeconds * 60;
+      const estDistancePctAfterDriverPitStop = interpolate(lookupTable.values, wrappedTimeSecondsBucket);
+      const estDistanceMetersAfterDriverPitStop = estDistancePctAfterDriverPitStop * $staticSessionInfo.lapLengthMeters;
+      
+      return interpolate(driverMetersToEstTime.values, estDistanceMetersAfterDriverPitStop);
+    });
+    // The driver will be at the pit exit, not their predicted location if they were lapping normally.
+    carIdxEstTimes[$staticSessionInfo.driverCarIdx] = pitExitEstTime;
+    return carIdxEstTimes;
+  });
 
 
   const lapsAtLine = $derived.by(() => {
@@ -204,7 +223,7 @@
     </div>
 
     <GapsTableTable estTimes={carIdxEstTimeToPositionForDriverCarClass} />
-<!--    <GapsTableTable estTimes={carIdxEstTimesAfterDriverPits} />-->
+    <GapsTableTable estTimes={carIdxEstTimesAfterDriverPits} />
   </div>
 
   <div class="row mt-1 ms-4">
