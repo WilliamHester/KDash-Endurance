@@ -196,6 +196,7 @@ message SessionInfo {
    float driver_car_est_lap_time = 2;
    repeated CarClass car_classes = 3;
    LookupTables lookup_tables = 4;
+   PitOptions selected_pit_options = 5;
 }
 
 message StaticSessionInfo {
@@ -252,4 +253,16 @@ message LookupTables {
 
 message LookupTable {
    repeated float values = 1;
+}
+
+message PitOptions {
+   bool lf_tire = 1;
+   bool rf_tire = 2;
+   bool lr_tire = 3;
+   bool rr_tire = 4;
+   bool start_fueling = 5;
+   bool windshield_tearoff = 6;
+   bool fast_repair = 7;
+
+   float fuel_to_add = 8;
 }

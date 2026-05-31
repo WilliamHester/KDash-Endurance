@@ -203,6 +203,7 @@ export interface SessionInfo {
   driverCarEstLapTime: number;
   carClasses: CarClass[];
   lookupTables: LookupTables | undefined;
+  selectedPitOptions: PitOptions | undefined;
 }
 
 export interface StaticSessionInfo {
@@ -266,6 +267,17 @@ export interface LookupTables_CarIdxEstTimeToDistanceEntry {
 
 export interface LookupTable {
   values: number[];
+}
+
+export interface PitOptions {
+  lfTire: boolean;
+  rfTire: boolean;
+  lrTire: boolean;
+  rrTire: boolean;
+  startFueling: boolean;
+  windshieldTearoff: boolean;
+  fastRepair: boolean;
+  fuelToAdd: number;
 }
 
 function createBaseConnectRequest(): ConnectRequest {
@@ -2435,7 +2447,13 @@ export const OtherCarStintEntry: MessageFns<OtherCarStintEntry> = {
 };
 
 function createBaseSessionInfo(): SessionInfo {
-  return { drivers: [], driverCarEstLapTime: 0, carClasses: [], lookupTables: undefined };
+  return {
+    drivers: [],
+    driverCarEstLapTime: 0,
+    carClasses: [],
+    lookupTables: undefined,
+    selectedPitOptions: undefined,
+  };
 }
 
 export const SessionInfo: MessageFns<SessionInfo> = {
@@ -2451,6 +2469,9 @@ export const SessionInfo: MessageFns<SessionInfo> = {
     }
     if (message.lookupTables !== undefined) {
       LookupTables.encode(message.lookupTables, writer.uint32(34).fork()).join();
+    }
+    if (message.selectedPitOptions !== undefined) {
+      PitOptions.encode(message.selectedPitOptions, writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -2494,6 +2515,14 @@ export const SessionInfo: MessageFns<SessionInfo> = {
           message.lookupTables = LookupTables.decode(reader, reader.uint32());
           continue;
         }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.selectedPitOptions = PitOptions.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2511,6 +2540,7 @@ export const SessionInfo: MessageFns<SessionInfo> = {
         ? object.carClasses.map((e: any) => CarClass.fromJSON(e))
         : [],
       lookupTables: isSet(object.lookupTables) ? LookupTables.fromJSON(object.lookupTables) : undefined,
+      selectedPitOptions: isSet(object.selectedPitOptions) ? PitOptions.fromJSON(object.selectedPitOptions) : undefined,
     };
   },
 
@@ -2528,6 +2558,9 @@ export const SessionInfo: MessageFns<SessionInfo> = {
     if (message.lookupTables !== undefined) {
       obj.lookupTables = LookupTables.toJSON(message.lookupTables);
     }
+    if (message.selectedPitOptions !== undefined) {
+      obj.selectedPitOptions = PitOptions.toJSON(message.selectedPitOptions);
+    }
     return obj;
   },
 
@@ -2541,6 +2574,9 @@ export const SessionInfo: MessageFns<SessionInfo> = {
     message.carClasses = object.carClasses?.map((e) => CarClass.fromPartial(e)) || [];
     message.lookupTables = (object.lookupTables !== undefined && object.lookupTables !== null)
       ? LookupTables.fromPartial(object.lookupTables)
+      : undefined;
+    message.selectedPitOptions = (object.selectedPitOptions !== undefined && object.selectedPitOptions !== null)
+      ? PitOptions.fromPartial(object.selectedPitOptions)
       : undefined;
     return message;
   },
@@ -3531,6 +3567,187 @@ export const LookupTable: MessageFns<LookupTable> = {
   fromPartial(object: DeepPartial<LookupTable>): LookupTable {
     const message = createBaseLookupTable();
     message.values = object.values?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBasePitOptions(): PitOptions {
+  return {
+    lfTire: false,
+    rfTire: false,
+    lrTire: false,
+    rrTire: false,
+    startFueling: false,
+    windshieldTearoff: false,
+    fastRepair: false,
+    fuelToAdd: 0,
+  };
+}
+
+export const PitOptions: MessageFns<PitOptions> = {
+  encode(message: PitOptions, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.lfTire !== false) {
+      writer.uint32(8).bool(message.lfTire);
+    }
+    if (message.rfTire !== false) {
+      writer.uint32(16).bool(message.rfTire);
+    }
+    if (message.lrTire !== false) {
+      writer.uint32(24).bool(message.lrTire);
+    }
+    if (message.rrTire !== false) {
+      writer.uint32(32).bool(message.rrTire);
+    }
+    if (message.startFueling !== false) {
+      writer.uint32(40).bool(message.startFueling);
+    }
+    if (message.windshieldTearoff !== false) {
+      writer.uint32(48).bool(message.windshieldTearoff);
+    }
+    if (message.fastRepair !== false) {
+      writer.uint32(56).bool(message.fastRepair);
+    }
+    if (message.fuelToAdd !== 0) {
+      writer.uint32(69).float(message.fuelToAdd);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PitOptions {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePitOptions();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.lfTire = reader.bool();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.rfTire = reader.bool();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.lrTire = reader.bool();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.rrTire = reader.bool();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.startFueling = reader.bool();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.windshieldTearoff = reader.bool();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.fastRepair = reader.bool();
+          continue;
+        }
+        case 8: {
+          if (tag !== 69) {
+            break;
+          }
+
+          message.fuelToAdd = reader.float();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PitOptions {
+    return {
+      lfTire: isSet(object.lfTire) ? globalThis.Boolean(object.lfTire) : false,
+      rfTire: isSet(object.rfTire) ? globalThis.Boolean(object.rfTire) : false,
+      lrTire: isSet(object.lrTire) ? globalThis.Boolean(object.lrTire) : false,
+      rrTire: isSet(object.rrTire) ? globalThis.Boolean(object.rrTire) : false,
+      startFueling: isSet(object.startFueling) ? globalThis.Boolean(object.startFueling) : false,
+      windshieldTearoff: isSet(object.windshieldTearoff) ? globalThis.Boolean(object.windshieldTearoff) : false,
+      fastRepair: isSet(object.fastRepair) ? globalThis.Boolean(object.fastRepair) : false,
+      fuelToAdd: isSet(object.fuelToAdd) ? globalThis.Number(object.fuelToAdd) : 0,
+    };
+  },
+
+  toJSON(message: PitOptions): unknown {
+    const obj: any = {};
+    if (message.lfTire !== false) {
+      obj.lfTire = message.lfTire;
+    }
+    if (message.rfTire !== false) {
+      obj.rfTire = message.rfTire;
+    }
+    if (message.lrTire !== false) {
+      obj.lrTire = message.lrTire;
+    }
+    if (message.rrTire !== false) {
+      obj.rrTire = message.rrTire;
+    }
+    if (message.startFueling !== false) {
+      obj.startFueling = message.startFueling;
+    }
+    if (message.windshieldTearoff !== false) {
+      obj.windshieldTearoff = message.windshieldTearoff;
+    }
+    if (message.fastRepair !== false) {
+      obj.fastRepair = message.fastRepair;
+    }
+    if (message.fuelToAdd !== 0) {
+      obj.fuelToAdd = message.fuelToAdd;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PitOptions>): PitOptions {
+    return PitOptions.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PitOptions>): PitOptions {
+    const message = createBasePitOptions();
+    message.lfTire = object.lfTire ?? false;
+    message.rfTire = object.rfTire ?? false;
+    message.lrTire = object.lrTire ?? false;
+    message.rrTire = object.rrTire ?? false;
+    message.startFueling = object.startFueling ?? false;
+    message.windshieldTearoff = object.windshieldTearoff ?? false;
+    message.fastRepair = object.fastRepair ?? false;
+    message.fuelToAdd = object.fuelToAdd ?? 0;
     return message;
   },
 };

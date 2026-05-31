@@ -3,6 +3,7 @@ import { browser } from '$app/environment';
 import {
     LiveTelemetryServiceDefinition,
     LookupTables,
+    PitOptions,
     SessionInfo,
     StaticSessionInfo
 } from '$lib/grpc/live_telemetry_service';
@@ -19,6 +20,7 @@ const initialState = {
     stints: [],
     otherCarLaps: [],
     otherCarStints: [],
+    selectedPitOptions: PitOptions.create(),
     telemetry: {},
     activeQueries: []
 };
@@ -88,7 +90,9 @@ function createSessionStore() {
             (async () => {
                 try {
                     for await (const response of client.monitorSessionInfo(request, { signal })) {
-                        if (response.lookupTables) {
+                        if (response.selectedPitOptions) {
+                            update(state => ({ ...state, selectedPitOptions: response.selectedPitOptions }));
+                        } else if (response.lookupTables) {
                             update(state => ({ ...state, lookupTables: response.lookupTables }));
                         } else {
                             update(state => ({ ...state, sessionInfo: response }));
