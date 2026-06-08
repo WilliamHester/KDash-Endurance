@@ -39,7 +39,9 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  font-family: "Azeret Mono", monospace;
+  --text-sm: 12px;
+
+  font-family: "Titillium Web", monospace;
 }
 
 .dark {
@@ -118,6 +120,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

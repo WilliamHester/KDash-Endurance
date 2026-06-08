@@ -10,7 +10,7 @@
   } from "$lib/stores/session.js";
   import {OtherCarLapEntry, OtherCarStintEntry} from "$lib/grpc/live_telemetry_service.ts";
   import { formatNumberAsDuration } from '$lib/formatters';
-  import {calculateGaps} from "$lib/gaps.js";
+  import {calculateRelativeGapToDriver} from "$lib/gaps.js";
   import DataBox from "$lib/components/DataBox.svelte";
 
   const { driver } = $props();
@@ -42,7 +42,7 @@
     const distances = $telemetry['CarIdxDriverCarClassEstTime'];
     console.log(distances);
     const gaps =
-      calculateGaps(
+      calculateRelativeGapToDriver(
         $telemetry['CarIdxDriverCarClassEstTime'],
         $drivers,
         $staticSessionInfo.driverCarIdx,

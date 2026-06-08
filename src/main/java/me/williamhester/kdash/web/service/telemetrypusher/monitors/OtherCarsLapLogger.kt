@@ -76,6 +76,7 @@ class OtherCarsLapLogger(
           val sessionTime = dataSnapshot.sessionTime
           // Values that are accurate at the end of the previous lap
           position = dataSnapshot.getCarIdxPosition(carIdx)
+          // TODO: Interpolate this value so it's closer to reality.
           lapTime = sessionTime - lapStartTime
           trackTemp = dataSnapshot.trackTempCrew
           val driver = metadataHolder.metadata.getCarIdx(carIdx)

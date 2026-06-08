@@ -225,6 +225,11 @@ export interface Driver {
   carClassName: string;
   driverName: string;
   teamName: string;
+  /**
+   * The estimated lap time (per the session string YAML). Note that this is different from the computed expected lap
+   * time that is reported as a part of the lookup tables. This is largely used for sorting purposes.
+   */
+  estimatedLapTime: number;
 }
 
 export interface CarClass {
@@ -2783,7 +2788,7 @@ export const StaticSessionInfo: MessageFns<StaticSessionInfo> = {
 };
 
 function createBaseDriver(): Driver {
-  return { carId: 0, carNumber: 0, carClassId: 0, carClassName: "", driverName: "", teamName: "" };
+  return { carId: 0, carNumber: 0, carClassId: 0, carClassName: "", driverName: "", teamName: "", estimatedLapTime: 0 };
 }
 
 export const Driver: MessageFns<Driver> = {
@@ -2805,6 +2810,9 @@ export const Driver: MessageFns<Driver> = {
     }
     if (message.teamName !== "") {
       writer.uint32(50).string(message.teamName);
+    }
+    if (message.estimatedLapTime !== 0) {
+      writer.uint32(61).float(message.estimatedLapTime);
     }
     return writer;
   },
@@ -2864,6 +2872,14 @@ export const Driver: MessageFns<Driver> = {
           message.teamName = reader.string();
           continue;
         }
+        case 7: {
+          if (tag !== 61) {
+            break;
+          }
+
+          message.estimatedLapTime = reader.float();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2881,6 +2897,7 @@ export const Driver: MessageFns<Driver> = {
       carClassName: isSet(object.carClassName) ? globalThis.String(object.carClassName) : "",
       driverName: isSet(object.driverName) ? globalThis.String(object.driverName) : "",
       teamName: isSet(object.teamName) ? globalThis.String(object.teamName) : "",
+      estimatedLapTime: isSet(object.estimatedLapTime) ? globalThis.Number(object.estimatedLapTime) : 0,
     };
   },
 
@@ -2904,6 +2921,9 @@ export const Driver: MessageFns<Driver> = {
     if (message.teamName !== "") {
       obj.teamName = message.teamName;
     }
+    if (message.estimatedLapTime !== 0) {
+      obj.estimatedLapTime = message.estimatedLapTime;
+    }
     return obj;
   },
 
@@ -2918,6 +2938,7 @@ export const Driver: MessageFns<Driver> = {
     message.carClassName = object.carClassName ?? "";
     message.driverName = object.driverName ?? "";
     message.teamName = object.teamName ?? "";
+    message.estimatedLapTime = object.estimatedLapTime ?? 0;
     return message;
   },
 };

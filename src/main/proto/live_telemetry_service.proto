@@ -218,6 +218,9 @@ message Driver {
    string car_class_name = 4;
    string driver_name = 5;
    string team_name = 6;
+   // The estimated lap time (per the session string YAML). Note that this is different from the computed expected lap
+   // time that is reported as a part of the lookup tables. This is largely used for sorting purposes.
+   float estimated_lap_time = 7;
 }
 
 message CarClass {

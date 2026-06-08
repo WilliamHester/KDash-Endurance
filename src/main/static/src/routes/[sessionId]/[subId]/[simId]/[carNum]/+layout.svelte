@@ -1,6 +1,6 @@
 <script>
-  import { page } from '$app/state';
-  import { sessionStore } from '$lib/stores/session';
+  import { page } from "$app/state";
+  import { sessionStore } from "$lib/stores/session";
   let { children } = $props();
 
   $effect(() => {
@@ -12,7 +12,9 @@
   });
 
   let currentPath = $derived(page.url.pathname);
-  let basePath = $derived(`/${page.params.sessionId}/${page.params.subId}/${page.params.simId}/${page.params.carNum}`);
+  let basePath = $derived(
+    `/${page.params.sessionId}/${page.params.subId}/${page.params.simId}/${page.params.carNum}`,
+  );
 </script>
 
 <div class="app-column">
@@ -27,42 +29,56 @@
       <a
         class="menu-item"
         class:active={currentPath === basePath}
-        href="{basePath}">
+        href={basePath}
+      >
         Race Overview
       </a>
 
       <a
         class="menu-item"
-        class:active={currentPath.includes('/pit')}
-        href="{basePath}/pit">
+        class:active={currentPath.includes("/pit")}
+        href="{basePath}/pit"
+      >
         Pit Strategy
       </a>
 
-      <a 
-        class="menu-item" 
-        class:active={currentPath.includes('/laps')} 
-        href="{basePath}/laps">
+      <a
+        class="menu-item"
+        class:active={currentPath.includes("/leaderboard")}
+        href="{basePath}/leaderboard"
+      >
+        Leaderboard
+      </a>
+
+      <a
+        class="menu-item"
+        class:active={currentPath.includes("/laps")}
+        href="{basePath}/laps"
+      >
         Lap Records
       </a>
-      
-      <a 
-        class="menu-item" 
-        class:active={currentPath.includes('/otherlaps')} 
-        href="{basePath}/otherlaps">
+
+      <a
+        class="menu-item"
+        class:active={currentPath.includes("/otherlaps")}
+        href="{basePath}/otherlaps"
+      >
         Other Cars' Laps
       </a>
 
       <a
         class="menu-item"
-        class:active={currentPath.includes('/telemetry')}
-        href="{basePath}/telemetry">
+        class:active={currentPath.includes("/telemetry")}
+        href="{basePath}/telemetry"
+      >
         Telemetry Charts
       </a>
 
       <a
         class="menu-item"
-        class:active={currentPath.includes('/options')}
-        href="{basePath}/options">
+        class:active={currentPath.includes("/options")}
+        href="{basePath}/options"
+      >
         Options
       </a>
     </nav>
@@ -78,8 +94,7 @@
     margin: 0;
     background-color: #000;
     color: #f0f0f0;
-    font-family: Roboto, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-    font-size: 0.7em;
+    font-size: var(--text-sm);
     height: 100vh;
     overflow: hidden;
   }
@@ -100,7 +115,7 @@
   }
 
   .website-name {
-    font-family: 'Electrolize', sans-serif;
+    font-family: "Electrolize", sans-serif;
     font-size: 1.2rem;
     color: inherit;
     text-decoration: none;
@@ -117,7 +132,7 @@
     flex-direction: column;
     width: 150px;
     background-color: #101010;
-    font-family: 'Electrolize', sans-serif;
+    /* font-family: "Electrolize", sans-serif; */
     padding-top: 10px;
     border-right: 1px solid #333;
   }

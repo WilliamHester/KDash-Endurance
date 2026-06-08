@@ -81,9 +81,10 @@ class MonitorSessionInfoHandler(
         carId = it["CarIdx"].value.toInt()
         carNumber = it["CarNumberRaw"].value.toInt()
         carClassId = it["CarClassID"].value.toInt()
-        carClassName = it["CarClassShortName"].value
+        carClassName = it["CarClassShortName"].value.ifBlank { "Class ID: ${it["CarClassID"].value}" }
         driverName = it["UserName"].value
         teamName = it["TeamName"].value
+        estimatedLapTime = it["CarClassEstLapTime"].value.toFloat()
       }
     }.filter { it.carId != paceCarIdx }
 
@@ -92,7 +93,7 @@ class MonitorSessionInfoHandler(
         .map {
           carClass {
             carClassId = it["CarClassID"].value.toInt()
-            carClassShortName = it["CarClassShortName"].value
+            carClassShortName = it["CarClassShortName"].value.ifBlank { "Class ID: ${it["CarClassID"].value}" }
             carClassColor = '#' + it["CarClassColor"].value.substringAfter('x')
           }
         }

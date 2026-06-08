@@ -5,7 +5,7 @@
     staticSessionInfo,
     telemetry,
   } from "$lib/stores/session.js";
-  import { calculateGaps } from "$lib/gaps.js";
+  import { calculateRelativeGapToDriver } from "$lib/gaps.js";
   import DataBox from "$lib/components/DataBox.svelte";
 
   let { estTimes } = $props();
@@ -19,7 +19,7 @@
     const driverIdx = $staticSessionInfo.driverCarIdx;
     const lapTime = $sessionInfo.driverCarEstLapTime;
 
-    const calculatedGaps = calculateGaps(estTimes, $drivers, driverIdx, lapTime);
+    const calculatedGaps = calculateRelativeGapToDriver(estTimes, $drivers, driverIdx, lapTime);
     if (calculatedGaps.length === 0) return [];
 
     const sortedGaps = calculatedGaps.sort((a, b) => b[1] - a[1]);

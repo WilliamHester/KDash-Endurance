@@ -31,7 +31,7 @@ class GetStaticSessionInfoHandler(
         .map {
           carClass {
             carClassId = it["CarClassID"].value.toInt()
-            carClassShortName = it["CarClassShortName"].value
+            carClassShortName = it["CarClassShortName"].value.ifBlank { "Class ID: ${it["CarClassID"].value}" }
             carClassColor = '#' + it["CarClassColor"].value.substringAfter('x')
           }
         }

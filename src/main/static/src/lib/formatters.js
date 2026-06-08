@@ -1,5 +1,5 @@
 export function formatNumberAsDuration(number, minutesOptional, alwaysShowSign) {
-  if (number === 0 || number === -1 || number === undefined) {
+  if (number === 0 || number === -1 || number === undefined || number === Number.MAX_VALUE) {
     return '--';
   }
   let sign = '';

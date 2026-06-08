@@ -28,7 +28,8 @@ internal object LocalClient {
       logger.atSevere().withCause(e).log("Uncaught exception")
     }
 //    val loggedDataReader = IRacingLoggedDataReader(Paths.get("/Users/williamhester/Downloads/livedata.ibt"))
-    val basePath = Path("/Users/williamhester/Documents/iRacing/telemetry/multiclass")
+//    val basePath = Path("/Users/williamhester/Documents/iRacing/telemetry/multiclass")
+    val basePath = Path("/Users/williamhester/Documents/iRacing/telemetry/IMSA_watkins_practice")
     val loggedDataReader = IRacingLoggedDataAndMetadataReader(
       ibtFilePath = basePath.resolve("telemetry.ibt"),
       sessionInfoFilePath = basePath.resolve("sessioninfo.irh"),
