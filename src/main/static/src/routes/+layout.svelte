@@ -1,20 +1,21 @@
 <script>
-	import favicon from '$lib/assets/favicon.svg';
+  import favicon from "$lib/assets/favicon.svg";
   import "../app.css";
-  import {ModeWatcher} from "mode-watcher";
+  import { ModeWatcher } from "mode-watcher";
 
-	let { children } = $props();
+  let { children } = $props();
 </script>
 
 <svelte:head>
   <title>Stintlytics</title>
-	<link rel="icon" href={favicon} />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Electrolize">
-  <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300&family=Roboto:wght@400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700" rel="stylesheet">
+  <link rel="icon" href={favicon} />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700"
+    rel="stylesheet"
+  />
 </svelte:head>
 
-<ModeWatcher defaultMode="dark"/>
+<ModeWatcher defaultMode="dark" />
 {@render children()}

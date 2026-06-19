@@ -115,7 +115,6 @@
   }
 
   .website-name {
-    font-family: "Electrolize", sans-serif;
     font-size: 1.2rem;
     color: inherit;
     text-decoration: none;
@@ -132,7 +131,6 @@
     flex-direction: column;
     width: 150px;
     background-color: #101010;
-    /* font-family: "Electrolize", sans-serif; */
     padding-top: 10px;
     border-right: 1px solid #333;
   }

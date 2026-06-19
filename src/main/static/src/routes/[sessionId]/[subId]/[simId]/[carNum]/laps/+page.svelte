@@ -1,6 +1,6 @@
 <script>
-  import { laps } from '$lib/stores/session';
-  import LapLogTable from '$lib/components/LapLogTable.svelte';
+    import { laps } from "$lib/stores/session";
+    import LapLogTable from "$lib/components/LapLogTable.svelte";
 </script>
 
 <div class="page-layout">
@@ -32,7 +32,6 @@
 
     h2 {
         margin: 0;
-        font-family: 'Electrolize', sans-serif;
     }
 
     .count {
