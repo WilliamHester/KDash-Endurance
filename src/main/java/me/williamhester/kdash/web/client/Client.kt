@@ -34,10 +34,11 @@ import kotlin.reflect.KProperty
 internal class Client(
   private val iRacingDataReader: IRacingDataReader,
   channel: ManagedChannel,
+  readRateLimitHz: Double,
   clientName: String? = null,
 ) {
   private val logTag = if (clientName != null) "Client $clientName: " else ""
-  private val dataReadRateLimiter = RateLimiter.create(60.0 * 3)
+  private val dataReadRateLimiter = RateLimiter.create(readRateLimitHz)
   private val reconnectionRateLimiter = RateLimiter.create(1 / 10.0)
   private var outputStreamObserver: StreamObserver<SessionMetadataOrDataSnapshot>? by BlockingDelegate()
   private var varBufferFields: VarBufferFields by BlockingDelegate()
