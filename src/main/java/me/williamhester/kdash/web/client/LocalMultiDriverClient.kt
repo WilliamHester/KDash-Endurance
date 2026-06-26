@@ -58,8 +58,8 @@ internal object LocalMultiDriverClient {
       sessionInfoFilePath = basePath.resolve("driver2/sessioninfo.irh"),
     )
     synchronizeReaders(driver1DataReader, driver2DataReader)
-    Client(driver1DataReader, channel, "William").start()
-    Client(driver2DataReader, channel, "Matthew").start()
+    Client(driver1DataReader, channel, 600.0, "William").start()
+    Client(driver2DataReader, channel, 600.0, "Matthew").start()
     Thread.sleep(365 * 24 * 60 * 60 * 1000L)
   }
 }

@@ -5,6 +5,10 @@ import com.google.common.util.concurrent.RateLimiter
 import com.google.protobuf.ByteString
 import com.google.protobuf.CodedOutputStream
 import com.google.protobuf.DescriptorProtos
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type.TYPE_BOOL
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type.TYPE_DOUBLE
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type.TYPE_FLOAT
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type.TYPE_INT32
 import io.grpc.ManagedChannel
 import io.grpc.StatusRuntimeException
 import io.grpc.stub.StreamObserver
@@ -41,7 +45,7 @@ internal class Client(
   private val dataReadRateLimiter = RateLimiter.create(readRateLimitHz)
   private val reconnectionRateLimiter = RateLimiter.create(1 / 10.0)
   private var outputStreamObserver: StreamObserver<SessionMetadataOrDataSnapshot>? by BlockingDelegate()
-  private var varBufferFields: VarBufferFields by BlockingDelegate()
+  private var varBufferFields: List<ResolvedField> by BlockingDelegate()
   private var sessionMetadata: SessionMetadata by BlockingDelegate()
   private val dataQueue = LinkedBlockingDeque<SessionMetadataOrDataSnapshot>(QUEUE_CAPACITY)
   private val sessionMetadataMonitorExecutor = Executors.newSingleThreadScheduledExecutor()
@@ -118,10 +122,41 @@ internal class Client(
   }
 
   fun onConnected(varBufferFields: VarBufferFields) {
-    this.varBufferFields = varBufferFields
+    this.varBufferFields = varBufferFields.descriptorProto.fieldList.mapNotNull { field ->
+      val iRacingField = field.options.unknownFields.getField(50000)
+      val iRacingFieldName = ByteString.copyFrom(iRacingField.lengthDelimitedList).toStringUtf8()
+
+      val fieldNumber = field.number
+      val isRepeated = field.label == DescriptorProtos.FieldDescriptorProto.Label.LABEL_REPEATED
+      val fieldHeader =  iRacingDataReader.headers[iRacingFieldName]
+      if (fieldHeader == null) {
+        logger.atWarning().log("Field header not found for variable '%s'. Skipping.", iRacingFieldName)
+        return@mapNotNull null
+      }
+      val count = if (isRepeated) fieldHeader.count else 1
+
+      val type =
+        when (field.type) {
+          TYPE_DOUBLE -> ResolvedFieldType.DOUBLE
+          TYPE_FLOAT -> ResolvedFieldType.FLOAT
+          TYPE_INT32 -> ResolvedFieldType.INT
+          TYPE_BOOL -> ResolvedFieldType.BOOLEAN
+          else -> {
+            logger.atWarning().log("Unsupported field type: %s", field.type)
+            return@mapNotNull null
+          }
+        }
+
+      ResolvedField(
+        iRacingFieldName = iRacingFieldName,
+        count = count,
+        outputProtoFieldNumber = fieldNumber,
+        fieldType = type,
+      )
+    }
   }
 
-  private fun readData(varBufferFields: VarBufferFields) {
+  private fun readData(varBufferFields: List<ResolvedField>) {
     sendSessionMetadata()
     sessionMetadataMonitor =
       sessionMetadataMonitorExecutor.scheduleAtFixedRate(this::pollSessionMetadata, 1, 1, TimeUnit.SECONDS)
@@ -143,8 +178,8 @@ internal class Client(
         logger.atInfo().atMostEvery(5, TimeUnit.SECONDS).log("%sSending data.", logTag)
       }
 
-      for (field in varBufferFields.descriptorProto.fieldList) {
-        data.writeToOutputStream(field, iRacingDataReader, codedOutputStream)
+      for (field in varBufferFields) {
+        data.writeToOutputStream(field, codedOutputStream)
       }
 
       codedOutputStream.flush()
@@ -210,39 +245,29 @@ internal class Client(
   }
 
   private fun VarBuffer.writeToOutputStream(
-    field: DescriptorProtos.FieldDescriptorProto,
-    iRacingDataReader: IRacingDataReader,
+    field: ResolvedField,
     codedOutputStream: CodedOutputStream,
   ) {
-    val iracingField = field.options.unknownFields.getField(50000)
-    val iRacingFieldName = ByteString.copyFrom(iracingField.lengthDelimitedList).toStringUtf8()
-    val fieldNumber = field.number
-    val isRepeated = field.label == DescriptorProtos.FieldDescriptorProto.Label.LABEL_REPEATED
-    val fieldHeader =  iRacingDataReader.headers[iRacingFieldName]
-    if (fieldHeader == null) {
-      logger.atWarning().log("Field header not found for variable '%s'. Skipping.", iRacingFieldName)
-      return
-    }
-    val count = if (isRepeated) fieldHeader.count else 1
-    for (i in 0 until count) {
-      when (field.type) {
-        DescriptorProtos.FieldDescriptorProto.Type.TYPE_DOUBLE -> {
-          val result = getArrayDouble(iRacingFieldName, i)
-          codedOutputStream.writeDouble(fieldNumber, result)
+    with(field) {
+      for (i in 0 until count) {
+        when (fieldType) {
+          ResolvedFieldType.DOUBLE -> {
+            val result = getArrayDouble(iRacingFieldName, i)
+            codedOutputStream.writeDouble(outputProtoFieldNumber, result)
+          }
+          ResolvedFieldType.FLOAT -> {
+            val result = getArrayFloat(iRacingFieldName, i)
+            codedOutputStream.writeFloat(outputProtoFieldNumber, result)
+          }
+          ResolvedFieldType.INT -> {
+            val result = getArrayInt(iRacingFieldName, i)
+            codedOutputStream.writeInt32(outputProtoFieldNumber, result)
+          }
+          ResolvedFieldType.BOOLEAN -> {
+            val result = getArrayBoolean(iRacingFieldName, i)
+            codedOutputStream.writeBool(outputProtoFieldNumber, result)
+          }
         }
-        DescriptorProtos.FieldDescriptorProto.Type.TYPE_FLOAT -> {
-          val result = getArrayFloat(iRacingFieldName, i)
-          codedOutputStream.writeFloat(fieldNumber, result)
-        }
-        DescriptorProtos.FieldDescriptorProto.Type.TYPE_INT32 -> {
-          val result = getArrayInt(iRacingFieldName, i)
-          codedOutputStream.writeInt32(fieldNumber, result)
-        }
-        DescriptorProtos.FieldDescriptorProto.Type.TYPE_BOOL -> {
-          val result = getArrayBoolean(iRacingFieldName, i)
-          codedOutputStream.writeBool(fieldNumber, result)
-        }
-        else -> TODO("Unsupported field type: ${field.type}")
       }
     }
   }
@@ -261,6 +286,20 @@ internal class Client(
     if (!didAdd) {
       logger.atWarning().atMostEvery(30, TimeUnit.SECONDS).log("%sLost data because queue was out of space.", logTag)
     }
+  }
+
+  private class ResolvedField(
+    val iRacingFieldName: String,
+    val count: Int,
+    val outputProtoFieldNumber: Int,
+    val fieldType: ResolvedFieldType,
+  )
+
+  private enum class ResolvedFieldType {
+    BOOLEAN,
+    INT,
+    FLOAT,
+    DOUBLE,
   }
 
   companion object {
