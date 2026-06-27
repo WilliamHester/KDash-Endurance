@@ -19,7 +19,18 @@
     } else {
       lapsString = `${lapDelta} laps + `;
     }
-    return lapsString + formatNumberAsDuration(gap, true);
+    let minutesString = "";
+    let secondsString = "";
+    if (gap > 60) {
+      const minutes = Math.floor(gap / 60);
+      minutesString = `${minutes}:`;
+      gap %= 60;
+      if (gap < 10) {
+        secondsString = "0";
+      }
+    }
+    secondsString += gap.toFixed(1);
+    return lapsString + minutesString + secondsString;
   }
 
   let driverOrTeamName = $state("Driver");

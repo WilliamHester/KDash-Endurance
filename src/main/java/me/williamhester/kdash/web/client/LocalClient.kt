@@ -3,7 +3,6 @@ package me.williamhester.kdash.web.client
 import com.google.common.flogger.FluentLogger
 import io.grpc.netty.GrpcSslContexts
 import io.grpc.netty.NettyChannelBuilder
-import me.williamhester.kdash.api.IRacingLoggedDataReader
 import kotlin.io.path.Path
 
 internal object LocalClient {
@@ -28,13 +27,13 @@ internal object LocalClient {
         _, e ->
       logger.atSevere().withCause(e).log("Uncaught exception")
     }
-    val loggedDataReader = IRacingLoggedDataReader(Path("/Users/williamhester/Downloads/livedata.ibt"))
-//    val basePath = Path("/Users/williamhester/Documents/iRacing/telemetry/multiclass")
+//    val loggedDataReader = IRacingLoggedDataReader(Path("/Users/williamhester/Downloads/livedata.ibt"))
+    val basePath = Path("/Users/williamhester/Documents/iRacing/telemetry/multiclass")
 //    val basePath = Path("/Users/williamhester/Documents/iRacing/telemetry/IMSA_watkins_practice")
-//    val loggedDataReader = IRacingLoggedDataAndMetadataReader(
-//      ibtFilePath = basePath.resolve("telemetry.ibt"),
-//      sessionInfoFilePath = basePath.resolve("sessioninfo.irh"),
-//    )
+    val loggedDataReader = IRacingLoggedDataAndMetadataReader(
+      ibtFilePath = basePath.resolve("telemetry.ibt"),
+      sessionInfoFilePath = basePath.resolve("sessioninfo.irh"),
+    )
     Client(loggedDataReader, channel, 60.0 * 3).start()
     Thread.sleep(365 * 24 * 60 * 60 * 1000L)
   }
