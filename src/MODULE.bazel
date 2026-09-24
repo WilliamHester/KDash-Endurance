@@ -108,7 +108,7 @@ maven.install(
         "io.grpc:grpc-stub:1.57.0",
         "io.javalin:javalin:jar:4.6.0",
         "org.mindrot:jbcrypt:0.4",
-        "org.slf4j:slf4j-simple:1.8.0-beta4",
+        "org.slf4j:slf4j-simple:2.0.19",
         "com.impossibl.pgjdbc-ng:pgjdbc-ng:0.8.9",
         "com.zaxxer:HikariCP:7.0.2",
 
