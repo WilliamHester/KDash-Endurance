@@ -470,11 +470,10 @@ object Store {
             responseListener.onNext(LapEntry.parseFrom(it.getBytes(2)))
             lastLapId = max(newLapId, lastLapId)
           }
-
-          do {
-            val lapId = blockingQueue.take()!!.toInt()
-          } while (lapId <= lastLapId)
         }
+        do {
+          val lapId = blockingQueue.take().toInt()
+        } while (lapId <= lastLapId)
       }
     }
   }
@@ -516,7 +515,7 @@ object Store {
         }
 
         do {
-          val stintId = blockingQueue.take()!!.toInt()
+          val stintId = blockingQueue.take().toInt()
         } while (stintId < lastStintId)
       }
     }
@@ -560,8 +559,8 @@ object Store {
         }
 
         do {
-          val lapId = blockingQueue.take()!!.toInt()
-        } while (lapId < lastOtherCarLapId)
+          val lapId = blockingQueue.take().toInt()
+        } while (lapId <= lastOtherCarLapId)
       }
     }
   }
@@ -604,8 +603,8 @@ object Store {
         }
 
         do {
-          val lapId = blockingQueue.take()!!.toInt()
-        } while (lapId < lastOtherCarStintId)
+          val lapId = blockingQueue.take().toInt()
+        } while (lapId <= lastOtherCarStintId)
       }
     }
   }
